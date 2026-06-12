@@ -17,6 +17,13 @@ const fields: TwentyFieldMetadata[] = [
     isNullable: false,
   },
   {
+    id: "products",
+    name: "products",
+    label: "Products",
+    type: "MULTI_SELECT",
+    isNullable: true,
+  },
+  {
     id: "status",
     name: "status",
     label: "Status",
@@ -55,5 +62,11 @@ describe("portal view metadata configuration", () => {
   it("uses an equality filter for select dropdowns", () => {
     const config = filterConfigsFromNames(["status"], fields)[0];
     expect(defaultFilterOperator(fields[1], config)).toBe("eq");
+  });
+
+  it("uses Twenty's containsAny operator for multi-select fields", () => {
+    expect(filterConfigsFromNames(["products"], fields)[0]?.operators).toEqual([
+      "containsAny",
+    ]);
   });
 });

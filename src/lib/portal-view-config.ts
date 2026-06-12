@@ -14,8 +14,9 @@ export function companyScopeFields(fields: TwentyFieldMetadata[]) {
     const score = (field: TwentyFieldMetadata) => {
       const name = field.name.toLowerCase();
       const target = field.relationTargetObjectNameSingular?.toLowerCase();
-      if (target === "company") return 0;
-      if (name === "companyid" || name === "company") return 1;
+      if (name === "companyid") return 0;
+      if (target === "company") return 1;
+      if (name === "company") return 2;
       if (name.includes("company")) return 2;
       if (field.type === "RELATION" || field.type === "UUID") return 3;
       return 4;
@@ -38,7 +39,7 @@ export function filterOperatorsForType(type: string) {
     case "DATE_TIME":
       return ["eq", "neq", "gt", "gte", "lt", "lte"];
     case "MULTI_SELECT":
-      return ["eq", "neq", "in"];
+      return ["containsAny"];
     default:
       return ["contains", "startsWith", "eq", "neq"];
   }
@@ -52,7 +53,7 @@ export function defaultFilterOperator(
     field.type === "TEXT"
       ? "contains"
       : field.type === "MULTI_SELECT"
-        ? "in"
+        ? "containsAny"
         : "eq";
   return config.operators.includes(preferred)
     ? preferred

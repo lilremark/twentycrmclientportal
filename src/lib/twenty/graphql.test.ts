@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildListQuery,
   buildMutation,
+  buildSelection,
   gqlEnum,
   toGraphQLLiteral,
 } from "@/lib/twenty/graphql";
@@ -47,5 +48,11 @@ describe("GraphQL construction", () => {
         selection: "id",
       }),
     ).toThrow("Invalid GraphQL identifier");
+  });
+
+  it("selects relation IDs instead of requesting a relation as a scalar", () => {
+    expect(
+      buildSelection(["company"], { company: "RELATION" }),
+    ).toContain("company{id}");
   });
 });

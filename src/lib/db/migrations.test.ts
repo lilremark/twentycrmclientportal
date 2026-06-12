@@ -22,4 +22,19 @@ describe("initial database migration", () => {
       );
     }
   });
+
+  it("adds direct portal access and explicit record scoping", async () => {
+    const migration = await readFile(
+      resolve("drizzle/0002_portal_access.sql"),
+      "utf8",
+    );
+
+    expect(migration).toContain('CREATE TABLE "portal_access"');
+    expect(migration).toContain(
+      'ADD COLUMN "allowed_record_ids" jsonb',
+    );
+    expect(migration).toContain(
+      'DROP INDEX IF EXISTS "portal_view_object_unique"',
+    );
+  });
 });

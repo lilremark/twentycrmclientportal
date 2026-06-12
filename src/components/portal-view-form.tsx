@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 
+import { listShareableRecordsAction } from "@/app/actions/admin";
 import type {
   PortalFieldConfig,
   PortalFilterConfig,
@@ -17,6 +18,8 @@ type InitialView = {
   slug: string;
   objectNameSingular: string;
   scopeFieldName: string;
+  scopeMode: string;
+  allowedRecordIds: string[];
   columns: PortalFieldConfig[];
   detailFields: PortalFieldConfig[];
   filterFields: PortalFilterConfig[];
@@ -79,6 +82,21 @@ export function PortalViewForm({
   const [objectName, setObjectName] = useState(
     initial?.objectNameSingular ?? "",
   );
+  const [objectSearch, setObjectSearch] = useState("");
+  const [scopeMode, setScopeMode] = useState(initial?.scopeMode ?? "records");
+  const [recordSearch, setRecordSearch] = useState("");
+  const [records, setRecords] = useState<Array<{ id: string; label: string }>>(
+    [],
+  );
+  const [selectedRecordIds, setSelectedRecordIds] = useState(
+    initial?.allowedRecordIds ?? [],
+  );
+  const [recordsPending, startRecordsTransition] = useTransition();
+  const filteredObjects = objects.filter((item) =>
+    `${item.labelSingular} ${item.nameSingular}`
+      .toLowerCase()
+      .includes(objectSearch.toLowerCase()),
+  );
   const object = useMemo(
     () => objects.find((item) => item.nameSingular === objectName),
     [objectName, objects],
@@ -88,6 +106,11 @@ export function PortalViewForm({
   const initialApplies = initial?.objectNameSingular === objectName;
   const defaults = (items?: Array<{ name: string }>) =>
     initialApplies ? selectedNames(items) : [];
+  const visibleRecords = records.filter((record) =>
+    `${record.label} ${record.id}`
+      .toLowerCase()
+      .includes(recordSearch.toLowerCase()),
+  );
 
   return (
     <form action={action} className="card grid gap-6 p-5">
@@ -130,41 +153,148 @@ export function PortalViewForm({
           />
         </div>
         <div className="field">
+          <label htmlFor="objectSearch">Find an object</label>
+          <input
+            className="input"
+            id="objectSearch"
+            onChange={(event) => setObjectSearch(event.target.value)}
+            placeholder="Search by label or API name"
+            type="search"
+            value={objectSearch}
+          />
+        </div>
+        <div className="field">
           <label htmlFor="objectNameSingular">Twenty object</label>
           <select
             className="input"
             id="objectNameSingular"
             name="objectNameSingular"
-            onChange={(event) => setObjectName(event.target.value)}
+            onChange={(event) => {
+              const nextObject = event.target.value;
+              setObjectName(nextObject);
+              setRecords([]);
+              setRecordSearch("");
+              setSelectedRecordIds(
+                nextObject === initial?.objectNameSingular
+                  ? initial.allowedRecordIds
+                  : [],
+              );
+            }}
             required
             value={objectName}
           >
             <option value="">Choose an object</option>
-            {objects.map((item) => (
+            {filteredObjects.map((item) => (
               <option key={item.id} value={item.nameSingular}>
-                {item.labelSingular}
+                {item.labelSingular} · {item.nameSingular}
               </option>
             ))}
           </select>
         </div>
         <div className="field">
-          <label htmlFor="scopeFieldName">Company scope field</label>
+          <label htmlFor="scopeMode">Records shared by this portal</label>
           <select
             className="input"
-            defaultValue={initialApplies ? initial?.scopeFieldName : ""}
-            id="scopeFieldName"
-            key={`scope-${objectName}`}
-            name="scopeFieldName"
+            id="scopeMode"
+            name="scopeMode"
+            onChange={(event) => setScopeMode(event.target.value)}
             required
+            value={scopeMode}
           >
-            <option value="">Choose the Company relation</option>
-            {scopeFields.map((field) => (
-              <option key={field.id} value={field.name}>
-                {field.label} · {field.type}
-              </option>
-            ))}
+            <option value="records">Only specific record IDs</option>
+            <option value="company">All records for a Company</option>
           </select>
         </div>
+        {scopeMode === "company" ? (
+          <div className="field">
+            <label htmlFor="scopeFieldName">Company scope field</label>
+            <select
+              className="input"
+              defaultValue={initialApplies ? initial?.scopeFieldName : ""}
+              id="scopeFieldName"
+              key={`scope-${objectName}`}
+              name="scopeFieldName"
+              required
+            >
+              <option value="">Choose the Company relation</option>
+              {scopeFields.map((field) => (
+                <option key={field.id} value={field.name}>
+                  {field.label} · {field.type}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div className="field md:col-span-2">
+            <label>Specific records</label>
+            {selectedRecordIds.map((recordId) => (
+              <input
+                key={recordId}
+                name="allowedRecordIds"
+                type="hidden"
+                value={recordId}
+              />
+            ))}
+            <div className="flex flex-wrap gap-2">
+              <button
+                className="button secondary"
+                disabled={!object || recordsPending}
+                onClick={() =>
+                  startRecordsTransition(async () => {
+                    setRecords(
+                      await listShareableRecordsAction(
+                        object?.nameSingular ?? "",
+                      ),
+                    );
+                  })
+                }
+                type="button"
+              >
+                {recordsPending ? "Loading…" : "Load records from Twenty"}
+              </button>
+              {selectedRecordIds.length ? (
+                <span className="badge">
+                  {selectedRecordIds.length} selected
+                </span>
+              ) : null}
+            </div>
+            {records.length ? (
+              <>
+                <input
+                  className="input"
+                  onChange={(event) => setRecordSearch(event.target.value)}
+                  placeholder="Filter loaded records"
+                  type="search"
+                  value={recordSearch}
+                />
+                <div className="record-picker">
+                  {visibleRecords.map((record) => (
+                    <label key={record.id}>
+                      <input
+                        checked={selectedRecordIds.includes(record.id)}
+                        onChange={(event) =>
+                          setSelectedRecordIds((current) =>
+                            event.target.checked
+                              ? [...new Set([...current, record.id])]
+                              : current.filter((id) => id !== record.id),
+                          )
+                        }
+                        type="checkbox"
+                      />
+                      <span>
+                        <strong>{record.label}</strong>
+                        <small>{record.id}</small>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </>
+            ) : null}
+            <span className="text-xs text-[#68758a]">
+              Only these records can be listed, opened, or edited.
+            </span>
+          </div>
+        )}
         <div className="field">
           <label htmlFor="defaultSortField">Default sort</label>
           <select

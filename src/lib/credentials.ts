@@ -9,6 +9,7 @@ import {
   account,
   invitations,
   memberships,
+  portalAccess,
   portalAdministrators,
   user,
 } from "@/lib/db/schema";
@@ -28,6 +29,7 @@ export async function createCredentialUser(input: {
   password: string;
   isAdmin?: boolean;
   clientAccountId?: string | null;
+  portalViewId?: string | null;
   membershipRole?: "viewer" | "contributor";
 }) {
   const normalizedEmail = input.email.trim().toLowerCase();
@@ -74,6 +76,14 @@ export async function createCredentialUser(input: {
         role: input.membershipRole,
       });
     }
+
+    if (input.portalViewId && input.membershipRole) {
+      await tx.insert(portalAccess).values({
+        userId,
+        portalViewId: input.portalViewId,
+        role: input.membershipRole,
+      });
+    }
   });
 
   return userId;
@@ -102,6 +112,7 @@ export async function acceptInvitation(input: {
     password: input.password,
     isAdmin: invitation.role === "admin",
     clientAccountId: invitation.clientAccountId,
+    portalViewId: invitation.portalViewId,
     membershipRole:
       invitation.role === "viewer" || invitation.role === "contributor"
         ? invitation.role

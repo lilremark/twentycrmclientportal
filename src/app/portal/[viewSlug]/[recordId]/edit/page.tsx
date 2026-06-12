@@ -2,13 +2,13 @@ import { notFound } from "next/navigation";
 
 import { updateRecordAction } from "@/app/actions/portal";
 import { RecordForm } from "@/components/record-form";
-import { requirePortalContext } from "@/lib/access";
+import { requirePortalViewContext } from "@/lib/access";
 import {
   getLatestMetadata,
   getObjectMetadata,
-  getPortalView,
 } from "@/lib/portal";
 import { getTwentyRecord } from "@/lib/twenty/client";
+import { buildPortalScopeFilter } from "@/lib/twenty/filters";
 
 export default async function EditRecordPage({
   params,
@@ -16,11 +16,11 @@ export default async function EditRecordPage({
   params: Promise<{ viewSlug: string; recordId: string }>;
 }) {
   const { viewSlug, recordId } = await params;
-  const [context, view, metadata] = await Promise.all([
-    requirePortalContext(),
-    getPortalView(viewSlug),
+  const [context, metadata] = await Promise.all([
+    requirePortalViewContext(viewSlug),
     getLatestMetadata(),
   ]);
+  const view = context.view;
   if (
     context.role !== "contributor" ||
     !view?.isEnabled ||
@@ -37,7 +37,13 @@ export default async function EditRecordPage({
     filter: {
       and: [
         { id: { eq: recordId } },
-        { [view.scopeFieldName]: { eq: context.twentyCompanyId } },
+        buildPortalScopeFilter({
+          scopeMode: view.scopeMode,
+          scopeFieldName: view.scopeFieldName,
+          allowedRecordIds: view.allowedRecordIds,
+          twentyCompanyId: context.twentyCompanyId,
+          metadataFields: object.fields,
+        }),
       ],
     },
   });

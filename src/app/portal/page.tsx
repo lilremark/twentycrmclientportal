@@ -1,18 +1,15 @@
 import Link from "next/link";
 
 import { requirePortalContext } from "@/lib/access";
-import { getEnabledPortalViews } from "@/lib/portal";
 
 export default async function PortalHomePage() {
-  const [context, views] = await Promise.all([
-    requirePortalContext(),
-    getEnabledPortalViews(),
-  ]);
+  const context = await requirePortalContext();
+  const views = context.views;
   return (
     <div>
       <h2 className="text-2xl font-bold">Welcome, {context.session.user.name}</h2>
       <p className="mt-2 text-[#68758a]">
-        Select a workspace area to view records scoped to {context.clientName}.
+        Select a portal to view the records shared with you.
       </p>
       <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {views.map((view) => (

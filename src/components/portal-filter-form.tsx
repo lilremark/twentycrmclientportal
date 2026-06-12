@@ -12,6 +12,7 @@ const operatorLabels: Record<string, string> = {
   contains: "Contains",
   startsWith: "Starts with",
   in: "Includes",
+  containsAny: "Contains",
   gt: "Greater than",
   gte: "At least",
   lt: "Less than",

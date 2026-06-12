@@ -1,4 +1,7 @@
-import type { PortalFilterConfig } from "@/lib/db/schema";
+import type {
+  PortalFilterConfig,
+  TwentyFieldMetadata,
+} from "@/lib/db/schema";
 
 export type PortalFilterInput = {
   field: string;
@@ -12,6 +15,7 @@ const supportedOperators = new Set([
   "contains",
   "startsWith",
   "in",
+  "containsAny",
   "gt",
   "gte",
   "lt",
@@ -20,7 +24,7 @@ const supportedOperators = new Set([
 ]);
 
 function coerceFilterValue(operator: string, value: string) {
-  if (operator === "in") {
+  if (operator === "in" || operator === "containsAny") {
     return value
       .split(",")
       .map((item) => item.trim())
@@ -32,9 +36,39 @@ function coerceFilterValue(operator: string, value: string) {
   return value;
 }
 
-export function buildScopedFilter(input: {
+export function buildPortalScopeFilter(input: {
+  scopeMode: string;
   scopeFieldName: string;
-  twentyCompanyId: string;
+  allowedRecordIds: string[];
+  twentyCompanyId: string | null;
+  metadataFields: TwentyFieldMetadata[];
+}) {
+  if (input.scopeMode === "records") {
+    return { id: { in: input.allowedRecordIds } };
+  }
+
+  if (!input.twentyCompanyId) {
+    throw new Error("This portal view requires a client Company.");
+  }
+
+  const scopeField = input.metadataFields.find(
+    (field) => field.name === input.scopeFieldName,
+  );
+  return scopeField?.type === "RELATION"
+    ? {
+        [input.scopeFieldName]: {
+          id: { eq: input.twentyCompanyId },
+        },
+      }
+    : {
+        [input.scopeFieldName]: { eq: input.twentyCompanyId },
+      };
+}
+
+export function buildScopedFilter(input: {
+  scopeFieldName?: string;
+  twentyCompanyId?: string;
+  scopeFilter?: Record<string, unknown>;
   configuredFilters: PortalFilterConfig[];
   requestedFilters: PortalFilterInput[];
 }) {
@@ -42,8 +76,8 @@ export function buildScopedFilter(input: {
     input.configuredFilters.map((field) => [field.name, field]),
   );
   const filters: Record<string, unknown>[] = [
-    {
-      [input.scopeFieldName]: { eq: input.twentyCompanyId },
+    input.scopeFilter ?? {
+      [input.scopeFieldName!]: { eq: input.twentyCompanyId },
     },
   ];
 

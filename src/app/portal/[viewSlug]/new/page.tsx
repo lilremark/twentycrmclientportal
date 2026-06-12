@@ -2,11 +2,10 @@ import { notFound } from "next/navigation";
 
 import { createRecordAction } from "@/app/actions/portal";
 import { RecordForm } from "@/components/record-form";
-import { requirePortalContext } from "@/lib/access";
+import { requirePortalViewContext } from "@/lib/access";
 import {
   getLatestMetadata,
   getObjectMetadata,
-  getPortalView,
 } from "@/lib/portal";
 
 export default async function NewRecordPage({
@@ -15,15 +14,16 @@ export default async function NewRecordPage({
   params: Promise<{ viewSlug: string }>;
 }) {
   const { viewSlug } = await params;
-  const [context, view, metadata] = await Promise.all([
-    requirePortalContext(),
-    getPortalView(viewSlug),
+  const [context, metadata] = await Promise.all([
+    requirePortalViewContext(viewSlug),
     getLatestMetadata(),
   ]);
+  const view = context.view;
   if (
     context.role !== "contributor" ||
     !view?.isEnabled ||
-    !view.createFields.length
+    !view.createFields.length ||
+    view.scopeMode === "records"
   ) {
     notFound();
   }

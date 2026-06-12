@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { requirePortalContext } from "@/lib/access";
+import { requirePortalViewContext } from "@/lib/access";
 import {
   displayValue,
   getLatestMetadata,
   getObjectMetadata,
-  getPortalView,
 } from "@/lib/portal";
 import { getTwentyRecord } from "@/lib/twenty/client";
+import { buildPortalScopeFilter } from "@/lib/twenty/filters";
 
 export default async function RecordDetailPage({
   params,
@@ -16,11 +16,11 @@ export default async function RecordDetailPage({
   params: Promise<{ viewSlug: string; recordId: string }>;
 }) {
   const { viewSlug, recordId } = await params;
-  const [context, view, metadata] = await Promise.all([
-    requirePortalContext(),
-    getPortalView(viewSlug),
+  const [context, metadata] = await Promise.all([
+    requirePortalViewContext(viewSlug),
     getLatestMetadata(),
   ]);
+  const view = context.view;
   if (!view?.isEnabled) notFound();
   const object = getObjectMetadata(metadata, view.objectNameSingular);
   if (!object) notFound();
@@ -31,7 +31,13 @@ export default async function RecordDetailPage({
     filter: {
       and: [
         { id: { eq: recordId } },
-        { [view.scopeFieldName]: { eq: context.twentyCompanyId } },
+        buildPortalScopeFilter({
+          scopeMode: view.scopeMode,
+          scopeFieldName: view.scopeFieldName,
+          allowedRecordIds: view.allowedRecordIds,
+          twentyCompanyId: context.twentyCompanyId,
+          metadataFields: object.fields,
+        }),
       ],
     },
   });

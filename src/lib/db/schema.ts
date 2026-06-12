@@ -184,6 +184,7 @@ export const invitations = pgTable(
       () => clientAccounts.id,
       { onDelete: "cascade" },
     ),
+    portalViewId: uuid("portal_view_id"),
     tokenHash: text("token_hash").notNull(),
     status: invitationStatus("status").default("pending").notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
@@ -221,6 +222,11 @@ export const portalViews = pgTable(
     objectNameSingular: text("object_name_singular").notNull(),
     objectNamePlural: text("object_name_plural").notNull(),
     scopeFieldName: text("scope_field_name").notNull(),
+    scopeMode: text("scope_mode").default("company").notNull(),
+    allowedRecordIds: jsonb("allowed_record_ids")
+      .$type<string[]>()
+      .default([])
+      .notNull(),
     columns: jsonb("columns").$type<PortalFieldConfig[]>().notNull(),
     detailFields: jsonb("detail_fields").$type<PortalFieldConfig[]>().notNull(),
     filterFields: jsonb("filter_fields").$type<PortalFilterConfig[]>().notNull(),
@@ -240,11 +246,34 @@ export const portalViews = pgTable(
   },
   (table) => [
     uniqueIndex("portal_view_slug_unique").on(table.slug),
-    uniqueIndex("portal_view_object_unique").on(table.objectNameSingular),
     index("portal_view_navigation_idx").on(
       table.isEnabled,
       table.navigationOrder,
     ),
+  ],
+);
+
+export const portalAccess = pgTable(
+  "portal_access",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    portalViewId: uuid("portal_view_id")
+      .notNull()
+      .references(() => portalViews.id, { onDelete: "cascade" }),
+    role: membershipRole("role").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("portal_access_user_view_unique").on(
+      table.userId,
+      table.portalViewId,
+    ),
+    index("portal_access_view_idx").on(table.portalViewId),
   ],
 );
 

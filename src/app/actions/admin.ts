@@ -25,6 +25,7 @@ import {
 } from "@/lib/portal-view-config";
 import {
   fetchTwentyMetadata,
+  listTwentyRecords,
   testTwentyConnection,
 } from "@/lib/twenty/client";
 import { validatePortalViewConfiguration } from "@/lib/twenty/validation";
@@ -35,6 +36,18 @@ function selectedNames(formData: FormData, name: string) {
     .map(String)
     .map((value) => value.trim())
     .filter(Boolean);
+}
+
+function parseRecordIds(formData: FormData) {
+  return [
+    ...new Set(
+      formData
+        .getAll("allowedRecordIds")
+        .flatMap((value) => String(value).split(/[\s,]+/))
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  ];
 }
 
 function portalViewFields(formData: FormData, object: TwentyObjectMetadata) {
@@ -89,6 +102,47 @@ export async function testConnectionAction() {
   }
 }
 
+export async function listShareableRecordsAction(objectNameSingular: string) {
+  await requireAdmin();
+  const [latest] = await db
+    .select()
+    .from(metadataSnapshots)
+    .orderBy(desc(metadataSnapshots.syncedAt))
+    .limit(1);
+  const object = latest?.objects.find(
+    (item) => item.nameSingular === objectNameSingular,
+  );
+  if (!object) return [];
+
+  const displayField =
+    object.fields.find((field) =>
+      ["name", "title", "label", "email"].includes(field.name),
+    ) ??
+    object.fields.find((field) =>
+      ["TEXT", "FULL_NAME"].includes(field.type),
+    );
+  const fields = displayField
+    ? [{ name: displayField.name, label: displayField.label }]
+    : [];
+  const result = await listTwentyRecords({
+    objectNamePlural: object.namePlural,
+    fields,
+    metadataFields: object.fields,
+    filter: {},
+  });
+
+  return result.edges.map(({ node }) => {
+    const value = displayField ? node[displayField.name] : null;
+    const label =
+      value && typeof value === "object"
+        ? Object.values(value as Record<string, unknown>)
+            .filter(Boolean)
+            .join(" ")
+        : String(value ?? node.id);
+    return { id: String(node.id), label };
+  });
+}
+
 export async function syncMetadataAction() {
   const current = await requireAdmin();
   const objects = await fetchTwentyMetadata();
@@ -109,6 +163,7 @@ export async function syncMetadataAction() {
     const errors = validatePortalViewConfiguration({
       objectNameSingular: view.objectNameSingular,
       scopeFieldName: view.scopeFieldName,
+      scopeMode: view.scopeMode,
       fieldNames,
       objects,
     });
@@ -166,7 +221,8 @@ export async function createPortalViewAction(formData: FormData) {
         .regex(/^[a-z0-9-]+$/),
       label: z.string().trim().min(2),
       objectNameSingular: z.string().trim().min(1),
-      scopeFieldName: z.string().trim().min(1),
+      scopeMode: z.enum(["company", "records"]),
+      scopeFieldName: z.string().trim().optional().default(""),
       defaultSortField: z.string().trim().optional(),
       defaultSortDirection: z.enum(["asc", "desc"]).default("asc"),
       navigationOrder: z.coerce.number().int().default(0),
@@ -187,9 +243,14 @@ export async function createPortalViewAction(formData: FormData) {
     );
   }
   const fields = portalViewFields(formData, object);
+  const allowedRecordIds = parseRecordIds(formData);
+  if (scalar.scopeMode === "records" && !allowedRecordIds.length) {
+    throw new Error("Add at least one Twenty record ID.");
+  }
   const validationErrors = validatePortalViewConfiguration({
     objectNameSingular: scalar.objectNameSingular,
     scopeFieldName: scalar.scopeFieldName,
+    scopeMode: scalar.scopeMode,
     fieldNames: [
       ...fields.columns,
       ...fields.detailFields,
@@ -211,6 +272,7 @@ export async function createPortalViewAction(formData: FormData) {
     .values({
       ...scalar,
       objectNamePlural: object.namePlural,
+      allowedRecordIds,
       defaultSortField: scalar.defaultSortField || null,
       ...fields,
       validationErrors,
@@ -225,6 +287,7 @@ export async function createPortalViewAction(formData: FormData) {
     after: {
       ...scalar,
       objectNamePlural: object.namePlural,
+      allowedRecordIds,
       ...fields,
     },
   });
@@ -251,7 +314,8 @@ export async function updatePortalViewAction(
         .regex(/^[a-z0-9-]+$/),
       label: z.string().trim().min(2),
       objectNameSingular: z.string().trim().min(1),
-      scopeFieldName: z.string().trim().min(1),
+      scopeMode: z.enum(["company", "records"]),
+      scopeFieldName: z.string().trim().optional().default(""),
       defaultSortField: z.string().trim().optional(),
       defaultSortDirection: z.enum(["asc", "desc"]).default("asc"),
       navigationOrder: z.coerce.number().int().default(0),
@@ -271,9 +335,14 @@ export async function updatePortalViewAction(
     );
   }
   const fields = portalViewFields(formData, object);
+  const allowedRecordIds = parseRecordIds(formData);
+  if (scalar.scopeMode === "records" && !allowedRecordIds.length) {
+    throw new Error("Add at least one Twenty record ID.");
+  }
   const validationErrors = validatePortalViewConfiguration({
     objectNameSingular: scalar.objectNameSingular,
     scopeFieldName: scalar.scopeFieldName,
+    scopeMode: scalar.scopeMode,
     fieldNames: [
       ...fields.columns,
       ...fields.detailFields,
@@ -292,6 +361,7 @@ export async function updatePortalViewAction(
   const after = {
     ...scalar,
     objectNamePlural: object.namePlural,
+    allowedRecordIds,
     defaultSortField: scalar.defaultSortField || null,
     ...fields,
     validationErrors,
@@ -323,11 +393,11 @@ export async function createInvitationAction(
         name: z.string().trim().min(2),
         email: z.email(),
         role: z.enum(["admin", "viewer", "contributor"]),
-        clientAccountId: z.string().uuid().optional().or(z.literal("")),
+        portalViewId: z.string().uuid().optional().or(z.literal("")),
       })
       .parse(Object.fromEntries(formData));
-    if (input.role !== "admin" && !input.clientAccountId) {
-      return { error: "Client invitations require a client account." };
+    if (input.role !== "admin" && !input.portalViewId) {
+      return { error: "Choose the portal this person can access." };
     }
 
     const token = createOpaqueToken();
@@ -335,7 +405,7 @@ export async function createInvitationAction(
       name: input.name,
       email: input.email.toLowerCase(),
       role: input.role,
-      clientAccountId: input.clientAccountId || null,
+      portalViewId: input.portalViewId || null,
       tokenHash: hashOpaqueToken(token),
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       invitedByUserId: current.user.id,
@@ -349,10 +419,13 @@ export async function createInvitationAction(
     });
     await writeAuditEvent({
       actorUserId: current.user.id,
-      clientAccountId: input.clientAccountId || null,
       action: "invitation.created",
       status: "success",
-      metadata: { email: input.email, role: input.role },
+      metadata: {
+        email: input.email,
+        role: input.role,
+        portalViewId: input.portalViewId || null,
+      },
     });
     revalidatePath("/admin/invitations");
     return { inviteUrl };

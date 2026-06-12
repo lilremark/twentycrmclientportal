@@ -6,9 +6,10 @@ records stored in one Twenty CRM workspace.
 ## Capabilities
 
 - Invite-only email/password authentication with viewer and contributor roles.
-- Client accounts mapped to Twenty Company records.
+- Company-scoped or explicit-record portal views.
+- Direct portal invitations that do not require a client account.
 - Metadata-driven object lists, filters, detail pages, and create/edit forms.
-- Server-enforced Company scoping on every read and write.
+- Server-enforced Company or record-ID scoping on every read and write.
 - Signed Twenty webhook ingestion, deduplication, and audit history.
 - Administrator UI for metadata sync, clients, portal views, and invitations.
 - PostgreSQL persistence and Docker Compose deployment.
@@ -95,9 +96,15 @@ npm run dev
 
 Twenty generates its API from each workspace schema. After metadata
 synchronization, the portal-view form provides dropdowns for the object,
-Company scope, columns, detail fields, filters, create/edit forms, and default
-sorting. The server derives API names and allowed filter operators from the
-synchronized metadata rather than accepting manually entered field names.
+scope mode, columns, detail fields, filters, create/edit forms, and default
+sorting. Object and record pickers load synchronized or live Twenty API data.
+The server derives API names and allowed filter operators from metadata rather
+than accepting manually entered field names.
+
+Use **Only specific record IDs** to load up to 50 records from Twenty and select
+exactly which records the portal may expose. These portals can be invited
+directly without creating a client account. Use **All records for a Company**
+for the original Company-membership workflow.
 
 Client filter controls are type-aware. Select and multi-select fields use their
 Twenty option labels, booleans use an Any/Yes/No dropdown, and numeric/date/text
@@ -105,6 +112,19 @@ fields expose only their supported comparison operators.
 
 A metadata sync validates saved views. If an object, scope field, or configured
 field disappears, the view is disabled rather than sending malformed queries.
+
+## Branding and appearance
+
+The sidebar supports smooth desktop collapse, responsive mobile navigation, and
+persistent light/dark mode. Configure white labeling in `.env`:
+
+```env
+BRAND_NAME=Customer Workspace
+BRAND_LOGO_URL=https://example.com/logo.svg
+BRAND_PRIMARY_COLOR=#3157d5
+```
+
+Recreate the portal container after changing branding values.
 
 ## Operations
 
@@ -139,8 +159,8 @@ do not expose PostgreSQL publicly.
 
 The browser never receives Twenty credentials. Every CRM operation runs on the
 server, only fields configured by an administrator are accepted, and the
-authenticated client account's Company ID is injected into queries and creates.
-Updates first fetch the record using both its ID and Company scope.
+configured Company or explicit record-ID scope is injected into queries.
+Updates first fetch the record through the same scope to prevent IDOR access.
 
 V1 assumes one application replica. Login throttling is handled by Better Auth,
 and mutation throttling is in process. Use shared rate-limit storage before

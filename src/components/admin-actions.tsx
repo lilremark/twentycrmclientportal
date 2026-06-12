@@ -35,9 +35,9 @@ export function ConnectionTestButton() {
 }
 
 export function InvitationForm({
-  clients,
+  views,
 }: {
-  clients: Array<{ id: string; name: string }>;
+  views: Array<{ id: string; label: string; scopeMode: string }>;
 }) {
   const [state, action, pending] = useActionState(createInvitationAction, {
     error: undefined,
@@ -76,15 +76,18 @@ export function InvitationForm({
           </select>
         </div>
         <div className="field">
-          <label htmlFor="clientAccountId">Client account</label>
-          <select className="input" id="clientAccountId" name="clientAccountId">
-            <option value="">Not applicable</option>
-            {clients.map((client) => (
-              <option key={client.id} value={client.id}>
-                {client.name}
+          <label htmlFor="portalViewId">Portal access</label>
+          <select className="input" id="portalViewId" name="portalViewId">
+            <option value="">Choose a portal</option>
+            {views.map((view) => (
+              <option key={view.id} value={view.id}>
+                {view.label}
               </option>
             ))}
           </select>
+          <span className="text-xs text-[#68758a]">
+            Anyone can be invited to a specific-record portal.
+          </span>
         </div>
       </div>
       <button className="button w-fit" disabled={pending} type="submit">

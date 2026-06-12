@@ -2,16 +2,31 @@ import { desc } from "drizzle-orm";
 
 import { InvitationForm } from "@/components/admin-actions";
 import { db } from "@/lib/db";
-import { clientAccounts, invitations } from "@/lib/db/schema";
+import { invitations, portalViews } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 export default async function InvitationsPage() {
-  const [clients, invites] = await Promise.all([
-    db.select().from(clientAccounts),
-    db.select().from(invitations).orderBy(desc(invitations.createdAt)),
+  const [views, invites] = await Promise.all([
+    db
+      .select()
+      .from(portalViews)
+      .where(eq(portalViews.scopeMode, "records")),
+    db
+      .select({
+        id: invitations.id,
+        email: invitations.email,
+        role: invitations.role,
+        status: invitations.status,
+        expiresAt: invitations.expiresAt,
+        portalLabel: portalViews.label,
+      })
+      .from(invitations)
+      .leftJoin(portalViews, eq(portalViews.id, invitations.portalViewId))
+      .orderBy(desc(invitations.createdAt)),
   ]);
   return (
     <div className="grid gap-6">
-      <InvitationForm clients={clients} />
+      <InvitationForm views={views} />
       <section className="card overflow-hidden">
         <div className="border-b border-[#dde3ed] p-5">
           <h2 className="text-lg font-bold">Invitation history</h2>
@@ -22,6 +37,7 @@ export default async function InvitationsPage() {
               <tr>
                 <th className="p-4">Email</th>
                 <th className="p-4">Role</th>
+                <th className="p-4">Portal</th>
                 <th className="p-4">Status</th>
                 <th className="p-4">Expires</th>
               </tr>
@@ -31,6 +47,7 @@ export default async function InvitationsPage() {
                 <tr className="border-t border-[#edf0f5]" key={invite.id}>
                   <td className="p-4">{invite.email}</td>
                   <td className="p-4 capitalize">{invite.role}</td>
+                  <td className="p-4">{invite.portalLabel ?? "Administrator"}</td>
                   <td className="p-4 capitalize">{invite.status}</td>
                   <td className="p-4">{invite.expiresAt.toLocaleString()}</td>
                 </tr>

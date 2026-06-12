@@ -20,6 +20,12 @@ const envSchema = z.object({
   SMTP_USER: optionalString,
   SMTP_PASSWORD: optionalString,
   SMTP_FROM: z.string().default("Twenty Portal <portal@example.com>"),
+  BRAND_NAME: z.string().trim().min(1).default("Twenty Portal"),
+  BRAND_LOGO_URL: optionalString,
+  BRAND_PRIMARY_COLOR: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .default("#3157d5"),
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),
@@ -48,6 +54,15 @@ export function getTrustedOrigins() {
 
 export function shouldUseSecureCookies(appUrl: string) {
   return new URL(appUrl).protocol === "https:";
+}
+
+export function getBranding() {
+  const env = getEnv();
+  return {
+    name: env.BRAND_NAME,
+    logoUrl: env.BRAND_LOGO_URL || null,
+    primaryColor: env.BRAND_PRIMARY_COLOR,
+  };
 }
 
 export function resetEnvForTests() {

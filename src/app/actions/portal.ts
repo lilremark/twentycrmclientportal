@@ -4,22 +4,23 @@ import { randomUUID } from "node:crypto";
 
 import { redirect } from "next/navigation";
 
-import { requirePortalContext } from "@/lib/access";
+import { requirePortalViewContext } from "@/lib/access";
 import { writeAuditEvent } from "@/lib/audit";
-import { getLatestMetadata, getObjectMetadata, getPortalView } from "@/lib/portal";
+import { getLatestMetadata, getObjectMetadata } from "@/lib/portal";
 import { enforceWriteRateLimit } from "@/lib/rate-limit";
 import {
   getTwentyRecord,
   writeTwentyRecord,
 } from "@/lib/twenty/client";
+import { buildPortalScopeFilter } from "@/lib/twenty/filters";
 import { validateRecordInput } from "@/lib/twenty/validation";
 
 async function getWriteContext(slug: string) {
-  const context = await requirePortalContext();
+  const context = await requirePortalViewContext(slug);
   if (context.role !== "contributor") {
     throw new Error("Your role does not permit changes.");
   }
-  const view = await getPortalView(slug);
+  const view = context.view;
   if (!view?.isEnabled || view.validationErrors.length > 0) {
     throw new Error("This portal view is unavailable.");
   }
@@ -33,6 +34,19 @@ async function getWriteContext(slug: string) {
 
 export async function createRecordAction(slug: string, formData: FormData) {
   const { context, view, metadata } = await getWriteContext(slug);
+  if (view.scopeMode === "records" || !context.twentyCompanyId) {
+    throw new Error(
+      "New records can only be created in a Company-scoped portal.",
+    );
+  }
+  const scopeField = metadata.fields.find(
+    (field) => field.name === view.scopeFieldName,
+  );
+  if (scopeField?.type === "RELATION") {
+    throw new Error(
+      "Creating records requires a Company ID field such as companyId, not the Company relation field.",
+    );
+  }
   enforceWriteRateLimit(context.session.user.id);
   const requestId = randomUUID();
   let after: Record<string, unknown> | undefined;
@@ -94,7 +108,13 @@ export async function updateRecordAction(
     filter: {
       and: [
         { id: { eq: recordId } },
-        { [view.scopeFieldName]: { eq: context.twentyCompanyId } },
+        buildPortalScopeFilter({
+          scopeMode: view.scopeMode,
+          scopeFieldName: view.scopeFieldName,
+          allowedRecordIds: view.allowedRecordIds,
+          twentyCompanyId: context.twentyCompanyId,
+          metadataFields: metadata.fields,
+        }),
       ],
     },
   });

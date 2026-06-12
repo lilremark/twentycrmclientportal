@@ -84,6 +84,7 @@ export function validateRecordInput(input: {
 export function validatePortalViewConfiguration(input: {
   objectNameSingular: string;
   scopeFieldName: string;
+  scopeMode?: string;
   fieldNames: string[];
   objects: Array<{
     nameSingular: string;
@@ -97,7 +98,10 @@ export function validatePortalViewConfiguration(input: {
   if (!object) return ["The configured Twenty object no longer exists."];
 
   const fields = new Set(object.fields.map((field) => field.name));
-  if (!fields.has(input.scopeFieldName)) {
+  if (
+    input.scopeMode !== "records" &&
+    !fields.has(input.scopeFieldName)
+  ) {
     errors.push("The Company scope field no longer exists.");
   }
   for (const fieldName of input.fieldNames) {

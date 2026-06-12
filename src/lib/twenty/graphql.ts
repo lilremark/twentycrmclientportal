@@ -53,6 +53,8 @@ export function buildSelection(
           return `${field}{amountMicros currencyCode}`;
         case "FULL_NAME":
           return `${field}{firstName lastName}`;
+        case "RELATION":
+          return `${field}{id}`;
         default:
           return field;
       }

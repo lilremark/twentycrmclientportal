@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/app-shell";
 import { requireAdmin } from "@/lib/access";
+import { getBranding } from "@/lib/env";
 
 const navigation = [
   { href: "/admin", label: "Overview" },
@@ -20,6 +21,7 @@ export default async function AdminLayout({
       title="Portal administration"
       subtitle={current.user.email}
       navigation={navigation}
+      branding={getBranding()}
     >
       {children}
     </AppShell>

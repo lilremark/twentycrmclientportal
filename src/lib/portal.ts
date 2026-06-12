@@ -1,10 +1,11 @@
 import "server-only";
 
-import { desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {
   metadataSnapshots,
+  portalAccess,
   portalViews,
   type TwentyObjectMetadata,
 } from "@/lib/db/schema";
@@ -15,11 +16,39 @@ export async function getPortalView(slug: string) {
   });
 }
 
-export async function getEnabledPortalViews() {
-  return db.query.portalViews.findMany({
-    where: eq(portalViews.isEnabled, true),
-    orderBy: (view, { asc }) => [asc(view.navigationOrder), asc(view.label)],
-  });
+export async function getEnabledPortalViews(input?: {
+  userId?: string;
+  includeAll?: boolean;
+  hasClientMembership?: boolean;
+}) {
+  if (input?.includeAll || input?.hasClientMembership) {
+    return db.query.portalViews.findMany({
+      where: eq(portalViews.isEnabled, true),
+      orderBy: (view, { asc: ascending }) => [
+        ascending(view.navigationOrder),
+        ascending(view.label),
+      ],
+    });
+  }
+
+  if (!input?.userId) return [];
+  const grants = await db
+    .select({ portalViewId: portalAccess.portalViewId })
+    .from(portalAccess)
+    .where(eq(portalAccess.userId, input.userId));
+  const viewIds = grants.map((grant) => grant.portalViewId);
+  if (!viewIds.length) return [];
+
+  return db
+    .select()
+    .from(portalViews)
+    .where(
+      and(
+        inArray(portalViews.id, viewIds),
+        eq(portalViews.isEnabled, true),
+      ),
+    )
+    .orderBy(asc(portalViews.navigationOrder), asc(portalViews.label));
 }
 
 export async function getLatestMetadata(): Promise<TwentyObjectMetadata[]> {

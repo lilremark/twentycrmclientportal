@@ -1,23 +1,21 @@
 import { AppShell } from "@/components/app-shell";
 import { requirePortalContext } from "@/lib/access";
-import { getEnabledPortalViews } from "@/lib/portal";
+import { getBranding } from "@/lib/env";
 
 export default async function PortalLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [context, views] = await Promise.all([
-    requirePortalContext(),
-    getEnabledPortalViews(),
-  ]);
+  const context = await requirePortalContext();
   return (
     <AppShell
       title={context.clientName}
       subtitle={`${context.session.user.email} · ${context.role}`}
+      branding={getBranding()}
       navigation={[
         { href: "/portal", label: "Home" },
-        ...views.map((view) => ({
+        ...context.views.map((view) => ({
           href: `/portal/${view.slug}`,
           label: view.label,
         })),
