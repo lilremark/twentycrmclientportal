@@ -12,6 +12,10 @@ import {
   buildSelection,
   buildSingleQuery,
 } from "@/lib/twenty/graphql";
+import {
+  getTwentyEndpoint,
+  type TwentyEndpoint,
+} from "@/lib/twenty/url";
 
 type GraphQLError = { message: string; extensions?: { code?: string } };
 
@@ -25,12 +29,13 @@ export class TwentyApiError extends Error {
   }
 }
 
-async function requestTwenty<T>(endpoint: "/graphql" | "/metadata", query: string) {
+async function requestTwenty<T>(endpoint: TwentyEndpoint, query: string) {
   const env = getEnv();
+  const endpointUrl = getTwentyEndpoint(env.TWENTY_BASE_URL, endpoint);
   let response: Response;
 
   try {
-    response = await fetch(new URL(endpoint, env.TWENTY_BASE_URL), {
+    response = await fetch(endpointUrl, {
       method: "POST",
       headers: {
         authorization: `Bearer ${env.TWENTY_API_KEY}`,
@@ -38,12 +43,24 @@ async function requestTwenty<T>(endpoint: "/graphql" | "/metadata", query: strin
       },
       body: JSON.stringify({ query }),
       cache: "no-store",
+      redirect: "manual",
       signal: AbortSignal.timeout(15_000),
     });
   } catch {
     throw new TwentyApiError(
       "Twenty CRM is temporarily unavailable. Try again shortly.",
       true,
+    );
+  }
+
+  if (response.status >= 300 && response.status < 400) {
+    const location = response.headers.get("location");
+    throw new TwentyApiError(
+      `Twenty CRM redirected ${endpointUrl.toString()}${
+        location ? ` to ${location}` : ""
+      }. Set TWENTY_BASE_URL to the final public origin, including the correct http or https protocol.`,
+      false,
+      response.status,
     );
   }
 
@@ -71,11 +88,11 @@ async function requestTwenty<T>(endpoint: "/graphql" | "/metadata", query: strin
 }
 
 export async function testTwentyConnection() {
-  const data = await requestTwenty<{ objects: { edges: unknown[] } }>(
-    "/metadata",
-    "query PortalConnectionTest { objects(paging:{first:1}) { edges { node { id } } } }",
+  const data = await requestTwenty<{ __typename: string }>(
+    "/graphql",
+    "query PortalConnectionTest { __typename }",
   );
-  return Array.isArray(data.objects.edges);
+  return data.__typename === "Query";
 }
 
 export async function fetchTwentyMetadata(): Promise<TwentyObjectMetadata[]> {
