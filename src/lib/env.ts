@@ -46,6 +46,10 @@ export function getTrustedOrigins() {
   ].filter((origin, index, origins) => origins.indexOf(origin) === index);
 }
 
+export function shouldUseSecureCookies(appUrl: string) {
+  return new URL(appUrl).protocol === "https:";
+}
+
 export function resetEnvForTests() {
   cachedEnv = undefined;
 }

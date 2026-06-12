@@ -6,7 +6,11 @@ import { betterAuth } from "better-auth";
 import { db } from "@/lib/db";
 import { account, session, user, verification } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email";
-import { getEnv, getTrustedOrigins } from "@/lib/env";
+import {
+  getEnv,
+  getTrustedOrigins,
+  shouldUseSecureCookies,
+} from "@/lib/env";
 import {
   hashPortalPassword,
   verifyPortalPassword,
@@ -50,7 +54,7 @@ export const auth = betterAuth({
     },
   },
   advanced: {
-    useSecureCookies: env.NODE_ENV === "production",
+    useSecureCookies: shouldUseSecureCookies(env.APP_URL),
     database: {
       generateId: "uuid",
     },

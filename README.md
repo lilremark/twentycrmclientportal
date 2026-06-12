@@ -21,7 +21,9 @@ records stored in one Twenty CRM workspace.
    connection string.
 3. Set `APP_URL` to the exact browser-facing address. For direct LAN access,
    use `APP_URL=http://10.0.0.22:3005` with your server's actual IP. Add every
-   additional browser origin to comma-separated `TRUSTED_ORIGINS`.
+   additional browser origin to comma-separated `TRUSTED_ORIGINS`. Session
+   cookies follow the `APP_URL` protocol: direct HTTP access works for initial
+   setup, while production internet deployments should use HTTPS.
 4. In Twenty, create a restricted API key with access only to portal-enabled
    objects and fields.
 5. Start the portal:
