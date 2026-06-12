@@ -1,0 +1,45 @@
+services:
+  portal:
+    build: .
+    restart: unless-stopped
+    env_file: ${PORTAL_ENV_FILE:-.env}
+    environment:
+      DATABASE_URL: postgres://portal:${POSTGRES_PASSWORD:-portal}@postgres:5432/portal
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "0.0.0.0:${PORTAL_PORT:-3005}:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000/health/ready",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: portal
+      POSTGRES_USER: portal
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-portal}
+    volumes:
+      - portal_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portal -d portal"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  portal_postgres:
