@@ -15,44 +15,51 @@ import {
   invitations,
   metadataSnapshots,
   portalViews,
-  type PortalFieldConfig,
-  type PortalFilterConfig,
+  type TwentyObjectMetadata,
 } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email";
 import { getEnv } from "@/lib/env";
+import {
+  fieldConfigsFromNames,
+  filterConfigsFromNames,
+} from "@/lib/portal-view-config";
 import {
   fetchTwentyMetadata,
   testTwentyConnection,
 } from "@/lib/twenty/client";
 import { validatePortalViewConfiguration } from "@/lib/twenty/validation";
 
-function parseFields(value: FormDataEntryValue | null): PortalFieldConfig[] {
-  return String(value ?? "")
-    .split(",")
-    .map((name) => name.trim())
-    .filter(Boolean)
-    .map((name) => ({ name }));
+function selectedNames(formData: FormData, name: string) {
+  return formData
+    .getAll(name)
+    .map(String)
+    .map((value) => value.trim())
+    .filter(Boolean);
 }
 
-function parseFilters(value: FormDataEntryValue | null): PortalFilterConfig[] {
-  return String(value ?? "")
-    .split(",")
-    .map((name) => name.trim())
-    .filter(Boolean)
-    .map((name) => ({
-      name,
-      operators: [
-        "eq",
-        "neq",
-        "contains",
-        "startsWith",
-        "in",
-        "gt",
-        "gte",
-        "lt",
-        "lte",
-      ],
-    }));
+function portalViewFields(formData: FormData, object: TwentyObjectMetadata) {
+  return {
+    columns: fieldConfigsFromNames(
+      selectedNames(formData, "columns"),
+      object.fields,
+    ),
+    detailFields: fieldConfigsFromNames(
+      selectedNames(formData, "detailFields"),
+      object.fields,
+    ),
+    filterFields: filterConfigsFromNames(
+      selectedNames(formData, "filterFields"),
+      object.fields,
+    ),
+    createFields: fieldConfigsFromNames(
+      selectedNames(formData, "createFields"),
+      object.fields,
+    ),
+    editFields: fieldConfigsFromNames(
+      selectedNames(formData, "editFields"),
+      object.fields,
+    ),
+  };
 }
 
 export async function testConnectionAction() {
@@ -159,7 +166,6 @@ export async function createPortalViewAction(formData: FormData) {
         .regex(/^[a-z0-9-]+$/),
       label: z.string().trim().min(2),
       objectNameSingular: z.string().trim().min(1),
-      objectNamePlural: z.string().trim().min(1),
       scopeFieldName: z.string().trim().min(1),
       defaultSortField: z.string().trim().optional(),
       defaultSortDirection: z.enum(["asc", "desc"]).default("asc"),
@@ -172,34 +178,41 @@ export async function createPortalViewAction(formData: FormData) {
     .from(metadataSnapshots)
     .orderBy(desc(metadataSnapshots.syncedAt))
     .limit(1);
-  const columns = parseFields(formData.get("columns"));
-  const detailFields = parseFields(formData.get("detailFields"));
-  const createFields = parseFields(formData.get("createFields"));
-  const editFields = parseFields(formData.get("editFields"));
-  const filterFields = parseFilters(formData.get("filterFields"));
+  const object = latest?.objects.find(
+    (item) => item.nameSingular === scalar.objectNameSingular,
+  );
+  if (!object) {
+    throw new Error(
+      "The selected Twenty object is unavailable. Synchronize metadata and try again.",
+    );
+  }
+  const fields = portalViewFields(formData, object);
   const validationErrors = validatePortalViewConfiguration({
     objectNameSingular: scalar.objectNameSingular,
     scopeFieldName: scalar.scopeFieldName,
     fieldNames: [
-      ...columns,
-      ...detailFields,
-      ...createFields,
-      ...editFields,
-      ...filterFields,
+      ...fields.columns,
+      ...fields.detailFields,
+      ...fields.createFields,
+      ...fields.editFields,
+      ...fields.filterFields,
     ].map((field) => field.name),
     objects: latest?.objects ?? [],
   });
+  if (
+    scalar.defaultSortField &&
+    !object.fields.some((field) => field.name === scalar.defaultSortField)
+  ) {
+    validationErrors.push("The default sort field does not exist.");
+  }
 
   const [created] = await db
     .insert(portalViews)
     .values({
       ...scalar,
+      objectNamePlural: object.namePlural,
       defaultSortField: scalar.defaultSortField || null,
-      columns,
-      detailFields,
-      createFields,
-      editFields,
-      filterFields,
+      ...fields,
       validationErrors,
       isEnabled: validationErrors.length === 0,
     })
@@ -211,11 +224,8 @@ export async function createPortalViewAction(formData: FormData) {
     recordId: created.id,
     after: {
       ...scalar,
-      columns,
-      detailFields,
-      createFields,
-      editFields,
-      filterFields,
+      objectNamePlural: object.namePlural,
+      ...fields,
     },
   });
   revalidatePath("/admin/views");
@@ -241,43 +251,49 @@ export async function updatePortalViewAction(
         .regex(/^[a-z0-9-]+$/),
       label: z.string().trim().min(2),
       objectNameSingular: z.string().trim().min(1),
-      objectNamePlural: z.string().trim().min(1),
       scopeFieldName: z.string().trim().min(1),
       defaultSortField: z.string().trim().optional(),
       defaultSortDirection: z.enum(["asc", "desc"]).default("asc"),
       navigationOrder: z.coerce.number().int().default(0),
     })
     .parse(Object.fromEntries(formData));
-  const columns = parseFields(formData.get("columns"));
-  const detailFields = parseFields(formData.get("detailFields"));
-  const createFields = parseFields(formData.get("createFields"));
-  const editFields = parseFields(formData.get("editFields"));
-  const filterFields = parseFilters(formData.get("filterFields"));
   const [latest] = await db
     .select()
     .from(metadataSnapshots)
     .orderBy(desc(metadataSnapshots.syncedAt))
     .limit(1);
+  const object = latest?.objects.find(
+    (item) => item.nameSingular === scalar.objectNameSingular,
+  );
+  if (!object) {
+    throw new Error(
+      "The selected Twenty object is unavailable. Synchronize metadata and try again.",
+    );
+  }
+  const fields = portalViewFields(formData, object);
   const validationErrors = validatePortalViewConfiguration({
     objectNameSingular: scalar.objectNameSingular,
     scopeFieldName: scalar.scopeFieldName,
     fieldNames: [
-      ...columns,
-      ...detailFields,
-      ...createFields,
-      ...editFields,
-      ...filterFields,
+      ...fields.columns,
+      ...fields.detailFields,
+      ...fields.createFields,
+      ...fields.editFields,
+      ...fields.filterFields,
     ].map((field) => field.name),
     objects: latest?.objects ?? [],
   });
+  if (
+    scalar.defaultSortField &&
+    !object.fields.some((field) => field.name === scalar.defaultSortField)
+  ) {
+    validationErrors.push("The default sort field does not exist.");
+  }
   const after = {
     ...scalar,
+    objectNamePlural: object.namePlural,
     defaultSortField: scalar.defaultSortField || null,
-    columns,
-    detailFields,
-    createFields,
-    editFields,
-    filterFields,
+    ...fields,
     validationErrors,
     isEnabled: validationErrors.length === 0,
     updatedAt: new Date(),

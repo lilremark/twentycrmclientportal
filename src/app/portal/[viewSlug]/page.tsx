@@ -2,12 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { PortalDataTable } from "@/components/portal-data-table";
+import { PortalFilterForm } from "@/components/portal-filter-form";
 import { requirePortalContext } from "@/lib/access";
 import {
   getLatestMetadata,
   getObjectMetadata,
   getPortalView,
 } from "@/lib/portal";
+import { defaultFilterOperator } from "@/lib/portal-view-config";
 import { listTwentyRecords, TwentyApiError } from "@/lib/twenty/client";
 import {
   buildScopedFilter,
@@ -32,13 +34,22 @@ export default async function PortalListPage({
   if (!view?.isEnabled || view.validationErrors.length) notFound();
   const object = getObjectMetadata(metadata, view.objectNameSingular);
   if (!object) notFound();
+  const metadataByName = new Map(
+    object.fields.map((field) => [field.name, field]),
+  );
 
   const requestedFilters: PortalFilterInput[] = view.filterFields.map(
-    (field) => ({
-      field: field.name,
-      operator: String(query[`op_${field.name}`] ?? "contains"),
-      value: String(query[`f_${field.name}`] ?? ""),
-    }),
+    (config) => {
+      const field = metadataByName.get(config.name);
+      return {
+        field: config.name,
+        operator: String(
+          query[`op_${config.name}`] ??
+            (field ? defaultFilterOperator(field, config) : "eq"),
+        ),
+        value: String(query[`f_${config.name}`] ?? ""),
+      };
+    },
   );
   const filter = buildScopedFilter({
     scopeFieldName: view.scopeFieldName,
@@ -94,44 +105,12 @@ export default async function PortalListPage({
         ) : null}
       </div>
       {view.filterFields.length ? (
-        <form className="card grid gap-4 p-4 md:grid-cols-3">
-          {view.filterFields.map((field) => (
-            <div className="field" key={field.name}>
-              <label htmlFor={`f_${field.name}`}>
-                {field.label ?? field.name}
-              </label>
-              <div className="grid grid-cols-[120px_1fr] gap-2">
-                <select
-                  className="input"
-                  defaultValue={String(
-                    query[`op_${field.name}`] ?? "contains",
-                  )}
-                  name={`op_${field.name}`}
-                >
-                  {field.operators.map((operator) => (
-                    <option key={operator} value={operator}>
-                      {operator}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  className="input"
-                  defaultValue={String(query[`f_${field.name}`] ?? "")}
-                  id={`f_${field.name}`}
-                  name={`f_${field.name}`}
-                />
-              </div>
-            </div>
-          ))}
-          <div className="flex items-end gap-2">
-            <button className="button" type="submit">
-              Apply filters
-            </button>
-            <Link className="button secondary" href={`/portal/${view.slug}`}>
-              Clear
-            </Link>
-          </div>
-        </form>
+        <PortalFilterForm
+          fields={object.fields}
+          filters={view.filterFields}
+          query={query}
+          viewSlug={view.slug}
+        />
       ) : null}
       {error ? <p className="error">{error}</p> : null}
       {result ? (

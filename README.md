@@ -93,15 +93,15 @@ npm run dev
 
 ## Portal view configuration
 
-Twenty generates its API from each workspace schema. The admin form therefore
-uses API field names:
+Twenty generates its API from each workspace schema. After metadata
+synchronization, the portal-view form provides dropdowns for the object,
+Company scope, columns, detail fields, filters, create/edit forms, and default
+sorting. The server derives API names and allowed filter operators from the
+synchronized metadata rather than accepting manually entered field names.
 
-- `objectNameSingular`: `salesCall`
-- `objectNamePlural`: `salesCalls`
-- `scopeFieldName`: the ID field relating the record to Company, such as
-  `companyId`
-- columns/forms/filters: comma-separated fields, such as
-  `title,status,calledAt,notes`
+Client filter controls are type-aware. Select and multi-select fields use their
+Twenty option labels, booleans use an Any/Yes/No dropdown, and numeric/date/text
+fields expose only their supported comparison operators.
 
 A metadata sync validates saved views. If an object, scope field, or configured
 field disappears, the view is disabled rather than sending malformed queries.
