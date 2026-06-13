@@ -134,6 +134,17 @@ export const portalAdministrators = pgTable("portal_administrator", {
     .notNull(),
 });
 
+export const applicationSettings = pgTable("application_setting", {
+  id: text("id").primaryKey(),
+  brandName: text("brand_name").notNull(),
+  brandLogoUrl: text("brand_logo_url"),
+  primaryColor: text("primary_color").notNull(),
+  portalTitle: text("portal_title").notNull(),
+  portalDescription: text("portal_description").notNull(),
+  supportEmail: text("support_email"),
+  ...timestamps,
+});
+
 export const clientAccounts = pgTable(
   "client_account",
   {

@@ -151,6 +151,10 @@ export function PortalViewForm({
             pattern="[a-z0-9-]+"
             required
           />
+          <span className="field-help">
+            Lowercase letters, numbers, and hyphens. The slug
+            &quot;settings&quot; is reserved.
+          </span>
         </div>
         <div className="field">
           <label htmlFor="objectSearch">Find an object</label>

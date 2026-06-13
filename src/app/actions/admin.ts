@@ -30,6 +30,15 @@ import {
 } from "@/lib/twenty/client";
 import { validatePortalViewConfiguration } from "@/lib/twenty/validation";
 
+const portalViewSlugSchema = z
+  .string()
+  .trim()
+  .min(2)
+  .regex(/^[a-z0-9-]+$/)
+  .refine((slug) => slug !== "settings", {
+    message: '"settings" is reserved for the account settings page.',
+  });
+
 function selectedNames(formData: FormData, name: string) {
   return formData
     .getAll(name)
@@ -214,11 +223,7 @@ export async function createPortalViewAction(formData: FormData) {
   const current = await requireAdmin();
   const scalar = z
     .object({
-      slug: z
-        .string()
-        .trim()
-        .min(2)
-        .regex(/^[a-z0-9-]+$/),
+      slug: portalViewSlugSchema,
       label: z.string().trim().min(2),
       objectNameSingular: z.string().trim().min(1),
       scopeMode: z.enum(["company", "records"]),
@@ -307,11 +312,7 @@ export async function updatePortalViewAction(
 
   const scalar = z
     .object({
-      slug: z
-        .string()
-        .trim()
-        .min(2)
-        .regex(/^[a-z0-9-]+$/),
+      slug: portalViewSlugSchema,
       label: z.string().trim().min(2),
       objectNameSingular: z.string().trim().min(1),
       scopeMode: z.enum(["company", "records"]),

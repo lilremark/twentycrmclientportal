@@ -12,6 +12,7 @@ import {
   memberships,
   portalAccess,
   portalAdministrators,
+  user,
 } from "@/lib/db/schema";
 import { getEnabledPortalViews } from "@/lib/portal";
 
@@ -24,7 +25,21 @@ export async function requireSession() {
   if (!current) {
     redirect("/login");
   }
-  return current;
+  const profile = await db.query.user.findFirst({
+    where: eq(user.id, current.user.id),
+  });
+  if (!profile) {
+    redirect("/login");
+  }
+  return {
+    ...current,
+    user: {
+      ...current.user,
+      name: profile.name,
+      email: profile.email,
+      image: profile.image,
+    },
+  };
 }
 
 export async function isAdministrator(userId: string) {

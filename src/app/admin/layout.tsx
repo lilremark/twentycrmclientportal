@@ -1,13 +1,17 @@
 import { AppShell } from "@/components/app-shell";
 import { requireAdmin } from "@/lib/access";
-import { getBranding } from "@/lib/env";
+import {
+  getApplicationSettings,
+  getSettingsBranding,
+} from "@/lib/application-settings";
 
 const navigation = [
-  { href: "/admin", label: "Overview" },
-  { href: "/admin/clients", label: "Clients" },
-  { href: "/admin/views", label: "Portal views" },
-  { href: "/admin/invitations", label: "Invitations" },
-  { href: "/admin/audit", label: "Audit" },
+  { href: "/admin", label: "Overview", icon: "overview" },
+  { href: "/admin/clients", label: "Clients", icon: "clients" },
+  { href: "/admin/views", label: "Portal views", icon: "views" },
+  { href: "/admin/invitations", label: "Invitations", icon: "invitations" },
+  { href: "/admin/audit", label: "Audit", icon: "audit" },
+  { href: "/admin/settings", label: "Settings", icon: "settings" },
 ];
 
 export default async function AdminLayout({
@@ -15,13 +19,21 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const current = await requireAdmin();
+  const [current, settings] = await Promise.all([
+    requireAdmin(),
+    getApplicationSettings(),
+  ]);
   return (
     <AppShell
       title="Portal administration"
-      subtitle={current.user.email}
+      subtitle="Administrator"
+      user={{
+        name: current.user.name,
+        email: current.user.email,
+        image: current.user.image ?? null,
+      }}
       navigation={navigation}
-      branding={getBranding()}
+      branding={getSettingsBranding(settings)}
     >
       {children}
     </AppShell>

@@ -1,15 +1,20 @@
 import Link from "next/link";
 
 import { requirePortalContext } from "@/lib/access";
+import { getApplicationSettings } from "@/lib/application-settings";
 
 export default async function PortalHomePage() {
-  const context = await requirePortalContext();
+  const [context, settings] = await Promise.all([
+    requirePortalContext(),
+    getApplicationSettings(),
+  ]);
   const views = context.views;
   return (
     <div>
-      <h2 className="text-2xl font-bold">Welcome, {context.session.user.name}</h2>
+      <p className="eyebrow">Welcome, {context.session.user.name}</p>
+      <h2 className="mt-1 text-2xl font-bold">{settings.portalTitle}</h2>
       <p className="mt-2 text-[#68758a]">
-        Select a portal to view the records shared with you.
+        {settings.portalDescription}
       </p>
       <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {views.map((view) => (

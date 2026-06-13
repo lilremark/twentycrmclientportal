@@ -4,26 +4,48 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
+  Building2,
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
+  FileClock,
+  House,
+  LayoutDashboard,
   Menu,
   Moon,
+  PanelsTopLeft,
+  Settings,
   Sun,
+  UserPlus,
   X,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { SignOutButton } from "@/components/sign-out-button";
+
+const navigationIcons: Record<string, LucideIcon> = {
+  audit: FileClock,
+  clients: Building2,
+  home: House,
+  invitations: UserPlus,
+  overview: LayoutDashboard,
+  records: ClipboardList,
+  settings: Settings,
+  views: PanelsTopLeft,
+};
 
 export function AppShell({
   title,
   subtitle,
+  user,
   navigation,
   branding,
   children,
 }: {
   title: string;
   subtitle: string;
-  navigation: Array<{ href: string; label: string }>;
+  user: { name: string; email: string; image: string | null };
+  navigation: Array<{ href: string; label: string; icon: string }>;
   branding: { name: string; logoUrl: string | null; primaryColor: string };
   children: React.ReactNode;
 }) {
@@ -70,10 +92,14 @@ export function AppShell({
       ) : null}
       <aside className={`app-sidebar ${mobileOpen ? "mobile-open" : ""}`}>
         <div className="sidebar-brand">
-          <Link className="brand-link" href="/">
+          <Link className="brand-link" href="/" title={branding.name}>
             {branding.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img alt="" className="brand-logo" src={branding.logoUrl} />
+              <img
+                alt={branding.name}
+                className="brand-logo"
+                src={branding.logoUrl}
+              />
             ) : (
               <span className="brand-mark">
                 {branding.name.slice(0, 2).toUpperCase()}
@@ -81,9 +107,19 @@ export function AppShell({
             )}
             <span className="brand-copy">
               <strong>{branding.name}</strong>
-              <span>{subtitle}</span>
+              <span>Twenty CRM portal</span>
             </span>
           </Link>
+          <button
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!collapsed}
+            className="sidebar-collapse-button desktop-only"
+            onClick={toggleCollapsed}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            type="button"
+          >
+            {collapsed ? <ChevronRight size={17} /> : <ChevronLeft size={17} />}
+          </button>
           <button
             aria-label="Close navigation"
             className="icon-button mobile-only"
@@ -94,36 +130,45 @@ export function AppShell({
           </button>
         </div>
         <nav className="sidebar-nav">
-          {navigation.map((item) => (
-            <Link
-              className={`sidebar-link ${
-                pathname === item.href ||
-                (item.href !== "/portal" &&
-                  item.href !== "/admin" &&
-                  pathname.startsWith(`${item.href}/`))
-                  ? "active"
-                  : ""
-              }`}
-              href={item.href}
-              key={item.href}
-              onClick={() => setMobileOpen(false)}
-              title={collapsed ? item.label : undefined}
-            >
-              <span className="sidebar-link-icon">
-                {item.label.slice(0, 1).toUpperCase()}
-              </span>
-              <span className="sidebar-link-label">{item.label}</span>
-            </Link>
-          ))}
+          {navigation.map((item) => {
+            const Icon = navigationIcons[item.icon] ?? ClipboardList;
+            return (
+              <Link
+                className={`sidebar-link ${
+                  pathname === item.href ||
+                  (item.href !== "/portal" &&
+                    item.href !== "/admin" &&
+                    pathname.startsWith(`${item.href}/`))
+                    ? "active"
+                    : ""
+                }`}
+                href={item.href}
+                key={item.href}
+                onClick={() => setMobileOpen(false)}
+                title={collapsed ? item.label : undefined}
+              >
+                <span className="sidebar-link-icon">
+                  <Icon size={18} strokeWidth={1.9} />
+                </span>
+                <span className="sidebar-link-label">{item.label}</span>
+              </Link>
+            );
+          })}
         </nav>
-        <button
-          className="sidebar-collapse"
-          onClick={toggleCollapsed}
-          type="button"
-        >
-          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-          <span>{collapsed ? "Expand" : "Collapse sidebar"}</span>
-        </button>
+        <div className="sidebar-profile" title={collapsed ? user.name : undefined}>
+          <div className="sidebar-avatar">
+            {user.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img alt="" src={user.image} />
+            ) : (
+              <span>{user.name.slice(0, 2).toUpperCase()}</span>
+            )}
+          </div>
+          <div className="sidebar-profile-copy">
+            <strong>{user.name}</strong>
+            <span>{subtitle}</span>
+          </div>
+        </div>
       </aside>
       <main className="app-main">
         <header className="app-header">
@@ -137,7 +182,9 @@ export function AppShell({
               <Menu size={20} />
             </button>
             <div className="min-w-0">
-              <h1 className="truncate text-xl font-bold">{title}</h1>
+              <h1 className="truncate text-lg font-bold tracking-tight">
+                {title}
+              </h1>
               <p className="truncate text-xs text-[var(--muted)] lg:hidden">
                 {subtitle}
               </p>
