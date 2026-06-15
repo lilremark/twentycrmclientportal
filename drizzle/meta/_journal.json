@@ -29,6 +29,20 @@
       "when": 1781371200000,
       "tag": "0003_application_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1781532000000,
+      "tag": "0004_portal_fixed_filters",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1781536800000,
+      "tag": "0005_person_scoped_clients",
+      "breakpoints": true
     }
   ]
 }

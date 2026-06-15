@@ -115,6 +115,7 @@ export async function fetchTwentyMetadata(): Promise<TwentyObjectMetadata[]> {
             isNullable: boolean;
             options?: Array<{ value: string; label: string; color?: string }>;
             relation?: {
+              type: "ONE_TO_MANY" | "MANY_TO_ONE";
               targetObjectMetadata?: { nameSingular: string };
             };
           }>;
@@ -130,7 +131,7 @@ export async function fetchTwentyMetadata(): Promise<TwentyObjectMetadata[]> {
             id nameSingular namePlural labelSingular labelPlural isActive
             fieldsList {
               id name label type isActive isNullable options
-              relation { targetObjectMetadata { nameSingular } }
+              relation { type targetObjectMetadata { nameSingular } }
             }
           }
         }
@@ -156,13 +157,14 @@ export async function fetchTwentyMetadata(): Promise<TwentyObjectMetadata[]> {
           type: field.type,
           isNullable: field.isNullable,
           options: field.options,
+          relationType: field.relation?.type,
           relationTargetObjectNameSingular:
             field.relation?.targetObjectMetadata?.nameSingular,
         })),
     }));
 }
 
-function fieldTypes(
+function fieldSelections(
   metadataFields: TwentyFieldMetadata[],
   fields: PortalFieldConfig[],
 ) {
@@ -170,7 +172,14 @@ function fieldTypes(
   return Object.fromEntries(
     metadataFields
       .filter((field) => requested.has(field.name))
-      .map((field) => [field.name, field.type]),
+      .map((field) => [
+        field.name,
+        {
+          type: field.type,
+          relationType: field.relationType,
+          relationDisplayFields: field.relationDisplayFields,
+        },
+      ]),
   );
 }
 
@@ -184,7 +193,7 @@ export async function listTwentyRecords(input: {
 }) {
   const selection = buildSelection(
     input.fields.map((field) => field.name),
-    fieldTypes(input.metadataFields, input.fields),
+    fieldSelections(input.metadataFields, input.fields),
   );
   const data = await requestTwenty<
     Record<
@@ -221,7 +230,7 @@ export async function getTwentyRecord(input: {
 }) {
   const selection = buildSelection(
     input.fields.map((field) => field.name),
-    fieldTypes(input.metadataFields, input.fields),
+    fieldSelections(input.metadataFields, input.fields),
   );
   const data = await requestTwenty<Record<string, Record<string, unknown> | null>>(
     "/graphql",
@@ -244,7 +253,7 @@ export async function writeTwentyRecord(input: {
 }) {
   const selection = buildSelection(
     input.fields.map((field) => field.name),
-    fieldTypes(input.metadataFields, input.fields),
+    fieldSelections(input.metadataFields, input.fields),
   );
   const mutationRoot = `${input.operation}${
     input.objectNameSingular.charAt(0).toUpperCase() +

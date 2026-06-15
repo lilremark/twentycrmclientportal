@@ -57,8 +57,18 @@ export default async function AuditPage({
     .limit(200);
 
   return (
-    <div className="grid gap-5">
-      <form className="card grid gap-3 p-4 md:grid-cols-4">
+    <div className="page-stack">
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">Security and operations</p>
+          <h2>Audit history</h2>
+          <p>
+            Search immutable portal activity by actor, client, object, record,
+            status, and date.
+          </p>
+        </div>
+      </div>
+      <form className="card form-card md:grid-cols-4">
         {[
           ["user", "User email"],
           ["client", "Client"],
@@ -110,50 +120,50 @@ export default async function AuditPage({
             type="date"
           />
         </div>
-        <div className="flex items-end">
+        <div className="filter-actions">
           <button className="button" type="submit">
             Search audit
           </button>
         </div>
       </form>
-      <section className="card overflow-hidden">
-        <div className="border-b border-[#dde3ed] p-5">
+      <section className="card table-shell">
+        <div className="section-heading">
           <h2 className="text-lg font-bold">Audit events</h2>
           <p className="mt-1 text-sm text-[#68758a]">
             Up to 200 events matching the current search.
           </p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-[#f8f9fc] text-[#68758a]">
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
               <tr>
-                <th className="p-4">Time</th>
-                <th className="p-4">User / client</th>
-                <th className="p-4">Action</th>
-                <th className="p-4">Object / record</th>
-                <th className="p-4">Status</th>
+                <th>Time</th>
+                <th>User / client</th>
+                <th>Action</th>
+                <th>Object / record</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
               {events.map((event) => (
-                <tr className="border-t border-[#edf0f5]" key={event.id}>
-                  <td className="p-4 whitespace-nowrap">
+                <tr key={event.id}>
+                  <td className="whitespace-nowrap">
                     {event.createdAt.toLocaleString()}
                   </td>
-                  <td className="p-4">
+                  <td>
                     <span className="block">{event.userEmail ?? "System"}</span>
                     <span className="text-xs text-[#68758a]">
                       {event.clientName ?? "No client"}
                     </span>
                   </td>
-                  <td className="p-4 font-semibold">{event.action}</td>
-                  <td className="p-4">
+                  <td className="font-semibold">{event.action}</td>
+                  <td>
                     <span className="block">{event.objectName ?? "—"}</span>
                     <span className="font-mono text-xs">
                       {event.recordId ?? "—"}
                     </span>
                   </td>
-                  <td className="p-4 capitalize">{event.status}</td>
+                  <td className="capitalize">{event.status}</td>
                 </tr>
               ))}
             </tbody>

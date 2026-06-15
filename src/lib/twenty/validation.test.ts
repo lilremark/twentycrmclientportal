@@ -27,6 +27,13 @@ const fields = [
     type: "UUID",
     isNullable: false,
   },
+  {
+    id: "4",
+    name: "products",
+    label: "Products",
+    type: "MULTI_SELECT",
+    isNullable: true,
+  },
 ];
 
 describe("record validation", () => {
@@ -47,6 +54,22 @@ describe("record validation", () => {
         scopeFieldName: "companyId",
       }),
     ).toEqual({ title: "Discovery call", score: 42 });
+  });
+
+  it("accepts checkbox values for multi-select fields", () => {
+    const data = new FormData();
+    data.append("products", "CFDP_KIT");
+    data.append("products", "CFDP_TRAINING_KIT");
+    expect(
+      validateRecordInput({
+        formData: data,
+        configuredFields: [{ name: "products" }],
+        metadataFields: fields,
+        scopeFieldName: "",
+      }),
+    ).toEqual({
+      products: ["CFDP_KIT", "CFDP_TRAINING_KIT"],
+    });
   });
 
   it("detects object and field schema drift", () => {

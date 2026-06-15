@@ -6,10 +6,10 @@ records stored in one Twenty CRM workspace.
 ## Capabilities
 
 - Invite-only email/password authentication with viewer and contributor roles.
-- Company-scoped or explicit-record portal views.
-- Direct portal invitations that do not require a client account.
+- All-record, Person-scoped, or explicit-record portal views.
+- Portal invitations linked to a client account backed by a Twenty Person ID.
 - Metadata-driven object lists, filters, detail pages, and create/edit forms.
-- Server-enforced Company or record-ID scoping on every read and write.
+- Server-enforced Person, record-ID, and saved-filter constraints.
 - Signed Twenty webhook ingestion, deduplication, and audit history.
 - Administrator UI for metadata sync, clients, portal views, and invitations.
 - PostgreSQL persistence and Docker Compose deployment.
@@ -101,10 +101,11 @@ sorting. Object and record pickers load synchronized or live Twenty API data.
 The server derives API names and allowed filter operators from metadata rather
 than accepting manually entered field names.
 
-Use **Only specific record IDs** to load up to 50 records from Twenty and select
-exactly which records the portal may expose. These portals can be invited
-directly without creating a client account. Use **All records for a Company**
-for the original Company-membership workflow.
+Use **All current records** to expose every record permitted by the saved
+filters and allow contributors to create records. Use **Records linked to a
+Person** when the selected object has a Person relation or Person ID field.
+Use **Only specific records** to load up to 50 records from Twenty and select
+exactly which records the portal may expose.
 
 Client filter controls are type-aware. Select and multi-select fields use their
 Twenty option labels, booleans use an Any/Yes/No dropdown, and numeric/date/text
@@ -159,7 +160,8 @@ do not expose PostgreSQL publicly.
 
 The browser never receives Twenty credentials. Every CRM operation runs on the
 server, only fields configured by an administrator are accepted, and the
-configured Company or explicit record-ID scope is injected into queries.
+configured Person or explicit record-ID scope and saved record filters are
+injected into queries.
 Updates first fetch the record through the same scope to prevent IDOR access.
 
 V1 assumes one application replica. Login throttling is handled by Better Auth,

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Eye, Pencil } from "lucide-react";
 
 import { createPortalViewAction } from "@/app/actions/admin";
 import { PortalViewForm } from "@/components/portal-view-form";
@@ -12,7 +13,17 @@ export default async function ViewsPage() {
     getLatestMetadata(),
   ]);
   return (
-    <div className="grid gap-6">
+    <div className="page-stack">
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">Configuration</p>
+          <h2>Portal views</h2>
+          <p>
+            Configure exactly which Twenty records, fields, filters, and
+            actions are available to external users.
+          </p>
+        </div>
+      </div>
       <PortalViewForm
         action={createPortalViewAction}
         objects={objects}
@@ -34,8 +45,16 @@ export default async function ViewsPage() {
                 </span>
                 <Link
                   className="button secondary"
+                  href={`/admin/views/${view.id}/preview`}
+                >
+                  <Eye size={16} />
+                  Preview
+                </Link>
+                <Link
+                  className="button secondary"
                   href={`/admin/views/${view.id}`}
                 >
+                  <Pencil size={16} />
                   Edit
                 </Link>
               </div>
@@ -49,6 +68,11 @@ export default async function ViewsPage() {
             ) : null}
           </article>
         ))}
+        {!views.length ? (
+          <div className="card empty-state">
+            <p>Create your first portal view using the configuration above.</p>
+          </div>
+        ) : null}
       </section>
     </div>
   );

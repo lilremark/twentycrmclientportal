@@ -150,12 +150,12 @@ export const clientAccounts = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     name: text("name").notNull(),
-    twentyCompanyId: text("twenty_company_id").notNull(),
+    twentyPersonId: text("twenty_person_id").notNull(),
     isActive: boolean("is_active").default(true).notNull(),
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("client_account_company_unique").on(table.twentyCompanyId),
+    uniqueIndex("client_account_person_unique").on(table.twentyPersonId),
     index("client_account_active_idx").on(table.isActive),
   ],
 );
@@ -224,6 +224,13 @@ export type PortalFilterConfig = {
   operators: string[];
 };
 
+export type PortalFixedFilter = {
+  name: string;
+  label?: string;
+  operator: string;
+  value: string;
+};
+
 export const portalViews = pgTable(
   "portal_view",
   {
@@ -233,7 +240,7 @@ export const portalViews = pgTable(
     objectNameSingular: text("object_name_singular").notNull(),
     objectNamePlural: text("object_name_plural").notNull(),
     scopeFieldName: text("scope_field_name").notNull(),
-    scopeMode: text("scope_mode").default("company").notNull(),
+    scopeMode: text("scope_mode").default("all").notNull(),
     allowedRecordIds: jsonb("allowed_record_ids")
       .$type<string[]>()
       .default([])
@@ -241,6 +248,10 @@ export const portalViews = pgTable(
     columns: jsonb("columns").$type<PortalFieldConfig[]>().notNull(),
     detailFields: jsonb("detail_fields").$type<PortalFieldConfig[]>().notNull(),
     filterFields: jsonb("filter_fields").$type<PortalFilterConfig[]>().notNull(),
+    fixedFilters: jsonb("fixed_filters")
+      .$type<PortalFixedFilter[]>()
+      .default([])
+      .notNull(),
     createFields: jsonb("create_fields").$type<PortalFieldConfig[]>().notNull(),
     editFields: jsonb("edit_fields").$type<PortalFieldConfig[]>().notNull(),
     defaultSortField: text("default_sort_field"),
@@ -288,6 +299,13 @@ export const portalAccess = pgTable(
   ],
 );
 
+export type TwentyRelationDisplayField = {
+  name: string;
+  type: string;
+  relationType?: "ONE_TO_MANY" | "MANY_TO_ONE";
+  relationDisplayFields?: TwentyRelationDisplayField[];
+};
+
 export type TwentyFieldMetadata = {
   id: string;
   name: string;
@@ -296,6 +314,8 @@ export type TwentyFieldMetadata = {
   isNullable: boolean;
   options?: Array<{ value: string; label: string; color?: string }>;
   relationTargetObjectNameSingular?: string;
+  relationType?: "ONE_TO_MANY" | "MANY_TO_ONE";
+  relationDisplayFields?: TwentyRelationDisplayField[];
 };
 
 export type TwentyObjectMetadata = {

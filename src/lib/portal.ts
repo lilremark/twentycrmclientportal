@@ -9,6 +9,8 @@ import {
   portalViews,
   type TwentyObjectMetadata,
 } from "@/lib/db/schema";
+import { formatPortalValue } from "@/lib/format-value";
+import { enrichRelationMetadata } from "@/lib/twenty/metadata";
 
 export async function getPortalView(slug: string) {
   return db.query.portalViews.findFirst({
@@ -19,9 +21,8 @@ export async function getPortalView(slug: string) {
 export async function getEnabledPortalViews(input?: {
   userId?: string;
   includeAll?: boolean;
-  hasClientMembership?: boolean;
 }) {
-  if (input?.includeAll || input?.hasClientMembership) {
+  if (input?.includeAll) {
     return db.query.portalViews.findMany({
       where: eq(portalViews.isEnabled, true),
       orderBy: (view, { asc: ascending }) => [
@@ -57,7 +58,7 @@ export async function getLatestMetadata(): Promise<TwentyObjectMetadata[]> {
     .from(metadataSnapshots)
     .orderBy(desc(metadataSnapshots.syncedAt))
     .limit(1);
-  return snapshot?.objects ?? [];
+  return enrichRelationMetadata(snapshot?.objects ?? []);
 }
 
 export function getObjectMetadata(
@@ -69,22 +70,6 @@ export function getObjectMetadata(
   );
 }
 
-export function displayValue(value: unknown) {
-  if (value === null || value === undefined || value === "") return "—";
-  if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (Array.isArray(value)) return value.join(", ");
-  if (typeof value === "object") {
-    const object = value as Record<string, unknown>;
-    if ("amountMicros" in object) {
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: String(object.currencyCode ?? "USD"),
-      }).format(Number(object.amountMicros) / 1_000_000);
-    }
-    if ("firstName" in object || "lastName" in object) {
-      return [object.firstName, object.lastName].filter(Boolean).join(" ");
-    }
-    return JSON.stringify(value);
-  }
-  return String(value);
+export function displayValue(value: unknown, type?: string) {
+  return formatPortalValue(value, type);
 }

@@ -40,11 +40,38 @@ export function RecordForm({
     metadataFields.map((field) => [field.name, field]),
   );
   return (
-    <form action={action} className="card grid gap-5 p-6">
+    <form action={action} className="card form-card">
       {fields.map((config) => {
         const field = metadataByName.get(config.name);
         if (!field) return null;
         const label = config.label ?? field.label;
+        if (field.type === "MULTI_SELECT" && field.options?.length) {
+          const currentValue = values[field.name];
+          const selected = Array.isArray(currentValue)
+            ? currentValue.map(String)
+            : String(currentValue ?? "")
+                .split(",")
+                .map((value) => value.trim())
+                .filter(Boolean);
+          return (
+            <fieldset className="field" key={field.id}>
+              <legend>{label}</legend>
+              <div className="option-checkbox-grid">
+                {field.options.map((option) => (
+                  <label key={option.value}>
+                    <input
+                      defaultChecked={selected.includes(option.value)}
+                      name={field.name}
+                      type="checkbox"
+                      value={option.value}
+                    />
+                    <span>{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          );
+        }
         if (field.type === "BOOLEAN") {
           return (
             <div className="field" key={field.id}>
@@ -102,21 +129,23 @@ export function RecordForm({
               type={inputType(field.type)}
             />
             {field.type === "MULTI_SELECT" ? (
-              <span className="text-xs text-[#68758a]">
+              <span className="field-help">
                 Enter comma-separated values.
               </span>
             ) : null}
             {field.type === "RELATION" ? (
-              <span className="text-xs text-[#68758a]">
+              <span className="field-help">
                 Enter a record UUID from an approved portal object.
               </span>
             ) : null}
           </div>
         );
       })}
-      <button className="button w-fit" type="submit">
-        {submitLabel}
-      </button>
+      <div className="form-actions">
+        <button className="button" type="submit">
+          {submitLabel}
+        </button>
+      </div>
     </form>
   );
 }

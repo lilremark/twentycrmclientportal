@@ -32,17 +32,22 @@ export function PortalFilterForm({
   fields,
   filters,
   query,
-  viewSlug,
+  clearHref,
+  hiddenParams = {},
 }: {
   fields: TwentyFieldMetadata[];
   filters: PortalFilterConfig[];
   query: Record<string, string | string[] | undefined>;
-  viewSlug: string;
+  clearHref: string;
+  hiddenParams?: Record<string, string>;
 }) {
   const metadata = new Map(fields.map((field) => [field.name, field]));
 
   return (
-    <form className="card grid gap-4 p-4 md:grid-cols-2 xl:grid-cols-3">
+    <form className="card form-card md:grid-cols-2 xl:grid-cols-3">
+      {Object.entries(hiddenParams).map(([name, value]) => (
+        <input key={name} name={name} type="hidden" value={value} />
+      ))}
       {filters.map((config) => {
         const field = metadata.get(config.name);
         if (!field) return null;
@@ -101,7 +106,7 @@ export function PortalFilterForm({
         return (
           <div className="field" key={field.id}>
             <label htmlFor={`f_${field.name}`}>{label}</label>
-            <div className="grid grid-cols-[130px_1fr] gap-2">
+            <div className="control-pair">
               <select
                 className="input"
                 defaultValue={selectedOperator}
@@ -129,11 +134,11 @@ export function PortalFilterForm({
           </div>
         );
       })}
-      <div className="flex items-end gap-2">
+      <div className="filter-actions">
         <button className="button" type="submit">
           Apply filters
         </button>
-        <Link className="button secondary" href={`/portal/${viewSlug}`}>
+        <Link className="button secondary" href={clearHref}>
           Clear
         </Link>
       </div>

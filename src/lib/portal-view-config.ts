@@ -1,5 +1,6 @@
 import type {
   PortalFieldConfig,
+  PortalFixedFilter,
   PortalFilterConfig,
   TwentyFieldMetadata,
 } from "@/lib/db/schema";
@@ -9,15 +10,15 @@ export function selectablePortalFields(fields: TwentyFieldMetadata[]) {
   return fields.filter((field) => supportedTwentyFieldTypes.has(field.type));
 }
 
-export function companyScopeFields(fields: TwentyFieldMetadata[]) {
+export function personScopeFields(fields: TwentyFieldMetadata[]) {
   return [...selectablePortalFields(fields)].sort((left, right) => {
     const score = (field: TwentyFieldMetadata) => {
       const name = field.name.toLowerCase();
       const target = field.relationTargetObjectNameSingular?.toLowerCase();
-      if (name === "companyid") return 0;
-      if (target === "company") return 1;
-      if (name === "company") return 2;
-      if (name.includes("company")) return 2;
+      if (name === "personid") return 0;
+      if (target === "person") return 1;
+      if (name === "person") return 2;
+      if (name.includes("person")) return 2;
       if (field.type === "RELATION" || field.type === "UUID") return 3;
       return 4;
     };
@@ -43,6 +44,53 @@ export function filterOperatorsForType(type: string) {
     default:
       return ["contains", "startsWith", "eq", "neq"];
   }
+}
+
+export function fixedFilterOperatorsForType(type: string) {
+  switch (type) {
+    case "SELECT":
+      return ["in"];
+    case "BOOLEAN":
+    case "UUID":
+    case "RELATION":
+      return ["eq"];
+    case "MULTI_SELECT":
+      return ["containsAny"];
+    default:
+      return filterOperatorsForType(type);
+  }
+}
+
+export function fixedFilterablePortalFields(fields: TwentyFieldMetadata[]) {
+  return selectablePortalFields(fields).filter(
+    (field) => fixedFilterOperatorsForType(field.type).length > 0,
+  );
+}
+
+export function validateFixedFilters(
+  filters: PortalFixedFilter[],
+  fields: TwentyFieldMetadata[],
+) {
+  const metadata = new Map(fields.map((field) => [field.name, field]));
+  const errors: string[] = [];
+
+  for (const filter of filters) {
+    const field = metadata.get(filter.name);
+    if (!field) {
+      errors.push(`Saved filter field "${filter.name}" no longer exists.`);
+      continue;
+    }
+    if (!fixedFilterOperatorsForType(field.type).includes(filter.operator)) {
+      errors.push(
+        `Saved filter operator "${filter.operator}" is not valid for ${field.label}.`,
+      );
+    }
+    if (!filter.value.trim()) {
+      errors.push(`Saved filter for ${field.label} needs a value.`);
+    }
+  }
+
+  return errors;
 }
 
 export function defaultFilterOperator(

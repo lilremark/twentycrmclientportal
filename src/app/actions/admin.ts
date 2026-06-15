@@ -15,13 +15,16 @@ import {
   invitations,
   metadataSnapshots,
   portalViews,
+  type PortalFixedFilter,
   type TwentyObjectMetadata,
 } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email";
 import { getEnv } from "@/lib/env";
 import {
   fieldConfigsFromNames,
+  fixedFilterOperatorsForType,
   filterConfigsFromNames,
+  validateFixedFilters,
 } from "@/lib/portal-view-config";
 import {
   fetchTwentyMetadata,
@@ -57,6 +60,61 @@ function parseRecordIds(formData: FormData) {
         .filter(Boolean),
     ),
   ];
+}
+
+const fixedFilterSchema = z.object({
+  name: z.string().trim().min(1),
+  operator: z.string().trim().min(1),
+  value: z.string().trim().min(1),
+});
+
+function parseFixedFilters(
+  formData: FormData,
+  object: TwentyObjectMetadata,
+): PortalFixedFilter[] {
+  const metadata = new Map(object.fields.map((field) => [field.name, field]));
+
+  return formData.getAll("fixedFilters").map((entry) => {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(String(entry));
+    } catch {
+      throw new Error("A saved portal filter is malformed.");
+    }
+    const input = fixedFilterSchema.parse(parsed);
+    const field = metadata.get(input.name);
+    if (!field) {
+      throw new Error(`Saved filter field "${input.name}" does not exist.`);
+    }
+    if (!fixedFilterOperatorsForType(field.type).includes(input.operator)) {
+      throw new Error(
+        `The saved filter operator is not valid for ${field.label}.`,
+      );
+    }
+
+    const values =
+      input.operator === "containsAny" || input.operator === "in"
+        ? input.value
+            .split(",")
+            .map((value) => value.trim())
+            .filter(Boolean)
+        : [input.value];
+    if (field.options?.length) {
+      const allowed = new Set(field.options.map((option) => option.value));
+      if (values.some((value) => !allowed.has(value))) {
+        throw new Error(
+          `A saved filter value is not valid for ${field.label}.`,
+        );
+      }
+    }
+
+    return {
+      name: field.name,
+      label: field.label,
+      operator: input.operator,
+      value: values.join(","),
+    };
+  });
 }
 
 function portalViewFields(formData: FormData, object: TwentyObjectMetadata) {
@@ -168,6 +226,7 @@ export async function syncMetadataAction() {
       ...view.createFields,
       ...view.editFields,
       ...view.filterFields,
+      ...view.fixedFilters,
     ].map((field) => field.name);
     const errors = validatePortalViewConfiguration({
       objectNameSingular: view.objectNameSingular,
@@ -176,6 +235,12 @@ export async function syncMetadataAction() {
       fieldNames,
       objects,
     });
+    const object = objects.find(
+      (item) => item.nameSingular === view.objectNameSingular,
+    );
+    if (object) {
+      errors.push(...validateFixedFilters(view.fixedFilters, object.fields));
+    }
     await db
       .update(portalViews)
       .set({
@@ -201,7 +266,7 @@ export async function createClientAccountAction(formData: FormData) {
   const input = z
     .object({
       name: z.string().trim().min(2),
-      twentyCompanyId: z.string().uuid(),
+      twentyPersonId: z.string().uuid(),
     })
     .parse(Object.fromEntries(formData));
 
@@ -226,7 +291,7 @@ export async function createPortalViewAction(formData: FormData) {
       slug: portalViewSlugSchema,
       label: z.string().trim().min(2),
       objectNameSingular: z.string().trim().min(1),
-      scopeMode: z.enum(["company", "records"]),
+      scopeMode: z.enum(["all", "person", "records"]),
       scopeFieldName: z.string().trim().optional().default(""),
       defaultSortField: z.string().trim().optional(),
       defaultSortDirection: z.enum(["asc", "desc"]).default("asc"),
@@ -248,6 +313,7 @@ export async function createPortalViewAction(formData: FormData) {
     );
   }
   const fields = portalViewFields(formData, object);
+  const fixedFilters = parseFixedFilters(formData, object);
   const allowedRecordIds = parseRecordIds(formData);
   if (scalar.scopeMode === "records" && !allowedRecordIds.length) {
     throw new Error("Add at least one Twenty record ID.");
@@ -262,6 +328,7 @@ export async function createPortalViewAction(formData: FormData) {
       ...fields.createFields,
       ...fields.editFields,
       ...fields.filterFields,
+      ...fixedFilters,
     ].map((field) => field.name),
     objects: latest?.objects ?? [],
   });
@@ -278,6 +345,7 @@ export async function createPortalViewAction(formData: FormData) {
       ...scalar,
       objectNamePlural: object.namePlural,
       allowedRecordIds,
+      fixedFilters,
       defaultSortField: scalar.defaultSortField || null,
       ...fields,
       validationErrors,
@@ -293,6 +361,7 @@ export async function createPortalViewAction(formData: FormData) {
       ...scalar,
       objectNamePlural: object.namePlural,
       allowedRecordIds,
+      fixedFilters,
       ...fields,
     },
   });
@@ -315,7 +384,7 @@ export async function updatePortalViewAction(
       slug: portalViewSlugSchema,
       label: z.string().trim().min(2),
       objectNameSingular: z.string().trim().min(1),
-      scopeMode: z.enum(["company", "records"]),
+      scopeMode: z.enum(["all", "person", "records"]),
       scopeFieldName: z.string().trim().optional().default(""),
       defaultSortField: z.string().trim().optional(),
       defaultSortDirection: z.enum(["asc", "desc"]).default("asc"),
@@ -336,6 +405,7 @@ export async function updatePortalViewAction(
     );
   }
   const fields = portalViewFields(formData, object);
+  const fixedFilters = parseFixedFilters(formData, object);
   const allowedRecordIds = parseRecordIds(formData);
   if (scalar.scopeMode === "records" && !allowedRecordIds.length) {
     throw new Error("Add at least one Twenty record ID.");
@@ -350,6 +420,7 @@ export async function updatePortalViewAction(
       ...fields.createFields,
       ...fields.editFields,
       ...fields.filterFields,
+      ...fixedFilters,
     ].map((field) => field.name),
     objects: latest?.objects ?? [],
   });
@@ -363,6 +434,7 @@ export async function updatePortalViewAction(
     ...scalar,
     objectNamePlural: object.namePlural,
     allowedRecordIds,
+    fixedFilters,
     defaultSortField: scalar.defaultSortField || null,
     ...fields,
     validationErrors,
@@ -395,10 +467,31 @@ export async function createInvitationAction(
         email: z.email(),
         role: z.enum(["admin", "viewer", "contributor"]),
         portalViewId: z.string().uuid().optional().or(z.literal("")),
+        clientAccountId: z.string().uuid().optional().or(z.literal("")),
       })
       .parse(Object.fromEntries(formData));
     if (input.role !== "admin" && !input.portalViewId) {
       return { error: "Choose the portal this person can access." };
+    }
+    if (input.role !== "admin" && !input.clientAccountId) {
+      return { error: "Choose the client Person for this invitation." };
+    }
+
+    if (input.portalViewId) {
+      const portal = await db.query.portalViews.findFirst({
+        where: eq(portalViews.id, input.portalViewId),
+      });
+      if (!portal?.isEnabled) {
+        return { error: "The selected portal is not currently available." };
+      }
+    }
+    if (input.clientAccountId) {
+      const client = await db.query.clientAccounts.findFirst({
+        where: eq(clientAccounts.id, input.clientAccountId),
+      });
+      if (!client?.isActive) {
+        return { error: "The selected client Person is not active." };
+      }
     }
 
     const token = createOpaqueToken();
@@ -407,6 +500,7 @@ export async function createInvitationAction(
       email: input.email.toLowerCase(),
       role: input.role,
       portalViewId: input.portalViewId || null,
+      clientAccountId: input.clientAccountId || null,
       tokenHash: hashOpaqueToken(token),
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       invitedByUserId: current.user.id,
@@ -426,6 +520,7 @@ export async function createInvitationAction(
         email: input.email,
         role: input.role,
         portalViewId: input.portalViewId || null,
+        clientAccountId: input.clientAccountId || null,
       },
     });
     revalidatePath("/admin/invitations");

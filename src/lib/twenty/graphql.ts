@@ -1,6 +1,14 @@
 const GRAPHQL_NAME = /^[_A-Za-z][_0-9A-Za-z]*$/;
 
 export type GraphQLEnum = { __enum: string };
+export type GraphQLFieldSelection = {
+  type: string;
+  relationType?: "ONE_TO_MANY" | "MANY_TO_ONE";
+  relationDisplayFields?: GraphQLFieldSelectionField[];
+};
+export type GraphQLFieldSelectionField = GraphQLFieldSelection & {
+  name: string;
+};
 
 export function gqlEnum(value: string): GraphQLEnum {
   return { __enum: assertGraphQLName(value) };
@@ -42,23 +50,47 @@ export function toGraphQLLiteral(value: unknown): string {
 
 export function buildSelection(
   fieldNames: string[],
-  fieldTypes: Record<string, string> = {},
+  fieldSelections: Record<string, GraphQLFieldSelection | string> = {},
 ) {
+  function buildField(
+    field: string,
+    config?: GraphQLFieldSelection | string,
+  ): string {
+    const name = assertGraphQLName(field);
+    const type = typeof config === "string" ? config : config?.type;
+
+    switch (type) {
+      case "CURRENCY":
+        return `${name}{amountMicros currencyCode}`;
+      case "FULL_NAME":
+        return `${name}{firstName lastName}`;
+      case "RICH_TEXT":
+        return `${name}{markdown blocknote}`;
+      case "RELATION": {
+        const displayFields =
+          typeof config === "string"
+            ? []
+            : config?.relationDisplayFields ?? [];
+        const nodeSelection = [
+          "id",
+          ...displayFields.map((displayField) =>
+            buildField(displayField.name, displayField),
+          ),
+        ].join(" ");
+        return config &&
+          typeof config !== "string" &&
+          config.relationType === "ONE_TO_MANY"
+          ? `${name}{edges{node{${nodeSelection}}}}`
+          : `${name}{${nodeSelection}}`;
+      }
+      default:
+        return name;
+    }
+  }
+
   const fields = [...new Set(["id", ...fieldNames])];
   return fields
-    .map((field) => {
-      assertGraphQLName(field);
-      switch (fieldTypes[field]) {
-        case "CURRENCY":
-          return `${field}{amountMicros currencyCode}`;
-        case "FULL_NAME":
-          return `${field}{firstName lastName}`;
-        case "RELATION":
-          return `${field}{id}`;
-        default:
-          return field;
-      }
-    })
+    .map((field) => buildField(field, fieldSelections[field]))
     .join("\n");
 }
 

@@ -56,9 +56,11 @@ export default async function PortalListPage({
       scopeMode: view.scopeMode,
       scopeFieldName: view.scopeFieldName,
       allowedRecordIds: view.allowedRecordIds,
-      twentyCompanyId: context.twentyCompanyId,
+      twentyPersonId: context.twentyPersonId,
       metadataFields: object.fields,
     }),
+    fixedFilters: view.fixedFilters,
+    metadataFields: object.fields,
     configuredFilters: view.filterFields,
     requestedFilters,
   });
@@ -95,11 +97,12 @@ export default async function PortalListPage({
   }
 
   return (
-    <div className="grid gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="page-stack">
+      <div className="page-heading">
         <div>
+          <p className="eyebrow">{object.labelPlural}</p>
           <h2 className="text-2xl font-bold">{view.label}</h2>
-          <p className="mt-1 text-sm text-[#68758a]">
+          <p>
             Showing only records shared through this portal.
           </p>
         </div>
@@ -114,16 +117,17 @@ export default async function PortalListPage({
           fields={object.fields}
           filters={view.filterFields}
           query={query}
-          viewSlug={view.slug}
+          clearHref={`/portal/${view.slug}`}
         />
       ) : null}
       {error ? <p className="error">{error}</p> : null}
       {result ? (
-        <section className="card overflow-hidden">
+        <section className="card table-shell">
           <PortalDataTable
             columns={view.columns}
+            metadataFields={object.fields}
             records={result.edges.map(({ node }) => node as { id: string })}
-            viewSlug={view.slug}
+            recordBaseHref={`/portal/${view.slug}`}
           />
           {result.pageInfo.hasNextPage && result.pageInfo.endCursor ? (
             <div className="border-t border-[#dde3ed] p-4 text-right">

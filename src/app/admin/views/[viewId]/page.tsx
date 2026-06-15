@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { Eye } from "lucide-react";
 
 import { updatePortalViewAction } from "@/app/actions/admin";
 import { PortalViewForm } from "@/components/portal-view-form";
@@ -22,11 +24,27 @@ export default async function EditViewPage({
   if (!view) notFound();
 
   return (
-    <PortalViewForm
-      action={updatePortalViewAction.bind(null, view.id)}
-      initial={view}
-      objects={objects}
-      submitLabel="Save view"
-    />
+    <div className="page-stack">
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">Portal configuration</p>
+          <h2>{view.label}</h2>
+          <p>Update the external experience, then open a live scoped preview.</p>
+        </div>
+        <Link
+          className="button secondary"
+          href={`/admin/views/${view.id}/preview`}
+        >
+          <Eye size={17} />
+          Preview portal
+        </Link>
+      </div>
+      <PortalViewForm
+        action={updatePortalViewAction.bind(null, view.id)}
+        initial={view}
+        objects={objects}
+        submitLabel="Save view"
+      />
+    </div>
   );
 }

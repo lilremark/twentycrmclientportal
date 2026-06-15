@@ -12,7 +12,10 @@ import {
   getTwentyRecord,
   writeTwentyRecord,
 } from "@/lib/twenty/client";
-import { buildPortalScopeFilter } from "@/lib/twenty/filters";
+import {
+  buildPortalScopeFilter,
+  buildScopedFilter,
+} from "@/lib/twenty/filters";
 import { validateRecordInput } from "@/lib/twenty/validation";
 
 async function getWriteContext(slug: string) {
@@ -34,17 +37,9 @@ async function getWriteContext(slug: string) {
 
 export async function createRecordAction(slug: string, formData: FormData) {
   const { context, view, metadata } = await getWriteContext(slug);
-  if (view.scopeMode === "records" || !context.twentyCompanyId) {
+  if (view.scopeMode === "records") {
     throw new Error(
-      "New records can only be created in a Company-scoped portal.",
-    );
-  }
-  const scopeField = metadata.fields.find(
-    (field) => field.name === view.scopeFieldName,
-  );
-  if (scopeField?.type === "RELATION") {
-    throw new Error(
-      "Creating records requires a Company ID field such as companyId, not the Company relation field.",
+      "New records cannot be created in a specific-record portal.",
     );
   }
   enforceWriteRateLimit(context.session.user.id);
@@ -57,10 +52,24 @@ export async function createRecordAction(slug: string, formData: FormData) {
       metadataFields: metadata.fields,
       scopeFieldName: view.scopeFieldName,
     });
-    const scopedData = {
-      ...data,
-      [view.scopeFieldName]: context.twentyCompanyId,
-    };
+    let scopedData = data;
+    if (view.scopeMode === "person") {
+      if (!context.twentyPersonId) {
+        throw new Error("This portal requires a client Person.");
+      }
+      const scopeField = metadata.fields.find(
+        (field) => field.name === view.scopeFieldName,
+      );
+      if (scopeField?.type === "RELATION") {
+        throw new Error(
+          "Creating Person-scoped records requires a Person ID field such as personId.",
+        );
+      }
+      scopedData = {
+        ...data,
+        [view.scopeFieldName]: context.twentyPersonId,
+      };
+    }
     after = await writeTwentyRecord({
       operation: "create",
       objectNameSingular: view.objectNameSingular,
@@ -108,12 +117,18 @@ export async function updateRecordAction(
     filter: {
       and: [
         { id: { eq: recordId } },
-        buildPortalScopeFilter({
-          scopeMode: view.scopeMode,
-          scopeFieldName: view.scopeFieldName,
-          allowedRecordIds: view.allowedRecordIds,
-          twentyCompanyId: context.twentyCompanyId,
+        buildScopedFilter({
+          scopeFilter: buildPortalScopeFilter({
+            scopeMode: view.scopeMode,
+            scopeFieldName: view.scopeFieldName,
+            allowedRecordIds: view.allowedRecordIds,
+            twentyPersonId: context.twentyPersonId,
+            metadataFields: metadata.fields,
+          }),
+          fixedFilters: view.fixedFilters,
           metadataFields: metadata.fields,
+          configuredFilters: [],
+          requestedFilters: [],
         }),
       ],
     },

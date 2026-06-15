@@ -8,7 +8,10 @@ import {
   getObjectMetadata,
 } from "@/lib/portal";
 import { getTwentyRecord } from "@/lib/twenty/client";
-import { buildPortalScopeFilter } from "@/lib/twenty/filters";
+import {
+  buildPortalScopeFilter,
+  buildScopedFilter,
+} from "@/lib/twenty/filters";
 
 export default async function EditRecordPage({
   params,
@@ -37,12 +40,18 @@ export default async function EditRecordPage({
     filter: {
       and: [
         { id: { eq: recordId } },
-        buildPortalScopeFilter({
-          scopeMode: view.scopeMode,
-          scopeFieldName: view.scopeFieldName,
-          allowedRecordIds: view.allowedRecordIds,
-          twentyCompanyId: context.twentyCompanyId,
+        buildScopedFilter({
+          scopeFilter: buildPortalScopeFilter({
+            scopeMode: view.scopeMode,
+            scopeFieldName: view.scopeFieldName,
+            allowedRecordIds: view.allowedRecordIds,
+            twentyPersonId: context.twentyPersonId,
+            metadataFields: object.fields,
+          }),
+          fixedFilters: view.fixedFilters,
           metadataFields: object.fields,
+          configuredFilters: [],
+          requestedFilters: [],
         }),
       ],
     },
@@ -50,8 +59,14 @@ export default async function EditRecordPage({
   if (!record) notFound();
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <h2 className="mb-5 text-2xl font-bold">Edit {object.labelSingular}</h2>
+    <div className="page-stack mx-auto max-w-2xl">
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">{view.label}</p>
+          <h2>Edit {object.labelSingular}</h2>
+          <p>Changes are validated and written directly to Twenty CRM.</p>
+        </div>
+      </div>
       <RecordForm
         action={updateRecordAction.bind(null, view.slug, recordId)}
         fields={view.editFields}

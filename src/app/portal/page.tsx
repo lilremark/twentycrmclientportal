@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowRight, Rows3 } from "lucide-react";
 
 import { requirePortalContext } from "@/lib/access";
 import { getApplicationSettings } from "@/lib/application-settings";
@@ -10,28 +11,38 @@ export default async function PortalHomePage() {
   ]);
   const views = context.views;
   return (
-    <div>
-      <p className="eyebrow">Welcome, {context.session.user.name}</p>
-      <h2 className="mt-1 text-2xl font-bold">{settings.portalTitle}</h2>
-      <p className="mt-2 text-[#68758a]">
-        {settings.portalDescription}
-      </p>
-      <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="page-stack">
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">Welcome, {context.session.user.name}</p>
+          <h2>{settings.portalTitle}</h2>
+          <p>{settings.portalDescription}</p>
+        </div>
+      </div>
+      <div className="portal-card-grid">
         {views.map((view) => (
           <Link
-            className="card p-5 transition-transform hover:-translate-y-0.5"
+            className="card portal-summary-card"
             href={`/portal/${view.slug}`}
             key={view.id}
           >
-            <h3 className="font-bold">{view.label}</h3>
-            <p className="mt-2 text-sm text-[#68758a]">
-              View and filter {view.objectNamePlural}.
-            </p>
+            <div>
+              <span className="activity-icon mb-3">
+                <Rows3 size={17} />
+              </span>
+              <h3 className="font-bold">{view.label}</h3>
+              <p className="mt-2 text-sm text-[var(--muted)]">
+                View and filter {view.objectNamePlural}.
+              </p>
+            </div>
+            <div className="portal-card-meta">
+              Open portal <ArrowRight size={14} />
+            </div>
           </Link>
         ))}
       </div>
       {!views.length ? (
-        <p className="card mt-7 p-6 text-sm text-[#68758a]">
+        <p className="card empty-state text-sm">
           No portal views have been configured yet.
         </p>
       ) : null}

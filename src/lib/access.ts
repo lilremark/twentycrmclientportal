@@ -66,7 +66,7 @@ async function getPortalIdentity() {
       role: memberships.role,
       clientAccountId: memberships.clientAccountId,
       clientName: clientAccounts.name,
-      twentyCompanyId: clientAccounts.twentyCompanyId,
+      twentyPersonId: clientAccounts.twentyPersonId,
     })
     .from(memberships)
     .innerJoin(
@@ -82,7 +82,6 @@ async function getPortalIdentity() {
   const views = await getEnabledPortalViews({
     userId: current.user.id,
     includeAll: admin,
-    hasClientMembership: Boolean(membership[0]),
   });
 
   if (!membership[0] && !views.length) {
@@ -105,7 +104,7 @@ export async function requirePortalContext() {
     role: identity.membership?.role ?? "viewer",
     clientAccountId: identity.membership?.clientAccountId ?? null,
     clientName: identity.membership?.clientName ?? "Shared portal",
-    twentyCompanyId: identity.membership?.twentyCompanyId ?? null,
+    twentyPersonId: identity.membership?.twentyPersonId ?? null,
   };
 }
 
@@ -125,9 +124,9 @@ export async function requirePortalViewContext(slug: string) {
     identity.membership?.role ??
     (identity.isAdmin ? "contributor" : "viewer");
 
-  if (view.scopeMode === "company" && !identity.membership) {
+  if (view.scopeMode === "person" && !identity.membership) {
     throw new Error(
-      "This portal view requires a client Company membership. Configure it for specific records to share it directly.",
+      "This portal view requires a client Person membership.",
     );
   }
 
@@ -137,6 +136,6 @@ export async function requirePortalViewContext(slug: string) {
     role,
     clientAccountId: identity.membership?.clientAccountId ?? null,
     clientName: identity.membership?.clientName ?? view.label,
-    twentyCompanyId: identity.membership?.twentyCompanyId ?? null,
+    twentyPersonId: identity.membership?.twentyPersonId ?? null,
   };
 }

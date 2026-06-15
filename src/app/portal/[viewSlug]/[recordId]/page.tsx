@@ -8,7 +8,10 @@ import {
   getObjectMetadata,
 } from "@/lib/portal";
 import { getTwentyRecord } from "@/lib/twenty/client";
-import { buildPortalScopeFilter } from "@/lib/twenty/filters";
+import {
+  buildPortalScopeFilter,
+  buildScopedFilter,
+} from "@/lib/twenty/filters";
 
 export default async function RecordDetailPage({
   params,
@@ -31,12 +34,18 @@ export default async function RecordDetailPage({
     filter: {
       and: [
         { id: { eq: recordId } },
-        buildPortalScopeFilter({
-          scopeMode: view.scopeMode,
-          scopeFieldName: view.scopeFieldName,
-          allowedRecordIds: view.allowedRecordIds,
-          twentyCompanyId: context.twentyCompanyId,
+        buildScopedFilter({
+          scopeFilter: buildPortalScopeFilter({
+            scopeMode: view.scopeMode,
+            scopeFieldName: view.scopeFieldName,
+            allowedRecordIds: view.allowedRecordIds,
+            twentyPersonId: context.twentyPersonId,
+            metadataFields: object.fields,
+          }),
+          fixedFilters: view.fixedFilters,
           metadataFields: object.fields,
+          configuredFilters: [],
+          requestedFilters: [],
         }),
       ],
     },
@@ -47,8 +56,8 @@ export default async function RecordDetailPage({
   );
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+    <div className="page-stack mx-auto max-w-3xl">
+      <div className="page-heading">
         <div>
           <Link
             className="text-sm font-semibold text-[#3157d5]"
@@ -56,7 +65,7 @@ export default async function RecordDetailPage({
           >
             ← Back to {view.label}
           </Link>
-          <h2 className="mt-2 text-2xl font-bold">{object.labelSingular}</h2>
+          <h2>{object.labelSingular}</h2>
         </div>
         {context.role === "contributor" && view.editFields.length ? (
           <Link
@@ -67,7 +76,7 @@ export default async function RecordDetailPage({
           </Link>
         ) : null}
       </div>
-      <dl className="card divide-y divide-[#edf0f5]">
+      <dl className="card divide-y divide-[var(--border)]">
         {view.detailFields.map((config) => (
           <div
             className="grid gap-2 p-5 sm:grid-cols-[180px_1fr]"
@@ -78,7 +87,12 @@ export default async function RecordDetailPage({
                 metadataByName.get(config.name)?.label ??
                 config.name}
             </dt>
-            <dd>{displayValue(record[config.name])}</dd>
+            <dd>
+              {displayValue(
+                record[config.name],
+                metadataByName.get(config.name)?.type,
+              )}
+            </dd>
           </div>
         ))}
       </dl>

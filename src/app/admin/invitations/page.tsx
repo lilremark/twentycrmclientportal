@@ -2,15 +2,23 @@ import { desc } from "drizzle-orm";
 
 import { InvitationForm } from "@/components/admin-actions";
 import { db } from "@/lib/db";
-import { invitations, portalViews } from "@/lib/db/schema";
+import {
+  clientAccounts,
+  invitations,
+  portalViews,
+} from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 export default async function InvitationsPage() {
-  const [views, invites] = await Promise.all([
+  const [views, clients, invites] = await Promise.all([
     db
       .select()
       .from(portalViews)
-      .where(eq(portalViews.scopeMode, "records")),
+      .where(eq(portalViews.isEnabled, true)),
+    db
+      .select()
+      .from(clientAccounts)
+      .where(eq(clientAccounts.isActive, true)),
     db
       .select({
         id: invitations.id,
@@ -19,42 +27,62 @@ export default async function InvitationsPage() {
         status: invitations.status,
         expiresAt: invitations.expiresAt,
         portalLabel: portalViews.label,
+        clientName: clientAccounts.name,
       })
       .from(invitations)
       .leftJoin(portalViews, eq(portalViews.id, invitations.portalViewId))
+      .leftJoin(
+        clientAccounts,
+        eq(clientAccounts.id, invitations.clientAccountId),
+      )
       .orderBy(desc(invitations.createdAt)),
   ]);
   return (
-    <div className="grid gap-6">
-      <InvitationForm views={views} />
-      <section className="card overflow-hidden">
-        <div className="border-b border-[#dde3ed] p-5">
+    <div className="page-stack">
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">Portal access</p>
+          <h2>Invitations</h2>
+          <p>
+            Invite viewers and contributors, then monitor acceptance and expiry
+            status.
+          </p>
+        </div>
+      </div>
+      <InvitationForm clients={clients} views={views} />
+      <section className="card table-shell">
+        <div className="section-heading">
           <h2 className="text-lg font-bold">Invitation history</h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-[#f8f9fc] text-[#68758a]">
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
               <tr>
-                <th className="p-4">Email</th>
-                <th className="p-4">Role</th>
-                <th className="p-4">Portal</th>
-                <th className="p-4">Status</th>
-                <th className="p-4">Expires</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Portal</th>
+                <th>Client Person</th>
+                <th>Status</th>
+                <th>Expires</th>
               </tr>
             </thead>
             <tbody>
               {invites.map((invite) => (
-                <tr className="border-t border-[#edf0f5]" key={invite.id}>
-                  <td className="p-4">{invite.email}</td>
-                  <td className="p-4 capitalize">{invite.role}</td>
-                  <td className="p-4">{invite.portalLabel ?? "Administrator"}</td>
-                  <td className="p-4 capitalize">{invite.status}</td>
-                  <td className="p-4">{invite.expiresAt.toLocaleString()}</td>
+                <tr key={invite.id}>
+                  <td>{invite.email}</td>
+                  <td className="capitalize">{invite.role}</td>
+                  <td>{invite.portalLabel ?? "Administrator"}</td>
+                  <td>{invite.clientName ?? "—"}</td>
+                  <td className="capitalize">{invite.status}</td>
+                  <td>{invite.expiresAt.toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        {!invites.length ? (
+          <div className="empty-state">No invitations have been created.</div>
+        ) : null}
       </section>
     </div>
   );

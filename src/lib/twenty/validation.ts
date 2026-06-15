@@ -76,7 +76,12 @@ export function validateRecordInput(input: {
   }
 
   const raw = Object.fromEntries(
-    Object.keys(shape).map((key) => [key, input.formData.get(key)]),
+    Object.keys(shape).map((key) => [
+      key,
+      metadataByName.get(key)?.type === "MULTI_SELECT"
+        ? input.formData.getAll(key)
+        : input.formData.get(key),
+    ]),
   );
   return z.object(shape).parse(raw);
 }
@@ -99,10 +104,10 @@ export function validatePortalViewConfiguration(input: {
 
   const fields = new Set(object.fields.map((field) => field.name));
   if (
-    input.scopeMode !== "records" &&
+    input.scopeMode === "person" &&
     !fields.has(input.scopeFieldName)
   ) {
-    errors.push("The Company scope field no longer exists.");
+    errors.push("The Person scope field no longer exists.");
   }
   for (const fieldName of input.fieldNames) {
     if (!fields.has(fieldName)) {

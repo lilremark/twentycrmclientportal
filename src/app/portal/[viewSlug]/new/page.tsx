@@ -31,8 +31,14 @@ export default async function NewRecordPage({
   if (!object) notFound();
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <h2 className="mb-5 text-2xl font-bold">Add {object.labelSingular}</h2>
+    <div className="page-stack mx-auto max-w-2xl">
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">{view.label}</p>
+          <h2>Add {object.labelSingular}</h2>
+          <p>Create a new scoped record in Twenty CRM.</p>
+        </div>
+      </div>
       <RecordForm
         action={createRecordAction.bind(null, view.slug)}
         fields={view.createFields}
