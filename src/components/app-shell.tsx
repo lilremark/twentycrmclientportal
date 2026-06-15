@@ -5,14 +5,14 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Building2,
-  ChevronLeft,
-  ChevronRight,
   ClipboardList,
   FileClock,
   House,
   LayoutDashboard,
   Menu,
   Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
   PanelsTopLeft,
   Settings,
   Sun,
@@ -107,7 +107,7 @@ export function AppShell({
             )}
             <span className="brand-copy">
               <strong>{branding.name}</strong>
-              <span>Twenty CRM portal</span>
+              <span>Client portal</span>
             </span>
           </Link>
           <button
@@ -118,7 +118,11 @@ export function AppShell({
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             type="button"
           >
-            {collapsed ? <ChevronRight size={17} /> : <ChevronLeft size={17} />}
+            {collapsed ? (
+              <PanelLeftOpen size={16} />
+            ) : (
+              <PanelLeftClose size={16} />
+            )}
           </button>
           <button
             aria-label="Close navigation"
@@ -128,6 +132,9 @@ export function AppShell({
           >
             <X size={19} />
           </button>
+        </div>
+        <div className="sidebar-section-label">
+          <span>Workspace</span>
         </div>
         <nav className="sidebar-nav">
           {navigation.map((item) => {
@@ -182,12 +189,7 @@ export function AppShell({
               <Menu size={20} />
             </button>
             <div className="min-w-0">
-              <h1 className="truncate text-lg font-bold tracking-tight">
-                {title}
-              </h1>
-              <p className="truncate text-xs text-[var(--muted)] lg:hidden">
-                {subtitle}
-              </p>
+              <h1>{title}</h1>
             </div>
           </div>
           <div className="flex items-center gap-2">

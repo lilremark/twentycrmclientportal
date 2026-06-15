@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Filter, RotateCcw } from "lucide-react";
 
 import type {
   PortalFilterConfig,
@@ -44,7 +45,11 @@ export function PortalFilterForm({
   const metadata = new Map(fields.map((field) => [field.name, field]));
 
   return (
-    <form className="card form-card md:grid-cols-2 xl:grid-cols-3">
+    <form className="card form-card portal-filter-bar md:grid-cols-2 xl:grid-cols-3">
+      <div className="portal-filter-heading">
+        <Filter size={14} />
+        <span>Filter records</span>
+      </div>
       {Object.entries(hiddenParams).map(([name, value]) => (
         <input key={name} name={name} type="hidden" value={value} />
       ))}
@@ -139,6 +144,7 @@ export function PortalFilterForm({
           Apply filters
         </button>
         <Link className="button secondary" href={clearHref}>
+          <RotateCcw size={14} />
           Clear
         </Link>
       </div>

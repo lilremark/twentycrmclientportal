@@ -13,6 +13,52 @@ import { formatPortalValue } from "@/lib/format-value";
 
 type RecordRow = Record<string, unknown> & { id: string };
 
+function PortalTableValue({
+  value,
+  type,
+}: {
+  value: unknown;
+  type?: string;
+}) {
+  const formatted = formatPortalValue(value, type);
+
+  if (type === "SELECT" || type === "MULTI_SELECT") {
+    const values = formatted
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item) => item && item !== "—");
+
+    if (!values.length) return <span className="table-empty-value">—</span>;
+    return (
+      <span className="table-tag-list" title={formatted}>
+        {values.map((item) => (
+          <span className="table-tag" key={item}>
+            {item}
+          </span>
+        ))}
+      </span>
+    );
+  }
+
+  if (type === "BOOLEAN") {
+    return (
+      <span className={`table-boolean ${formatted === "Yes" ? "is-true" : ""}`}>
+        <span aria-hidden="true" />
+        {formatted}
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={formatted === "—" ? "table-empty-value" : "table-cell-value"}
+      title={formatted === "—" ? undefined : formatted}
+    >
+      {formatted}
+    </span>
+  );
+}
+
 export function PortalDataTable({
   records,
   columns,
@@ -37,11 +83,12 @@ export function PortalDataTable({
         helper.accessor((row) => row[column.name], {
           id: column.name,
           header: column.label ?? column.name,
-          cell: (info) =>
-            formatPortalValue(
-              info.getValue(),
-              metadataByName.get(column.name)?.type,
-            ),
+          cell: (info) => (
+            <PortalTableValue
+              type={metadataByName.get(column.name)?.type}
+              value={info.getValue()}
+            />
+          ),
         }),
       ),
       ...(recordBaseHref
@@ -51,7 +98,7 @@ export function PortalDataTable({
               header: "",
               cell: ({ row }) => (
                 <Link
-                  className="font-semibold text-[var(--brand-primary)]"
+                  className="table-row-action"
                   href={`${recordBaseHref}/${row.original.id}`}
                 >
                   View
@@ -85,16 +132,8 @@ export function PortalDataTable({
           {table.getRowModel().rows.map((row) => (
             <tr key={row.id}>
               {row.getVisibleCells().map((cell) => {
-                const type = metadataByName.get(cell.column.id)?.type;
                 return (
-                  <td
-                    className={
-                      type === "RELATION"
-                        ? "max-w-sm whitespace-normal"
-                        : "max-w-sm truncate"
-                    }
-                    key={cell.id}
-                  >
+                  <td className="max-w-sm truncate" key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 );
