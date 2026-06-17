@@ -1,169 +1,342 @@
 # Twenty CRM Client Portal
 
-A self-hosted Next.js portal that gives external clients controlled access to
-records stored in one Twenty CRM workspace.
+A self-hosted Next.js portal that gives external clients controlled access to records stored in a single [Twenty CRM](https://twenty.com) workspace. It is designed to act as a secure intermediary layer, ensuring clients only see and edit the specific records they are authorized to access.
 
-## Capabilities
+---
 
-- Invite-only email/password authentication with viewer and contributor roles.
-- All-record, Person-scoped, or explicit-record portal views.
-- Portal invitations linked to a client account backed by a Twenty Person ID.
-- Metadata-driven object lists, filters, detail pages, and create/edit forms.
-- Server-enforced Person, record-ID, and saved-filter constraints.
-- Signed Twenty webhook ingestion, deduplication, and audit history.
-- Administrator UI for metadata sync, clients, portal views, and invitations.
-- PostgreSQL persistence and Docker Compose deployment.
+## Key Capabilities
 
-## Quick start
+- **Secure Role-Based Access Control**: Invite-only registration with granular `viewer` and `contributor` access levels per client.
+- **Flexible Data Scope Scenarios**:
+  - **All current records**: Expose all records matching filters.
+  - **Person-scoped records**: Dynamically filter records linked to the authenticated user's Twenty Person ID.
+  - **Explicit record selection**: Pin up to 50 specific CRM records for portal-only exposure.
+- **Dynamic Configuration & Forms**: Metadata-driven field displays, detail views, custom filtering, and create/edit forms using custom layout overrides.
+- **Self-Healing Metadata Sync**: Synchronizes object schemas from Twenty and automatically flags or disables views if fields or objects are deleted in the CRM, preventing database/API queries from failing silently.
+- **Audit Logging & History**: Comprehensive tracking of all portal mutations, access requests, and external modifications.
+- **Signed Webhook Integration**: Validates and consumes inbound webhook payloads from Twenty with deduplication guards to keep portal state in sync.
+- **System Admin Panel**: Visual admin UI to configure portals, synchronize metadata, manage client accounts, and issue invitations.
 
-1. Copy `.env.example` to `.env` and replace every secret.
-2. Set a strong `POSTGRES_PASSWORD`. Docker Compose constructs the internal
-   database URL automatically; `DATABASE_URL` remains the local-development
-   connection string.
-3. Set `APP_URL` to the exact browser-facing address. For direct LAN access,
-   use `APP_URL=http://10.0.0.22:3005` with your server's actual IP. Add every
-   additional browser origin to comma-separated `TRUSTED_ORIGINS`. Session
-   cookies follow the `APP_URL` protocol: direct HTTP access works for initial
-   setup, while production internet deployments should use HTTPS.
-4. In Twenty, create a restricted API key with access only to portal-enabled
-   objects and fields.
-5. Start the portal:
+---
 
+## Tech Stack
+
+- **Framework**: [Next.js 16 (App Router)](https://nextjs.org/)
+- **Runtime**: [Node.js 22](https://nodejs.org/) (Alpine-based container images)
+- **Database ORM**: [Drizzle ORM](https://orm.drizzle.team/)
+- **Database Engine**: [PostgreSQL 17](https://www.postgresql.org/)
+- **Authentication**: [Better Auth](https://www.better-auth.com/)
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
+- **Unit Testing**: [Vitest](https://vitest.dev/)
+- **E2E Testing**: [Playwright](https://playwright.dev/)
+
+---
+
+## Prerequisites
+
+- **Node.js**: `v22.x` (strictly enforced, active LTS)
+- **npm**: `v10.9.8`
+- **Docker & Docker Compose**: Required for Postgres persistent database and containerized builds.
+- **Twenty CRM Workspace**: Access to a Twenty workspace with a restricted API key and webhook capabilities.
+- **SMTP Server**: An active SMTP server (or Mailgun/Resend/SES details) to deliver portal invitations.
+
+---
+
+## Getting Started
+
+### Local Development (Host Mode)
+
+To set up a local development environment running directly on your host machine:
+
+#### 1. Clone the repository and install dependencies
 ```bash
-docker compose up --build
+git clone https://github.com/your-org/twenty-crm-client-portal.git
+cd twenty-crm-client-portal
+npm install
 ```
 
-The Docker dependency stage normalizes `package-lock.json` with the pinned npm
-version before running `npm ci`. This avoids npm's platform-specific optional
-dependency lock validation failures when building Linux images from a lockfile
-generated on macOS.
+#### 2. Configure Environment Variables
+Copy the example configuration file:
+```bash
+cp .env.example .env
+```
+Ensure you fill in `DATABASE_URL` (e.g., `postgresql://portal:portal@localhost:5432/portal`), `AUTH_SECRET`, `SETUP_TOKEN`, and your Twenty API details.
 
-6. Open the configured `APP_URL` and use `SETUP_TOKEN` to create the first
-   administrator.
-7. Test the Twenty connection, synchronize metadata, create a client mapping,
-   configure a portal view, and invite a user.
-8. Configure a Twenty webhook pointing to
-   `https://your-portal.example.com/api/webhooks/twenty`.
+#### 3. Spin up local database
+Ensure PostgreSQL is running locally. You can use a temporary Docker PostgreSQL instance:
+```bash
+docker run --name local-postgres \
+  -e POSTGRES_DB=portal \
+  -e POSTGRES_USER=portal \
+  -e POSTGRES_PASSWORD=portal \
+  -p 5432:5432 \
+  -d postgres:17-alpine
+```
 
-### Fresh database reset
+#### 4. Run Migrations & Bootstrap
+Create the tables, push the schema to PostgreSQL, and seed initial records:
+```bash
+npm run db:migrate
+npm run admin:bootstrap
+```
 
-To permanently delete all portal users, sessions, configuration, audit history,
-and other PostgreSQL data, then rebuild from a clean database:
+#### 5. Start Development Server
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser. Go to `/setup` and enter the `SETUP_TOKEN` from your `.env` file to create your system admin account.
 
+---
+
+### Docker Compose Deployment
+
+The project contains a production-ready multi-stage `Dockerfile` and a `docker-compose.yml` defining the web service and a PostgreSQL database.
+
+#### 1. Start Services
+Ensure `.env` matches your environment, then run:
+```bash
+docker compose up -d --build
+```
+This builds the Next.js app in production mode and binds port `3005` on the host to port `3000` inside the container.
+
+#### 2. Fresh Database Reset (Troubleshooting/Rebuilds)
+To permanently drop all PostgreSQL data, rebuild images without cache, apply migrations, verify table schemas, and restart cleanly:
 ```bash
 sh scripts/reset-docker.sh --yes
 ```
 
-The script removes only volumes attached to this Compose project, rebuilds the
-portal image without cache, starts PostgreSQL, applies migrations in a visible
-one-time container, verifies the Better Auth ID defaults, and then starts the
-portal. It does not delete data stored in Twenty.
-
-After the reset, open `${APP_URL}/setup` and create the first administrator with
-the current `SETUP_TOKEN`. Leave `SYSTEM_ADMIN_EMAIL` and
-`SYSTEM_ADMIN_PASSWORD` empty when using the setup page.
-
-### System administrator recovery
-
-To create a recovery administrator or reset an existing administrator password,
-temporarily set:
-
+#### 3. Administrative Recovery
+If you lose administrator access, you can inject a bootstrap account at startup. Set the following environment variables temporarily in `.env`:
 ```env
-SYSTEM_ADMIN_NAME=System Administrator
-SYSTEM_ADMIN_EMAIL=admin@example.com
-SYSTEM_ADMIN_PASSWORD=TemporaryAdminPassword123
+SYSTEM_ADMIN_NAME="Recovery Admin"
+SYSTEM_ADMIN_EMAIL="admin@example.com"
+SYSTEM_ADMIN_PASSWORD="StrongRecoveryPassword123"
 ```
-
-Recreate the portal container. Startup will create or update the credential
-account, grant portal-administrator access, and revoke its existing sessions.
-For initial recovery, use only letters and numbers in this environment value.
-Characters such as `$` and `#` may be interpreted by Compose or `.env` parsing
-unless quoted correctly.
-After confirming login, remove `SYSTEM_ADMIN_EMAIL` and
-`SYSTEM_ADMIN_PASSWORD` from `.env` and recreate the container again. The
-administrator account remains, but its password will no longer be reset on each
-startup.
-
-For local development:
-
+Recreate the portal container:
 ```bash
-npm install
-npm run db:migrate
+docker compose up -d portal
+```
+On boot, the portal creates/updates this user, assigns administrator status, and invalidates active sessions. **Remove these variables from `.env` and recreate the container once logged in.**
+
+---
+
+## System Architecture
+
+```
+                 +-----------------------------------------+
+                 |               Browser                   |
+                 +----+--------------------------------+---+
+                      |                                |
+                      | (Session Cookie)               | (Session Cookie)
+                      v                                v
+         +------------+------------+     +-------------+-----------+
+         |     Admin Interface     |     |      Client Interface    |
+         | (Metadata sync, views,  |     |   (View lists, detail,  |
+         |  client account config) |     |    forms, profile)      |
+         +------------+------------+     +-------------+-----------+
+                      |                                |
+                      +---------------+----------------+
+                                      |
+                                      v
+                       +--------------+---------------+
+                       |      Next.js Web Server      |
+                       |       (Better Auth)          |
+                       +-------+--------------+-------+
+                               |              |
+           (Drizzle / SQL)     |              | (REST API Calls)
+                               v              v
+                       +-------+------+   +---+---------------+
+                       |  PostgreSQL  |   |  Twenty CRM API   |
+                       |   Database   |   |                   |
+                       +-------+------+   +---+---------------+
+                               ^              |
+                               |              | (Signed JSON Webhook)
+                               +--------------+
+```
+
+### Directory Structure
+
+```
+├── drizzle/                # Drizzle migration files and SQL snapshots
+├── public/                 # Static public assets (logos, icons)
+├── scripts/                # Utility shell and TypeScript scripts
+│   ├── bootstrap-admin.ts  # Startup admin provisioning logic
+│   ├── migrate.ts          # Migration runner
+│   └── reset-docker.sh     # Docker-compose volume/cache reset script
+├── src/
+│   ├── app/                # Next.js App Router (Pages, API routes, Layouts)
+│   ├── components/         # Reusable React components (Forms, Tables, UI)
+│   ├── lib/                # Shared utilities
+│   │   ├── db/             # Drizzle schema definitions and DB client
+│   │   ├── twenty/         # Twenty CRM API client and metadata mapping
+│   │   └── auth.ts         # Better Auth initialization logic
+│   └── proxy.ts            # Local endpoint proxies
+├── tests/
+│   ├── unit/               # Core functional tests (Vitest)
+│   └── e2e/                # Playwright E2E and screenshot integration
+└── playwright.config.ts    # E2E test harness configuration
+```
+
+### Database Schema Reference
+
+The portal relies on the following database schema managed via Drizzle ORM:
+
+```mermaid
+erDiagram
+    user ||--o{ session : has
+    user ||--o{ account : has
+    user ||--o| portal_administrator : is
+    user ||--o{ membership : holds
+    user ||--o{ invitation : "invited by"
+    client_account ||--o{ membership : contains
+    client_account ||--o{ invitation : references
+    client_account ||--o{ audit_event : logs
+    portal_view ||--o{ portal_access : restricts
+    portal_view ||--o{ invitation : binds
+    user ||--o{ portal_access : assigned
+```
+
+#### Core Database Tables
+
+1. **`user`**: Stores user authentication profiles (managed by Better Auth).
+2. **`session`**: Active user sessions.
+3. **`account`**: User credential mappings.
+4. **`verification`**: Tokens for password resets and email verification.
+5. **`portal_administrator`**: Identifies user IDs permitted to access `/admin` endpoints.
+6. **`application_setting`**: Portal branding, Twenty endpoints, API keys, SMTP parameters.
+7. **`client_account`**: Represents an external client company, mapped directly to a `twenty_person_id` in the CRM.
+8. **`membership`**: Binds a `user` to a `client_account` with a specific role (`viewer` or `contributor`).
+9. **`invitation`**: Tracks pending/accepted invites sent to clients, containing role assignments, expiration timestamps, and target accounts.
+10. **`portal_view`**: Defines dynamic views (CRM object, columns to fetch, filters, edit/create permissions, and validation status).
+11. **`portal_access`**: Restricts which client users have access to which `portal_view`.
+12. **`metadata_snapshot`**: Holds snapshots of Twenty CRM object schemas to validate portal views against active CRM configurations.
+13. **`webhook_receipt`**: Tracks inbound webhook fingerprints from Twenty to prevent double-processing.
+14. **`audit_event`**: Records a detailed trail of actions (before/after states, IP addresses, target records, and actor IDs).
+
+---
+
+## Environment Variables
+
+| Variable | Description | Default / Example | Required |
+|---|---|---|---|
+| `DATABASE_URL` | PostgreSQL connection string | `postgres://portal:pass@postgres:5432/portal` | Yes |
+| `APP_URL` | The public url of the application | `http://localhost:3005` | Yes |
+| `AUTH_SECRET` | 32+ char token for Better Auth encryption | `generate-via-openssl-rand-hex` | Yes |
+| `SETUP_TOKEN` | Security code to authorize the `/setup` admin wizard | `setup-token-secret-xyz` | Yes |
+| `TWENTY_BASE_URL` | Endpoint of your Twenty CRM workspace | `http://localhost:3000` | Yes |
+| `TWENTY_API_KEY` | Limited access REST API Token from Twenty | `ts_abc123...` | Yes |
+| `TWENTY_WEBHOOK_SECRET` | Hex signature to sign inbound webhooks from Twenty | `wh_secret_xyz` | Yes |
+| `TRUSTED_ORIGINS` | Comma-separated list of browser host exceptions | `http://10.0.0.22:3005` | No |
+| `BRAND_NAME` | Portal logo text display | `My Customer Portal` | No |
+| `BRAND_LOGO_URL` | Absolute URL to branding image file | `https://site.com/logo.png` | No |
+| `BRAND_PRIMARY_COLOR` | Hex value for sidebar elements | `#3157d5` | No |
+
+---
+
+## Available Scripts
+
+The following scripts are configured in `package.json`:
+
+- `npm run dev`: Start Next.js dev server.
+- `npm run build`: Compile Next.js build output.
+- `npm run start`: Launch compiled web service in production.
+- `npm run check`: Run standard checks: linting, TypeScript compiler, and unit tests.
+- `npm run db:generate`: Create SQL migration files from Drizzle schema modifications.
+- `npm run db:migrate`: Apply pending migration files to the database.
+- `npm run admin:bootstrap`: Synchronize runtime settings and seed the default admin.
+- `npm run test`: Run the unit test suite once (using Vitest).
+- `npm run test:e2e`: Run browser tests locally (using Playwright).
+
+---
+
+## Running Screenshot Capture (Docker / Playwright)
+
+To capture screenshots of the portal interfaces without needing system dependencies (like headless browsers) installed on your host OS, you can run Playwright inside Docker.
+
+We provide a dedicated execution script, `scripts/take-screenshots.sh`.
+
+### Capture Modes
+
+#### 1. Compose Mode (Recommended)
+Captures screenshots of the portal while running inside your Docker Compose environment. It connects directly to the internal bridge network `twentycrmclientportal_default`.
+```bash
+# Ensure portal is running in Docker Compose
+docker compose up -d
+
+# Take screenshots
+sh scripts/take-screenshots.sh compose
+```
+
+#### 2. Host Mode
+Captures screenshots against the port mapped to your localhost machine (port `3005` by default). This uses `host.docker.internal` to resolve localhost from inside the container.
+```bash
+sh scripts/take-screenshots.sh host
+```
+
+#### 3. Local Mode
+Captures screenshots against a local dev instance running on your host machine via npm (`http://localhost:3000`).
+```bash
+# Start your local dev server
 npm run dev
+
+# In another terminal, run screenshots
+sh scripts/take-screenshots.sh local
 ```
 
-## Portal view configuration
+All screenshots will be written directly into the `./screenshots` directory on the host machine.
 
-Twenty generates its API from each workspace schema. After metadata
-synchronization, the portal-view form provides dropdowns for the object,
-scope mode, columns, detail fields, filters, create/edit forms, and default
-sorting. Object and record pickers load synchronized or live Twenty API data.
-The server derives API names and allowed filter operators from metadata rather
-than accepting manually entered field names.
+---
 
-Use **All current records** to expose every record permitted by the saved
-filters and allow contributors to create records. Use **Records linked to a
-Person** when the selected object has a Person relation or Person ID field.
-Use **Only specific records** to load up to 50 records from Twenty and select
-exactly which records the portal may expose.
+## Operations & Production Management
 
-Client filter controls are type-aware. Select and multi-select fields use their
-Twenty option labels, booleans use an Any/Yes/No dropdown, and numeric/date/text
-fields expose only their supported comparison operators.
-
-A metadata sync validates saved views. If an object, scope field, or configured
-field disappears, the view is disabled rather than sending malformed queries.
-
-## Branding and appearance
-
-The sidebar supports smooth desktop collapse, responsive mobile navigation, and
-persistent light/dark mode. Configure white labeling in `.env`:
-
-```env
-BRAND_NAME=Customer Workspace
-BRAND_LOGO_URL=https://example.com/logo.svg
-BRAND_PRIMARY_COLOR=#3157d5
-```
-
-Recreate the portal container after changing branding values.
-
-## Operations
-
-- Liveness: `GET /health/live`
-- Readiness: `GET /health/ready`
-- Apply migrations: `npm run db:migrate`
-- Generate migrations after schema changes: `npm run db:generate`
-- Verification: `npm run check`
-
-Back up PostgreSQL with:
-
+### Database Backups
+Create a compressed binary dump of the PostgreSQL database:
 ```bash
 docker compose exec postgres pg_dump -U portal -d portal -Fc > portal.dump
 ```
 
-Restore into an empty database with:
-
+Restore the dump into a clean database:
 ```bash
 docker compose exec -T postgres pg_restore -U portal -d portal --clean < portal.dump
 ```
 
-To rotate the Twenty API key, create a replacement key with the same restricted
-role, update `TWENTY_API_KEY`, restart the portal, test the connection, then
-revoke the old key. Rotate `TWENTY_WEBHOOK_SECRET` in Twenty and the portal
-together.
+### API Key & Webhook Rotation
+1. **API Key Rotation**: Generate a new REST key in your Twenty CRM console. Update `TWENTY_API_KEY` in `.env` and recreate the portal container. Test the sync in `/admin`. Once confirmed, delete the old key in Twenty.
+2. **Webhook Secret Rotation**: Change the webhook signing key inside Twenty, update `TWENTY_WEBHOOK_SECRET` in `.env` and restart.
 
-Place the application behind a TLS reverse proxy such as Caddy or nginx. Forward
-`Host`, `X-Forwarded-Proto`, and `X-Request-ID`, enforce request body limits, and
-do not expose PostgreSQL publicly.
+### Production Reverse Proxy Configurations
 
-## Security model
+Ensure the application is behind a secure TLS-terminating proxy (like Caddy or Nginx) to enforce secure session cookies (`__secure-` prefixed).
 
-The browser never receives Twenty credentials. Every CRM operation runs on the
-server, only fields configured by an administrator are accepted, and the
-configured Person or explicit record-ID scope and saved record filters are
-injected into queries.
-Updates first fetch the record through the same scope to prevent IDOR access.
+#### Nginx Configuration Snippet
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name portal.yourdomain.com;
 
-V1 assumes one application replica. Login throttling is handled by Better Auth,
-and mutation throttling is in process. Use shared rate-limit storage before
-running multiple replicas.
+    ssl_certificate /etc/letsencrypt/live/portal.yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/portal.yourdomain.com/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:3005;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+---
+
+## Troubleshooting
+
+- **Database Migration Locks**: If a migration fails due to lock timeouts, verify no other processes are actively holding schema locks (or restart PostgreSQL).
+- **Better Auth Signature Verification Failures**: Verify `AUTH_SECRET` is defined identically across replicas. Better Auth encrypts internal session payloads; mismatching secrets prevent authentication state decryption.
+- **Twenty Webhook Logs showing `401 Unauthorized`**:
+  1. Inspect webhook signature headers.
+  2. Verify `TWENTY_WEBHOOK_SECRET` in `.env` matches the signing secret displayed on the webhook dashboard inside Twenty exactly.
