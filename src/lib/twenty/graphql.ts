@@ -66,6 +66,10 @@ export function buildSelection(
         return `${name}{firstName lastName}`;
       case "RICH_TEXT":
         return `${name}{markdown blocknote}`;
+      case "FILE":
+        return `${name}{id name fullPath fullpath path url fileUrl downloadUrl type mimeType}`;
+      case "FILES":
+        return `${name}{edges{node{id name fullPath fullpath path url fileUrl downloadUrl type mimeType}}}`;
       case "RELATION": {
         const displayFields =
           typeof config === "string"

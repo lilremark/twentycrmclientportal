@@ -5,7 +5,7 @@ import type {
   TwentyFieldMetadata,
   TwentyObjectMetadata,
 } from "@/lib/db/schema";
-import { getEnv } from "@/lib/env";
+import { getTwentyIntegrationSettings } from "@/lib/integration-settings";
 import {
   buildListQuery,
   buildMutation,
@@ -30,15 +30,15 @@ export class TwentyApiError extends Error {
 }
 
 async function requestTwenty<T>(endpoint: TwentyEndpoint, query: string) {
-  const env = getEnv();
-  const endpointUrl = getTwentyEndpoint(env.TWENTY_BASE_URL, endpoint);
+  const settings = await getTwentyIntegrationSettings();
+  const endpointUrl = getTwentyEndpoint(settings.baseUrl, endpoint);
   let response: Response;
 
   try {
     response = await fetch(endpointUrl, {
       method: "POST",
       headers: {
-        authorization: `Bearer ${env.TWENTY_API_KEY}`,
+        authorization: `Bearer ${settings.apiKey}`,
         "content-type": "application/json",
       },
       body: JSON.stringify({ query }),

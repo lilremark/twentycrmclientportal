@@ -1,7 +1,10 @@
+import Link from "next/link";
+
 import type {
   PortalFieldConfig,
   TwentyFieldMetadata,
 } from "@/lib/db/schema";
+import { isWritablePortalField } from "@/lib/twenty/validation";
 
 function inputType(type: string) {
   if (type === "NUMBER" || type === "NUMERIC" || type === "CURRENCY") {
@@ -14,6 +17,25 @@ function inputType(type: string) {
 
 function defaultValue(value: unknown, type: string) {
   if (value === null || value === undefined) return "";
+  if (type === "RELATION" && typeof value === "object") {
+    const relation = value as Record<string, unknown>;
+    if (relation.id) return String(relation.id);
+    if (Array.isArray(relation.edges)) {
+      return relation.edges
+        .map((edge) =>
+          edge && typeof edge === "object"
+            ? (edge as Record<string, unknown>).node
+            : null,
+        )
+        .map((node) =>
+          node && typeof node === "object"
+            ? (node as Record<string, unknown>).id
+            : null,
+        )
+        .filter(Boolean)
+        .join(", ");
+    }
+  }
   if (type === "CURRENCY" && typeof value === "object") {
     return String(
       Number((value as Record<string, unknown>).amountMicros ?? 0) / 1_000_000,
@@ -29,21 +51,33 @@ export function RecordForm({
   values = {},
   action,
   submitLabel,
+  appearance = "card",
+  cancelHref,
 }: {
   fields: PortalFieldConfig[];
   metadataFields: TwentyFieldMetadata[];
   values?: Record<string, unknown>;
   action: (formData: FormData) => void | Promise<void>;
   submitLabel: string;
+  appearance?: "card" | "panel";
+  cancelHref?: string;
 }) {
   const metadataByName = new Map(
     metadataFields.map((field) => [field.name, field]),
   );
   return (
-    <form action={action} className="card form-card">
+    <form
+      action={action}
+      className={
+        appearance === "panel"
+          ? "record-panel-form"
+          : "card form-card"
+      }
+    >
       {fields.map((config) => {
         const field = metadataByName.get(config.name);
         if (!field) return null;
+        if (!isWritablePortalField(field)) return null;
         const label = config.label ?? field.label;
         if (field.type === "MULTI_SELECT" && field.options?.length) {
           const currentValue = values[field.name];
@@ -145,6 +179,11 @@ export function RecordForm({
         <button className="button" type="submit">
           {submitLabel}
         </button>
+        {cancelHref ? (
+          <Link className="button secondary" href={cancelHref} scroll={false}>
+            Cancel
+          </Link>
+        ) : null}
       </div>
     </form>
   );

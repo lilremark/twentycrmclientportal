@@ -4,6 +4,7 @@ import type {
   PortalFieldConfig,
   TwentyFieldMetadata,
 } from "@/lib/db/schema";
+import { gqlEnum } from "@/lib/twenty/graphql";
 
 export const supportedTwentyFieldTypes = new Set([
   "TEXT",
@@ -17,7 +18,38 @@ export const supportedTwentyFieldTypes = new Set([
   "CURRENCY",
   "RELATION",
   "UUID",
+  "FILE",
+  "FILES",
 ]);
+
+const writableTwentyFieldTypes = new Set([
+  "TEXT",
+  "NUMBER",
+  "NUMERIC",
+  "BOOLEAN",
+  "DATE",
+  "DATE_TIME",
+  "SELECT",
+  "MULTI_SELECT",
+  "CURRENCY",
+  "RELATION",
+  "UUID",
+]);
+
+export function isWritablePortalField(field: TwentyFieldMetadata) {
+  if (!writableTwentyFieldTypes.has(field.type)) return false;
+  return field.type !== "RELATION" || field.relationType === "MANY_TO_ONE";
+}
+
+function writeFieldName(field: TwentyFieldMetadata) {
+  return field.type === "RELATION" ? `${field.name}Id` : field.name;
+}
+
+function emptyToUndefined(value: unknown) {
+  if (value === "" || value === null) return undefined;
+  if (Array.isArray(value) && value.length === 0) return undefined;
+  return value;
+}
 
 function fieldSchema(field: TwentyFieldMetadata) {
   switch (field.type) {
@@ -28,14 +60,17 @@ function fieldSchema(field: TwentyFieldMetadata) {
       return z
         .union([z.boolean(), z.enum(["true", "false"])])
         .transform((value) => value === true || value === "true");
+    case "SELECT":
+      return z.string().trim().transform(gqlEnum);
     case "MULTI_SELECT":
       return z.union([z.array(z.string()), z.string()]).transform((value) =>
         Array.isArray(value)
-          ? value
+          ? value.map(gqlEnum)
           : value
               .split(",")
               .map((item) => item.trim())
-              .filter(Boolean),
+              .filter(Boolean)
+              .map(gqlEnum),
       );
     case "CURRENCY":
       return z.coerce.number().transform((amount) => ({
@@ -62,26 +97,41 @@ export function validateRecordInput(input: {
   const shape: Record<string, z.ZodType> = {};
 
   for (const config of input.configuredFields) {
-    if (config.name === input.scopeFieldName) continue;
     const metadata = metadataByName.get(config.name);
-    if (!metadata || !supportedTwentyFieldTypes.has(metadata.type)) continue;
+    if (!metadata || !isWritablePortalField(metadata)) continue;
+    const outputName = writeFieldName(metadata);
+    if (
+      config.name === input.scopeFieldName ||
+      outputName === input.scopeFieldName ||
+      outputName === `${input.scopeFieldName}Id`
+    ) {
+      continue;
+    }
 
     const schema = fieldSchema(metadata);
-    shape[config.name] = config.required
+    shape[outputName] = config.required
       ? schema
       : z.preprocess(
-          (value) => (value === "" || value === null ? undefined : value),
+          emptyToUndefined,
           schema.optional(),
         );
   }
 
   const raw = Object.fromEntries(
-    Object.keys(shape).map((key) => [
-      key,
-      metadataByName.get(key)?.type === "MULTI_SELECT"
-        ? input.formData.getAll(key)
-        : input.formData.get(key),
-    ]),
+    input.configuredFields.flatMap((config) => {
+      const metadata = metadataByName.get(config.name);
+      if (!metadata || !isWritablePortalField(metadata)) return [];
+      const outputName = writeFieldName(metadata);
+      if (!(outputName in shape)) return [];
+      return [
+        [
+          outputName,
+          metadata.type === "MULTI_SELECT"
+            ? input.formData.getAll(config.name)
+            : input.formData.get(config.name),
+        ],
+      ];
+    }),
   );
   return z.object(shape).parse(raw);
 }

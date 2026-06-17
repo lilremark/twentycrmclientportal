@@ -2,7 +2,7 @@ import "server-only";
 
 import nodemailer from "nodemailer";
 
-import { getEnv } from "@/lib/env";
+import { getSmtpIntegrationSettings } from "@/lib/integration-settings";
 
 type EmailMessage = {
   to: string;
@@ -12,9 +12,9 @@ type EmailMessage = {
 };
 
 export async function sendEmail(message: EmailMessage) {
-  const env = getEnv();
+  const settings = await getSmtpIntegrationSettings();
 
-  if (!env.SMTP_HOST) {
+  if (!settings) {
     console.info(
       JSON.stringify({
         level: "info",
@@ -27,17 +27,17 @@ export async function sendEmail(message: EmailMessage) {
   }
 
   const transporter = nodemailer.createTransport({
-    host: env.SMTP_HOST,
-    port: env.SMTP_PORT,
-    secure: env.SMTP_SECURE,
+    host: settings.host,
+    port: settings.port,
+    secure: settings.secure,
     auth:
-      env.SMTP_USER && env.SMTP_PASSWORD
-        ? { user: env.SMTP_USER, pass: env.SMTP_PASSWORD }
+      settings.user && settings.password
+        ? { user: settings.user, pass: settings.password }
         : undefined,
   });
 
   await transporter.sendMail({
-    from: env.SMTP_FROM,
+    from: settings.from,
     ...message,
   });
 

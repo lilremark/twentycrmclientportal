@@ -12,6 +12,8 @@ services:
         condition: service_healthy
     ports:
       - "0.0.0.0:${PORTAL_PORT:-3005}:3000"
+    volumes:
+      - portal_uploads:/app/data/uploads
     healthcheck:
       test:
         [
@@ -43,3 +45,4 @@ services:
 
 volumes:
   portal_postgres:
+  portal_uploads:

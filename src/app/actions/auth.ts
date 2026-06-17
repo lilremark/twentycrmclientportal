@@ -9,8 +9,10 @@ import { z } from "zod";
 import { writeAuditEvent } from "@/lib/audit";
 import { acceptInvitation, createCredentialUser } from "@/lib/credentials";
 import { db } from "@/lib/db";
-import { portalAdministrators } from "@/lib/db/schema";
+import { applicationSettings, portalAdministrators } from "@/lib/db/schema";
 import { getEnv } from "@/lib/env";
+import { APPLICATION_SETTINGS_ID } from "@/lib/application-settings";
+import { saveUploadedImage } from "@/lib/uploads";
 
 const passwordSchema = z
   .string()
@@ -49,6 +51,38 @@ export async function setupAction(
         name: z.string().trim().min(2),
         email: z.email(),
         password: passwordSchema,
+        brandName: z.string().trim().min(1).max(80).default("Twenty Portal"),
+        brandLogoUrl: z
+          .union([
+            z.literal(""),
+            z.url(),
+            z.string().regex(/^\/api\/uploads\/[A-Za-z0-9-_.]+$/),
+          ])
+          .optional(),
+        primaryColor: z
+          .string()
+          .regex(/^#[0-9a-fA-F]{6}$/)
+          .default("#3157d5"),
+        portalTitle: z.string().trim().min(1).max(100).default("Client portal"),
+        portalDescription: z
+          .string()
+          .trim()
+          .min(1)
+          .max(240)
+          .default("Secure access to the records shared with your team."),
+        supportEmail: z.union([z.literal(""), z.email()]).optional(),
+        twentyBaseUrl: z.union([z.literal(""), z.url()]).optional(),
+        twentyApiKey: z.string().optional(),
+        twentyWebhookSecret: z.string().optional(),
+        smtpHost: z.string().trim().optional(),
+        smtpPort: z.coerce.number().int().positive().default(587),
+        smtpSecure: z
+          .union([z.literal("on"), z.literal("true"), z.literal("false"), z.null()])
+          .optional()
+          .transform((value) => value === "on" || value === "true"),
+        smtpUser: z.string().trim().optional(),
+        smtpPassword: z.string().optional(),
+        smtpFrom: z.string().trim().optional(),
       })
       .parse(Object.fromEntries(formData));
 
@@ -61,6 +95,27 @@ export async function setupAction(
       email: input.email,
       password: input.password,
       isAdmin: true,
+    });
+    const uploadedLogo = await saveUploadedImage(
+      formData.get("brandLogoFile") as File | null,
+    );
+    await db.insert(applicationSettings).values({
+      id: APPLICATION_SETTINGS_ID,
+      brandName: input.brandName,
+      brandLogoUrl: uploadedLogo ?? input.brandLogoUrl ?? null,
+      primaryColor: input.primaryColor,
+      portalTitle: input.portalTitle,
+      portalDescription: input.portalDescription,
+      supportEmail: input.supportEmail || null,
+      twentyBaseUrl: input.twentyBaseUrl || null,
+      twentyApiKey: input.twentyApiKey?.trim() || null,
+      twentyWebhookSecret: input.twentyWebhookSecret?.trim() || null,
+      smtpHost: input.smtpHost || null,
+      smtpPort: input.smtpPort,
+      smtpSecure: input.smtpSecure,
+      smtpUser: input.smtpUser || null,
+      smtpPassword: input.smtpPassword?.trim() || null,
+      smtpFrom: input.smtpFrom || null,
     });
     await writeAuditEvent({
       actorUserId: userId,

@@ -51,8 +51,8 @@ export function InvitationForm({
       <div>
         <h2 className="text-base font-bold">Invite user</h2>
         <p className="mt-1 text-xs text-[var(--muted)]">
-          Assign a portal, role, and the Twenty Person represented by this
-          client account.
+          Assign a portal and role. A client Person is only needed for
+          Person-scoped portals.
         </p>
       </div>
       {state.error ? <p className="error text-sm">{state.error}</p> : null}
@@ -92,14 +92,13 @@ export function InvitationForm({
         </div>
         {role !== "admin" ? (
           <div className="field">
-            <label htmlFor="clientAccountId">Client Person</label>
+            <label htmlFor="clientAccountId">Client Person (optional)</label>
             <select
               className="input"
               id="clientAccountId"
               name="clientAccountId"
-              required
             >
-              <option value="">Choose a client Person</option>
+              <option value="">No Person mapping</option>
               {clients.map((client) => (
                 <option key={client.id} value={client.id}>
                   {client.name}
@@ -107,7 +106,8 @@ export function InvitationForm({
               ))}
             </select>
             <span className="field-help">
-              The client account maps this user to a Twenty Person UUID.
+              Required only when the selected portal is scoped to a Twenty
+              Person UUID.
             </span>
           </div>
         ) : null}

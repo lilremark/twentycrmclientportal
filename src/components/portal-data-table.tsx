@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { ArrowRight } from "lucide-react";
 import {
   createColumnHelper,
   flexRender,
@@ -10,6 +13,9 @@ import {
 
 import type { TwentyFieldMetadata } from "@/lib/db/schema";
 import { formatPortalValue } from "@/lib/format-value";
+import { RecordSidePanel } from "@/components/record-side-panel";
+import { PortalRecordValue } from "@/components/portal-record-value";
+import { extractPortalFiles } from "@/lib/file-values";
 
 type RecordRow = Record<string, unknown> & { id: string };
 
@@ -20,6 +26,10 @@ function PortalTableValue({
   value: unknown;
   type?: string;
 }) {
+  const files = extractPortalFiles(value);
+  if (files.length) {
+    return <PortalRecordValue type={type} value={value} />;
+  }
   const formatted = formatPortalValue(value, type);
 
   if (type === "SELECT" || type === "MULTI_SELECT") {
@@ -64,16 +74,45 @@ export function PortalDataTable({
   columns,
   metadataFields,
   recordBaseHref,
+  recordSelectionHref,
+  recordCloseHref,
+  selectedRecordId,
+  recordTitleField,
 }: {
   records: RecordRow[];
   columns: Array<{ name: string; label?: string }>;
   metadataFields: TwentyFieldMetadata[];
   recordBaseHref?: string | null;
+  recordSelectionHref?: string | null;
+  recordCloseHref?: string | null;
+  selectedRecordId?: string | null;
+  recordTitleField?: string | null;
 }) {
+  const router = useRouter();
+  const [pendingRecordId, setPendingRecordId] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
   const helper = createColumnHelper<RecordRow>();
   const metadataByName = new Map(
     metadataFields.map((field) => [field.name, field]),
   );
+  const pendingRecord = pendingRecordId
+    ? records.find((record) => record.id === pendingRecordId)
+    : undefined;
+  const pendingTitle = pendingRecord
+    ? recordTitleField
+      ? formatPortalValue(
+          pendingRecord[recordTitleField],
+          metadataByName.get(recordTitleField)?.type,
+        )
+      : columns
+          .map((column) =>
+            formatPortalValue(
+              pendingRecord[column.name],
+              metadataByName.get(column.name)?.type,
+            ),
+          )
+          .find((value) => value && value !== "—")
+    : undefined;
   // TanStack Table owns memoization internally; React Compiler should not wrap it.
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -91,7 +130,7 @@ export function PortalDataTable({
           ),
         }),
       ),
-      ...(recordBaseHref
+      ...(recordBaseHref || recordSelectionHref
         ? [
             helper.display({
               id: "actions",
@@ -99,9 +138,20 @@ export function PortalDataTable({
               cell: ({ row }) => (
                 <Link
                   className="table-row-action"
-                  href={`${recordBaseHref}/${row.original.id}`}
+                  href={
+                    recordSelectionHref
+                      ? `${recordSelectionHref}${encodeURIComponent(row.original.id)}`
+                      : `${recordBaseHref}/${row.original.id}`
+                  }
+                  onClick={(event) => {
+                    if (recordSelectionHref) {
+                      event.preventDefault();
+                      openRecord(row.original.id);
+                    }
+                  }}
+                  scroll={false}
                 >
-                  View
+                  Open <ArrowRight size={12} />
                 </Link>
               ),
             }),
@@ -110,6 +160,17 @@ export function PortalDataTable({
     ],
     getCoreRowModel: getCoreRowModel(),
   });
+
+  const openRecord = (recordId: string) => {
+    if (!recordSelectionHref) return;
+    setPendingRecordId(recordId);
+    startTransition(() => {
+      router.push(
+        `${recordSelectionHref}${encodeURIComponent(recordId)}`,
+        { scroll: false },
+      );
+    });
+  };
 
   return (
     <div className="table-scroll">
@@ -130,7 +191,46 @@ export function PortalDataTable({
         </thead>
         <tbody>
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id}>
+            <tr
+              aria-label={
+                recordSelectionHref ? `Open record ${row.original.id}` : undefined
+              }
+              aria-selected={
+                recordSelectionHref
+                  ? selectedRecordId === row.original.id
+                  : undefined
+              }
+              className={[
+                recordSelectionHref ? "data-table-clickable-row" : "",
+                selectedRecordId === row.original.id ? "is-selected" : "",
+                isPending && pendingRecordId === row.original.id
+                  ? "is-loading"
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              key={row.id}
+              onClick={(event) => {
+                if (
+                  recordSelectionHref &&
+                  !(event.target as HTMLElement).closest(
+                    "a, button, input, select, textarea",
+                  )
+                ) {
+                  openRecord(row.original.id);
+                }
+              }}
+              onKeyDown={(event) => {
+                if (
+                  recordSelectionHref &&
+                  (event.key === "Enter" || event.key === " ")
+                ) {
+                  event.preventDefault();
+                  openRecord(row.original.id);
+                }
+              }}
+              tabIndex={recordSelectionHref ? 0 : undefined}
+            >
               {row.getVisibleCells().map((cell) => {
                 return (
                   <td className="max-w-sm truncate" key={cell.id}>
@@ -146,6 +246,38 @@ export function PortalDataTable({
         <p className="p-8 text-center text-sm text-[#68758a]">
           No records match the current filters.
         </p>
+      ) : null}
+      {isPending &&
+      pendingRecordId &&
+      recordCloseHref &&
+      selectedRecordId !== pendingRecordId ? (
+        <RecordSidePanel
+          closeHref={recordCloseHref}
+          loading
+          title="Loading record details"
+        >
+          <header className="record-panel-header">
+            <div className="record-panel-heading">
+              <p className="eyebrow">Record</p>
+              <h2>{pendingTitle || "Loading record"}</h2>
+              <p title={pendingRecordId}>{pendingRecordId}</p>
+            </div>
+          </header>
+          <div className="record-panel-body">
+            <div
+              aria-label="Loading record details"
+              className="record-panel-loading"
+              role="status"
+            >
+              {Array.from({ length: 8 }, (_, index) => (
+                <div className="record-panel-loading-row" key={index}>
+                  <span />
+                  <span />
+                </div>
+              ))}
+            </div>
+          </div>
+        </RecordSidePanel>
       ) : null}
     </div>
   );

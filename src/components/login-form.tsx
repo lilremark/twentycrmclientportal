@@ -10,7 +10,7 @@ export function LoginForm() {
 
   return (
     <form
-      className="grid gap-4"
+      className={`login-form ${pending ? "is-signing-in" : ""}`}
       onSubmit={async (event) => {
         event.preventDefault();
         setError("");
@@ -48,8 +48,9 @@ export function LoginForm() {
           required
         />
       </div>
-      <button className="button mt-2" disabled={pending} type="submit">
-        {pending ? "Signing in…" : "Sign in"}
+      <button className="button login-submit" disabled={pending} type="submit">
+        <span className="login-submit-spinner" aria-hidden="true" />
+        {pending ? "Signing in..." : "Sign in"}
       </button>
       <a
         className="text-center text-sm font-semibold text-[#3157d5]"

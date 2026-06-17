@@ -227,6 +227,7 @@ export async function syncMetadataAction() {
       ...view.editFields,
       ...view.filterFields,
       ...view.fixedFilters,
+      ...(view.recordTitleField ? [{ name: view.recordTitleField }] : []),
     ].map((field) => field.name);
     const errors = validatePortalViewConfiguration({
       objectNameSingular: view.objectNameSingular,
@@ -293,6 +294,7 @@ export async function createPortalViewAction(formData: FormData) {
       objectNameSingular: z.string().trim().min(1),
       scopeMode: z.enum(["all", "person", "records"]),
       scopeFieldName: z.string().trim().optional().default(""),
+      recordTitleField: z.string().trim().optional(),
       defaultSortField: z.string().trim().optional(),
       defaultSortDirection: z.enum(["asc", "desc"]).default("asc"),
       navigationOrder: z.coerce.number().int().default(0),
@@ -313,6 +315,9 @@ export async function createPortalViewAction(formData: FormData) {
     );
   }
   const fields = portalViewFields(formData, object);
+  if (!fields.columns.length) {
+    throw new Error("Choose at least one table column.");
+  }
   const fixedFilters = parseFixedFilters(formData, object);
   const allowedRecordIds = parseRecordIds(formData);
   if (scalar.scopeMode === "records" && !allowedRecordIds.length) {
@@ -329,6 +334,7 @@ export async function createPortalViewAction(formData: FormData) {
       ...fields.editFields,
       ...fields.filterFields,
       ...fixedFilters,
+      ...(scalar.recordTitleField ? [{ name: scalar.recordTitleField }] : []),
     ].map((field) => field.name),
     objects: latest?.objects ?? [],
   });
@@ -338,6 +344,12 @@ export async function createPortalViewAction(formData: FormData) {
   ) {
     validationErrors.push("The default sort field does not exist.");
   }
+  if (
+    scalar.recordTitleField &&
+    !object.fields.some((field) => field.name === scalar.recordTitleField)
+  ) {
+    validationErrors.push("The record header field does not exist.");
+  }
 
   const [created] = await db
     .insert(portalViews)
@@ -346,6 +358,7 @@ export async function createPortalViewAction(formData: FormData) {
       objectNamePlural: object.namePlural,
       allowedRecordIds,
       fixedFilters,
+      recordTitleField: scalar.recordTitleField || null,
       defaultSortField: scalar.defaultSortField || null,
       ...fields,
       validationErrors,
@@ -386,6 +399,7 @@ export async function updatePortalViewAction(
       objectNameSingular: z.string().trim().min(1),
       scopeMode: z.enum(["all", "person", "records"]),
       scopeFieldName: z.string().trim().optional().default(""),
+      recordTitleField: z.string().trim().optional(),
       defaultSortField: z.string().trim().optional(),
       defaultSortDirection: z.enum(["asc", "desc"]).default("asc"),
       navigationOrder: z.coerce.number().int().default(0),
@@ -405,6 +419,9 @@ export async function updatePortalViewAction(
     );
   }
   const fields = portalViewFields(formData, object);
+  if (!fields.columns.length) {
+    throw new Error("Choose at least one table column.");
+  }
   const fixedFilters = parseFixedFilters(formData, object);
   const allowedRecordIds = parseRecordIds(formData);
   if (scalar.scopeMode === "records" && !allowedRecordIds.length) {
@@ -421,6 +438,7 @@ export async function updatePortalViewAction(
       ...fields.editFields,
       ...fields.filterFields,
       ...fixedFilters,
+      ...(scalar.recordTitleField ? [{ name: scalar.recordTitleField }] : []),
     ].map((field) => field.name),
     objects: latest?.objects ?? [],
   });
@@ -430,11 +448,18 @@ export async function updatePortalViewAction(
   ) {
     validationErrors.push("The default sort field does not exist.");
   }
+  if (
+    scalar.recordTitleField &&
+    !object.fields.some((field) => field.name === scalar.recordTitleField)
+  ) {
+    validationErrors.push("The record header field does not exist.");
+  }
   const after = {
     ...scalar,
     objectNamePlural: object.namePlural,
     allowedRecordIds,
     fixedFilters,
+    recordTitleField: scalar.recordTitleField || null,
     defaultSortField: scalar.defaultSortField || null,
     ...fields,
     validationErrors,
@@ -473,17 +498,27 @@ export async function createInvitationAction(
     if (input.role !== "admin" && !input.portalViewId) {
       return { error: "Choose the portal this person can access." };
     }
-    if (input.role !== "admin" && !input.clientAccountId) {
-      return { error: "Choose the client Person for this invitation." };
-    }
-
+    let selectedPortal:
+      | { isEnabled: boolean; scopeMode: string }
+      | undefined;
     if (input.portalViewId) {
       const portal = await db.query.portalViews.findFirst({
         where: eq(portalViews.id, input.portalViewId),
       });
+      selectedPortal = portal;
       if (!portal?.isEnabled) {
         return { error: "The selected portal is not currently available." };
       }
+    }
+    if (
+      input.role !== "admin" &&
+      selectedPortal?.scopeMode === "person" &&
+      !input.clientAccountId
+    ) {
+      return {
+        error:
+          "Choose a client Person for Person-scoped portals, or select an All records / Specific records portal.",
+      };
     }
     if (input.clientAccountId) {
       const client = await db.query.clientAccounts.findFirst({

@@ -7,11 +7,7 @@ import {
   getLatestMetadata,
   getObjectMetadata,
 } from "@/lib/portal";
-import { getTwentyRecord } from "@/lib/twenty/client";
-import {
-  buildPortalScopeFilter,
-  buildScopedFilter,
-} from "@/lib/twenty/filters";
+import { getScopedPortalRecord } from "@/lib/portal-record";
 
 export default async function RecordDetailPage({
   params,
@@ -27,28 +23,16 @@ export default async function RecordDetailPage({
   if (!view?.isEnabled) notFound();
   const object = getObjectMetadata(metadata, view.objectNameSingular);
   if (!object) notFound();
-  const record = await getTwentyRecord({
+  const record = await getScopedPortalRecord({
     objectNameSingular: view.objectNameSingular,
     fields: view.detailFields,
     metadataFields: object.fields,
-    filter: {
-      and: [
-        { id: { eq: recordId } },
-        buildScopedFilter({
-          scopeFilter: buildPortalScopeFilter({
-            scopeMode: view.scopeMode,
-            scopeFieldName: view.scopeFieldName,
-            allowedRecordIds: view.allowedRecordIds,
-            twentyPersonId: context.twentyPersonId,
-            metadataFields: object.fields,
-          }),
-          fixedFilters: view.fixedFilters,
-          metadataFields: object.fields,
-          configuredFilters: [],
-          requestedFilters: [],
-        }),
-      ],
-    },
+    recordId,
+    scopeMode: view.scopeMode,
+    scopeFieldName: view.scopeFieldName,
+    allowedRecordIds: view.allowedRecordIds,
+    twentyPersonId: context.twentyPersonId,
+    fixedFilters: view.fixedFilters,
   });
   if (!record) notFound();
   const metadataByName = new Map(

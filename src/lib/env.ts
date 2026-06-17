@@ -8,9 +8,9 @@ const envSchema = z.object({
   TRUSTED_ORIGINS: optionalString,
   AUTH_SECRET: z.string().min(32),
   SETUP_TOKEN: z.string().min(16),
-  TWENTY_BASE_URL: z.url(),
-  TWENTY_API_KEY: z.string().min(1),
-  TWENTY_WEBHOOK_SECRET: z.string().min(16),
+  TWENTY_BASE_URL: optionalString,
+  TWENTY_API_KEY: optionalString,
+  TWENTY_WEBHOOK_SECRET: optionalString,
   SMTP_HOST: optionalString,
   SMTP_PORT: z.coerce.number().int().positive().default(587),
   SMTP_SECURE: z

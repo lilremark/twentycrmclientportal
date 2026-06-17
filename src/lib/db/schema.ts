@@ -142,6 +142,15 @@ export const applicationSettings = pgTable("application_setting", {
   portalTitle: text("portal_title").notNull(),
   portalDescription: text("portal_description").notNull(),
   supportEmail: text("support_email"),
+  twentyBaseUrl: text("twenty_base_url"),
+  twentyApiKey: text("twenty_api_key"),
+  twentyWebhookSecret: text("twenty_webhook_secret"),
+  smtpHost: text("smtp_host"),
+  smtpPort: integer("smtp_port"),
+  smtpSecure: boolean("smtp_secure"),
+  smtpUser: text("smtp_user"),
+  smtpPassword: text("smtp_password"),
+  smtpFrom: text("smtp_from"),
   ...timestamps,
 });
 
@@ -252,6 +261,7 @@ export const portalViews = pgTable(
       .$type<PortalFixedFilter[]>()
       .default([])
       .notNull(),
+    recordTitleField: text("record_title_field"),
     createFields: jsonb("create_fields").$type<PortalFieldConfig[]>().notNull(),
     editFields: jsonb("edit_fields").$type<PortalFieldConfig[]>().notNull(),
     defaultSortField: text("default_sort_field"),

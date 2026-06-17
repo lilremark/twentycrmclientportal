@@ -113,13 +113,27 @@ export function AppShell({
           <button
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             aria-expanded={!collapsed}
-            className="sidebar-collapse-button desktop-only"
+            className={`sidebar-collapse-button desktop-only ${
+              collapsed ? "is-collapsed" : ""
+            }`}
             onClick={toggleCollapsed}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             type="button"
           >
             {collapsed ? (
-              <PanelLeftOpen size={16} />
+              <>
+                <span className="collapsed-brand-face">
+                  {branding.logoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img alt="" src={branding.logoUrl} />
+                  ) : (
+                    branding.name.slice(0, 2).toUpperCase()
+                  )}
+                </span>
+                <span className="collapsed-open-face">
+                  <PanelLeftOpen size={16} />
+                </span>
+              </>
             ) : (
               <PanelLeftClose size={16} />
             )}

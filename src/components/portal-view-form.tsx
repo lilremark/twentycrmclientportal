@@ -1,7 +1,13 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
-import { useMemo, useState, useTransition } from "react";
+import { ArrowDown, ArrowUp, GripVertical, Plus, Trash2 } from "lucide-react";
+import {
+  useActionState,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 
 import { listShareableRecordsAction } from "@/app/actions/admin";
 import type {
@@ -29,6 +35,7 @@ type InitialView = {
   detailFields: PortalFieldConfig[];
   filterFields: PortalFilterConfig[];
   fixedFilters: PortalFixedFilter[];
+  recordTitleField: string | null;
   createFields: PortalFieldConfig[];
   editFields: PortalFieldConfig[];
   defaultSortField: string | null;
@@ -36,16 +43,42 @@ type InitialView = {
   navigationOrder: number;
 };
 
+type ViewFormState = {
+  status: "idle" | "success" | "error";
+  message: string;
+};
+
+const initialViewFormState: ViewFormState = {
+  status: "idle",
+  message: "",
+};
+
+function FloatingToast({ state }: { state: ViewFormState }) {
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setVisible(false), 3200);
+    return () => window.clearTimeout(timeout);
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <div
+      aria-live="polite"
+      className={`toast-message ${state.status}`}
+      role="status"
+    >
+      {state.message}
+    </div>
+  );
+}
+
 function selectedNames(items?: Array<{ name: string }>) {
   return items?.map((item) => item.name) ?? [];
 }
 
 const permissionColumns = [
-  {
-    name: "columns",
-    label: "Table",
-    description: "Show in the record list",
-  },
   {
     name: "detailFields",
     label: "Detail",
@@ -87,33 +120,214 @@ function FieldPermissionsMatrix({
               </span>
             ))}
           </div>
-          {fields.map((field) => (
-            <div className="field-permissions-row" key={field.id} role="row">
-              <div>
-                <strong>{field.label}</strong>
-                <span>
-                  {field.name} · {field.type.replaceAll("_", " ")}
-                </span>
+          {fields.map((field) => {
+            const isWritable =
+              field.type !== "FILE" &&
+              field.type !== "FILES" &&
+              (field.type !== "RELATION" ||
+                field.relationType === "MANY_TO_ONE");
+            return (
+              <div className="field-permissions-row" key={field.id} role="row">
+                <div>
+                  <strong>{field.label}</strong>
+                  <span>
+                    {field.name} · {field.type.replaceAll("_", " ")}
+                  </span>
+                </div>
+                {permissionColumns.map((column) => {
+                  const isWriteColumn =
+                    column.name === "createFields" ||
+                    column.name === "editFields";
+                  const disabled = isWriteColumn && !isWritable;
+                  return (
+                    <label
+                      className="permission-checkbox"
+                      key={column.name}
+                      title={
+                        disabled
+                          ? "Twenty does not support writing this field from the parent record."
+                          : `${column.label}: ${field.label}`
+                      }
+                    >
+                      <input
+                        aria-label={`${field.label}: ${column.label}`}
+                        defaultChecked={
+                          !disabled && defaults[column.name].includes(field.name)
+                        }
+                        disabled={disabled}
+                        name={column.name}
+                        type="checkbox"
+                        value={field.name}
+                      />
+                      <span aria-hidden="true" />
+                    </label>
+                  );
+                })}
               </div>
-              {permissionColumns.map((column) => (
-                <label
-                  className="permission-checkbox"
-                  key={column.name}
-                  title={`${column.label}: ${field.label}`}
-                >
-                  <input
-                    aria-label={`${field.label}: ${column.label}`}
-                    defaultChecked={defaults[column.name].includes(field.name)}
-                    name={column.name}
-                    type="checkbox"
-                    value={field.name}
-                  />
-                  <span aria-hidden="true" />
-                </label>
-              ))}
-            </div>
-          ))}
+            );
+          })}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ColumnOrderEditor({
+  fields,
+  initialColumns,
+}: {
+  fields: ReturnType<typeof selectablePortalFields>;
+  initialColumns: string[];
+}) {
+  const validNames = new Set(fields.map((field) => field.name));
+  const [selected, setSelected] = useState<string[]>(
+    initialColumns.filter((name) => validNames.has(name)),
+  );
+  const [draggedName, setDraggedName] = useState<string | null>(null);
+  const [dropTargetName, setDropTargetName] = useState<string | null>(null);
+  const metadata = new Map(fields.map((field) => [field.name, field]));
+
+  const toggle = (name: string, checked: boolean) => {
+    setSelected((current) =>
+      checked
+        ? [...current, name].filter(
+            (item, index, values) => values.indexOf(item) === index,
+          )
+        : current.filter((item) => item !== name),
+    );
+  };
+  const move = (name: string, direction: -1 | 1) => {
+    setSelected((current) => {
+      const index = current.indexOf(name);
+      const nextIndex = index + direction;
+      if (index < 0 || nextIndex < 0 || nextIndex >= current.length) {
+        return current;
+      }
+      const next = [...current];
+      [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+      return next;
+    });
+  };
+  const moveToPosition = (name: string, targetName: string) => {
+    if (name === targetName) return;
+    setSelected((current) => {
+      const fromIndex = current.indexOf(name);
+      const toIndex = current.indexOf(targetName);
+      if (fromIndex < 0 || toIndex < 0) return current;
+      const next = [...current];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+  };
+
+  return (
+    <div className="column-order-editor">
+      {selected.map((name, index) => {
+        const field = metadata.get(name);
+        if (!field) return null;
+        return (
+          <div
+            className={[
+              "column-order-row",
+              draggedName === name ? "is-dragging" : "",
+              dropTargetName === name && draggedName !== name
+                ? "is-drop-target"
+                : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            key={name}
+            onDragEnter={(event) => {
+              event.preventDefault();
+              setDropTargetName(name);
+            }}
+            onDragOver={(event) => {
+              event.preventDefault();
+              event.dataTransfer.dropEffect = "move";
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              const dragged = event.dataTransfer.getData("text/plain");
+              if (dragged) moveToPosition(dragged, name);
+              setDraggedName(null);
+              setDropTargetName(null);
+            }}
+          >
+            <input name="columns" type="hidden" value={name} />
+            <button
+              aria-label={`Drag ${field.label}`}
+              className="column-drag-handle"
+              draggable
+              onDragEnd={() => {
+                setDraggedName(null);
+                setDropTargetName(null);
+              }}
+              onDragStart={(event) => {
+                event.dataTransfer.effectAllowed = "move";
+                event.dataTransfer.setData("text/plain", name);
+                setDraggedName(name);
+              }}
+              type="button"
+            >
+              <GripVertical size={15} />
+              <span>{index + 1}</span>
+            </button>
+            <div>
+              <strong>{field.label}</strong>
+              <span>{field.name}</span>
+            </div>
+            <div className="column-order-actions">
+              <button
+                aria-label={`Move ${field.label} up`}
+                className="icon-button"
+                disabled={index === 0}
+                onClick={() => move(name, -1)}
+                type="button"
+              >
+                <ArrowUp size={15} />
+              </button>
+              <button
+                aria-label={`Move ${field.label} down`}
+                className="icon-button"
+                disabled={index === selected.length - 1}
+                onClick={() => move(name, 1)}
+                type="button"
+              >
+                <ArrowDown size={15} />
+              </button>
+              <button
+                aria-label={`Remove ${field.label}`}
+                className="icon-button danger"
+                onClick={() => toggle(name, false)}
+                type="button"
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
+          </div>
+        );
+      })}
+      {!selected.length ? (
+        <div className="fixed-filter-empty">
+          <strong>No table columns selected</strong>
+          <p>Choose at least one column below to render the portal table.</p>
+        </div>
+      ) : null}
+      <div className="column-picker-grid">
+        {fields.map((field) => (
+          <label key={field.id}>
+            <input
+              checked={selected.includes(field.name)}
+              onChange={(event) => toggle(field.name, event.target.checked)}
+              type="checkbox"
+            />
+            <span>
+              <strong>{field.label}</strong>
+              <small>{field.type.replaceAll("_", " ")}</small>
+            </span>
+          </label>
+        ))}
       </div>
     </div>
   );
@@ -409,6 +623,29 @@ export function PortalViewForm({
     initial?.allowedRecordIds ?? [],
   );
   const [recordsPending, startRecordsTransition] = useTransition();
+  const [formState, formAction, formPending] = useActionState(
+    async (
+      _previousState: ViewFormState,
+      formData: FormData,
+    ): Promise<ViewFormState> => {
+      try {
+        await action(formData);
+        return {
+          status: "success",
+          message: initial
+            ? "Portal view changes have been saved."
+            : "Portal view has been created.",
+        };
+      } catch (error) {
+        return {
+          status: "error",
+          message:
+            error instanceof Error ? error.message : "Could not save view.",
+        };
+      }
+    },
+    initialViewFormState,
+  );
   const filteredObjects = objects.filter((item) =>
     `${item.labelSingular} ${item.nameSingular}`
       .toLowerCase()
@@ -430,7 +667,13 @@ export function PortalViewForm({
   );
 
   return (
-    <form action={action} className="card form-card portal-view-form">
+    <form action={formAction} className="card form-card portal-view-form">
+      {formState.status !== "idle" ? (
+        <FloatingToast
+          key={`${formState.status}:${formState.message}`}
+          state={formState}
+        />
+      ) : null}
       <div>
         <h2 className="text-lg font-bold">
           {initial ? `Edit ${initial.label}` : "Create a portal view"}
@@ -671,6 +914,21 @@ export function PortalViewForm({
         </section>
       ) : null}
 
+      {object ? (
+        <section className="portal-form-section">
+          <div className="portal-form-section-heading">
+            <div>
+              <h3>Table columns</h3>
+              <p>Select the portal table columns and arrange their order.</p>
+            </div>
+          </div>
+          <ColumnOrderEditor
+            fields={fields}
+            initialColumns={defaults(initial?.columns)}
+          />
+        </section>
+      ) : null}
+
       <section className="portal-form-section">
         <div className="portal-form-section-heading">
           <div>
@@ -679,6 +937,32 @@ export function PortalViewForm({
           </div>
         </div>
         <div className="portal-form-grid three-column">
+          <div className="field">
+            <label htmlFor="recordTitleField">Sidebar header field</label>
+            <select
+              className="input"
+              defaultValue={
+                initialApplies
+                  ? initial?.recordTitleField ??
+                    fields.find((field) => field.name === "name")?.name ??
+                    ""
+                  : fields.find((field) => field.name === "name")?.name ?? ""
+              }
+              id="recordTitleField"
+              key={`title-${objectName}`}
+              name="recordTitleField"
+            >
+              <option value="">Automatic first visible value</option>
+              {fields.map((field) => (
+                <option key={field.id} value={field.name}>
+                  {field.label}
+                </option>
+              ))}
+            </select>
+            <span className="field-help">
+              Used as the title when a record opens in the right sidebar.
+            </span>
+          </div>
           <div className="field">
             <label htmlFor="defaultSortField">Default sort field</label>
             <select
@@ -736,7 +1020,6 @@ export function PortalViewForm({
           </div>
           <FieldPermissionsMatrix
             defaults={{
-              columns: defaults(initial?.columns),
               detailFields: defaults(initial?.detailFields),
               filterFields: defaults(initial?.filterFields),
               createFields: defaults(initial?.createFields),
@@ -748,8 +1031,8 @@ export function PortalViewForm({
       ) : null}
 
       <div className="form-actions">
-        <button className="button" disabled={!object} type="submit">
-          {submitLabel}
+        <button className="button" disabled={!object || formPending} type="submit">
+          {formPending ? "Saving..." : submitLabel}
         </button>
       </div>
     </form>

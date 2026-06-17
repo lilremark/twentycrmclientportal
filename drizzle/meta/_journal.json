@@ -43,6 +43,20 @@
       "when": 1781536800000,
       "tag": "0005_person_scoped_clients",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1781712000000,
+      "tag": "0006_runtime_configuration",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1781715600000,
+      "tag": "0007_record_title_field",
+      "breakpoints": true
     }
   ]
 }

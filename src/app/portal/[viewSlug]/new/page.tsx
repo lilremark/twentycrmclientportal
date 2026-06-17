@@ -22,8 +22,7 @@ export default async function NewRecordPage({
   if (
     context.role !== "contributor" ||
     !view?.isEnabled ||
-    !view.createFields.length ||
-    view.scopeMode === "records"
+    !view.createFields.length
   ) {
     notFound();
   }

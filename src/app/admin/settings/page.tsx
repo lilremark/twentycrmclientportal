@@ -3,15 +3,19 @@ import { KeyRound, Mail, ServerCog, ShieldCheck } from "lucide-react";
 import {
   ApplicationSettingsForm,
   ProfileSettingsForm,
+  SmtpSettingsForm,
+  TwentySettingsForm,
 } from "@/components/settings-forms";
 import { requireAdmin } from "@/lib/access";
 import { getApplicationSettings } from "@/lib/application-settings";
 import { getEnv } from "@/lib/env";
+import { getAdminIntegrationSettingsSummary } from "@/lib/integration-settings";
 
 export default async function AdminSettingsPage() {
-  const [current, settings] = await Promise.all([
+  const [current, settings, integrations] = await Promise.all([
     requireAdmin(),
     getApplicationSettings(),
+    getAdminIntegrationSettingsSummary(),
   ]);
   const env = getEnv();
 
@@ -29,6 +33,8 @@ export default async function AdminSettingsPage() {
       </div>
 
       <ApplicationSettingsForm settings={settings} />
+      <TwentySettingsForm settings={integrations} />
+      <SmtpSettingsForm settings={integrations} />
       <ProfileSettingsForm
         email={current.user.email}
         initialImage={current.user.image ?? null}
@@ -50,12 +56,14 @@ export default async function AdminSettingsPage() {
         </div>
         <div className="configuration-list">
           <ConfigurationStatus
-            configured={Boolean(env.TWENTY_API_KEY && env.TWENTY_BASE_URL)}
+            configured={Boolean(
+              integrations.hasTwentyApiKey && integrations.twentyBaseUrl,
+            )}
             icon={<KeyRound size={18} />}
             label="Twenty CRM API"
           />
           <ConfigurationStatus
-            configured={Boolean(env.SMTP_HOST && env.SMTP_FROM)}
+            configured={Boolean(integrations.smtpHost && integrations.smtpFrom)}
             icon={<Mail size={18} />}
             label="Email delivery"
           />

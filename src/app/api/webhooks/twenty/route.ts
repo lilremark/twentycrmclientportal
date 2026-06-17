@@ -7,7 +7,7 @@ import { NextResponse } from "next/server";
 import { writeAuditEvent } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { portalViews, webhookReceipts } from "@/lib/db/schema";
-import { getEnv } from "@/lib/env";
+import { getTwentyIntegrationSettings } from "@/lib/integration-settings";
 import {
   isFreshWebhookTimestamp,
   verifyTwentyWebhookSignature,
@@ -17,16 +17,23 @@ export async function POST(request: Request) {
   const timestamp = request.headers.get("x-twenty-webhook-timestamp") ?? "";
   const signature = request.headers.get("x-twenty-webhook-signature") ?? "";
   const body = await request.text();
+  const settings = await getTwentyIntegrationSettings();
 
   if (!isFreshWebhookTimestamp(timestamp)) {
     return NextResponse.json({ error: "Stale webhook" }, { status: 401 });
+  }
+  if (!settings.webhookSecret) {
+    return NextResponse.json(
+      { error: "Webhook secret is not configured" },
+      { status: 503 },
+    );
   }
   if (
     !verifyTwentyWebhookSignature({
       timestamp,
       body,
       signature,
-      secret: getEnv().TWENTY_WEBHOOK_SECRET,
+      secret: settings.webhookSecret,
     })
   ) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
