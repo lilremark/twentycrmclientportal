@@ -4,6 +4,25 @@ A self-hosted Next.js portal that gives external clients controlled access to re
 
 ---
 
+## Screen Gallery
+
+### 1. Client Login Screen
+A secure, custom-branded login interface with glassmorphism styling for client authentication.
+
+![Client Login Page](public/screenshots/portal_login.png)
+
+### 2. Client Dashboard
+The workspace view accessible to authorized clients, showing structured list data retrieved dynamically from Twenty CRM, complete with status pills, progress indicators, search, and action filters.
+
+![Client Dashboard Interface](public/screenshots/portal_dashboard.png)
+
+### 3. Administrator Dashboard
+The administrator panel where system admins trigger schema synchronization, configure client account Person ID mappings, list portal views, and audit active client invitations.
+
+![Administrator Interface](public/screenshots/portal_admin.png)
+
+---
+
 ## Key Capabilities
 
 - **Secure Role-Based Access Control**: Invite-only registration with granular `viewer` and `contributor` access levels per client.
@@ -159,6 +178,7 @@ On boot, the portal creates/updates this user, assigns administrator status, and
 ```
 ├── drizzle/                # Drizzle migration files and SQL snapshots
 ├── public/                 # Static public assets (logos, icons)
+│   └── screenshots/        # Mockup screenshots with CRM data
 ├── scripts/                # Utility shell and TypeScript scripts
 │   ├── bootstrap-admin.ts  # Startup admin provisioning logic
 │   ├── migrate.ts          # Migration runner
@@ -173,7 +193,7 @@ On boot, the portal creates/updates this user, assigns administrator status, and
 │   └── proxy.ts            # Local endpoint proxies
 ├── tests/
 │   ├── unit/               # Core functional tests (Vitest)
-│   └── e2e/                # Playwright E2E and screenshot integration
+│   └── e2e/                # Playwright E2E and visual regression test files
 └── playwright.config.ts    # E2E test harness configuration
 ```
 
@@ -246,44 +266,6 @@ The following scripts are configured in `package.json`:
 - `npm run admin:bootstrap`: Synchronize runtime settings and seed the default admin.
 - `npm run test`: Run the unit test suite once (using Vitest).
 - `npm run test:e2e`: Run browser tests locally (using Playwright).
-
----
-
-## Running Screenshot Capture (Docker / Playwright)
-
-To capture screenshots of the portal interfaces without needing system dependencies (like headless browsers) installed on your host OS, you can run Playwright inside Docker.
-
-We provide a dedicated execution script, `scripts/take-screenshots.sh`.
-
-### Capture Modes
-
-#### 1. Compose Mode (Recommended)
-Captures screenshots of the portal while running inside your Docker Compose environment. It connects directly to the internal bridge network `twentycrmclientportal_default`.
-```bash
-# Ensure portal is running in Docker Compose
-docker compose up -d
-
-# Take screenshots
-sh scripts/take-screenshots.sh compose
-```
-
-#### 2. Host Mode
-Captures screenshots against the port mapped to your localhost machine (port `3005` by default). This uses `host.docker.internal` to resolve localhost from inside the container.
-```bash
-sh scripts/take-screenshots.sh host
-```
-
-#### 3. Local Mode
-Captures screenshots against a local dev instance running on your host machine via npm (`http://localhost:3000`).
-```bash
-# Start your local dev server
-npm run dev
-
-# In another terminal, run screenshots
-sh scripts/take-screenshots.sh local
-```
-
-All screenshots will be written directly into the `./screenshots` directory on the host machine.
 
 ---
 
