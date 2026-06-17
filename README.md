@@ -7,7 +7,7 @@ A self-hosted Next.js portal that gives external clients controlled access to re
 ## Screen Gallery
 
 ### 1. Client Login Screen
-A secure, custom-branded login interface with glassmorphism styling for client authentication.
+A secure, custom-branded login interface for client authentication.
 
 ![Client Login Page](public/screenshots/portal_login.png)
 
@@ -47,7 +47,6 @@ The administrator panel where system admins trigger schema synchronization, conf
 - **Authentication**: [Better Auth](https://www.better-auth.com/)
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
 - **Unit Testing**: [Vitest](https://vitest.dev/)
-- **E2E Testing**: [Playwright](https://playwright.dev/)
 
 ---
 
