@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:runtime": "mkdir -p .runtime && esbuild scripts/migrate.ts --bundle --platform=node --format=esm --target=node22 --outfile=.runtime/migrate.mjs && esbuild scripts/bootstrap-admin.ts --bundle --platform=node --format=esm --target=node22 --outfile=.runtime/bootstrap-admin.mjs",
+    "build:runtime": "rm -rf .runtime && mkdir -p .runtime && esbuild scripts/migrate.ts --bundle --platform=node --format=cjs --target=node22 --outfile=.runtime/migrate.cjs && esbuild scripts/bootstrap-admin.ts --bundle --platform=node --format=cjs --target=node22 --outfile=.runtime/bootstrap-admin.cjs",
     "start": "next start --hostname 0.0.0.0 --port 3000",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",

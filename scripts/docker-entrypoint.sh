@@ -3,10 +3,10 @@
 set -eu
 
 echo "Applying database migrations..."
-node /app/scripts/migrate.mjs
+node /app/scripts/migrate.cjs
 
 echo "Checking optional administrator bootstrap..."
-node /app/scripts/bootstrap-admin.mjs
+node /app/scripts/bootstrap-admin.cjs
 
 echo "Starting Twenty CRM Client Portal..."
 exec node /app/server.js
