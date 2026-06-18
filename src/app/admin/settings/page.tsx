@@ -21,17 +21,6 @@ export default async function AdminSettingsPage() {
 
   return (
     <div className="settings-page">
-      <div className="page-intro">
-        <div>
-          <p className="eyebrow">Administration</p>
-          <h2>Settings</h2>
-          <p>
-            Manage the portal identity, your profile, and review deployment
-            configuration.
-          </p>
-        </div>
-      </div>
-
       <ApplicationSettingsForm settings={settings} />
       <TwentySettingsForm settings={integrations} />
       <SmtpSettingsForm settings={integrations} />

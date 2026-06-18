@@ -1,6 +1,8 @@
-import { getBranding } from "@/lib/env";
+import { connection } from "next/server";
 
-export function AuthCard({
+import { getApplicationSettings } from "@/lib/application-settings";
+
+export async function AuthCard({
   title,
   description,
   children,
@@ -9,11 +11,27 @@ export function AuthCard({
   description: string;
   children: React.ReactNode;
 }) {
-  const branding = getBranding();
+  await connection();
+  const settings = await getApplicationSettings();
+  const branding = {
+    name: settings.brandName,
+    logoUrl: settings.brandLogoUrl,
+    primaryColor: settings.primaryColor,
+    loginBackgroundUrl: settings.loginBackgroundUrl,
+  };
   return (
     <main
-      className="auth-shell"
-      style={{ "--brand-primary": branding.primaryColor } as React.CSSProperties}
+      className={`auth-shell ${
+        branding.loginBackgroundUrl ? "has-custom-background" : ""
+      }`}
+      style={
+        {
+          "--brand-primary": branding.primaryColor,
+          "--auth-background-image": branding.loginBackgroundUrl
+            ? `url("${branding.loginBackgroundUrl}")`
+            : "none",
+        } as React.CSSProperties
+      }
     >
       <div className="auth-preview" aria-hidden="true">
         <aside className="auth-preview-sidebar">

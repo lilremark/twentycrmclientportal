@@ -124,15 +124,7 @@ export default async function PortalViewPreviewPage({
 
   return (
     <div className="page-stack">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">Portal preview</p>
-          <h2>{view.label}</h2>
-          <p>
-            This read-only preview uses the same scoped GraphQL request,
-            filters, columns, and empty states as the external portal.
-          </p>
-        </div>
+      <div className="page-actions">
         <Link className="button secondary" href={`/admin/views/${view.id}`}>
           <ArrowLeft size={17} />
           Back to configuration
@@ -186,11 +178,7 @@ export default async function PortalViewPreviewPage({
           <span className="badge">Read only</span>
         </div>
         <div className="preview-canvas-body">
-          <div className="page-heading">
-            <div>
-              <h2>{view.label}</h2>
-              <p>Showing only records shared through this portal.</p>
-            </div>
+          <div className="page-actions">
             {view.createFields.length && view.scopeMode !== "records" ? (
               <span aria-disabled="true" className="button opacity-60">
                 Add record

@@ -9,9 +9,11 @@ import {
 import { db } from "@/lib/db";
 import { applicationSettings } from "@/lib/db/schema";
 import { getEnv } from "@/lib/env";
+import { normalizeTwentyBaseUrl } from "@/lib/twenty/url";
 
 export type TwentyIntegrationSettings = {
   baseUrl: string;
+  autoFormatUrl: boolean;
   apiKey: string;
   webhookSecret: string;
 };
@@ -41,7 +43,13 @@ export async function getTwentyIntegrationSettings(): Promise<TwentyIntegrationS
     getRawApplicationSettingsRow(),
     Promise.resolve(getEnv()),
   ]);
-  const baseUrl = clean(row?.twentyBaseUrl) ?? clean(env.TWENTY_BASE_URL);
+  const configuredBaseUrl =
+    clean(row?.twentyBaseUrl) ?? clean(env.TWENTY_BASE_URL);
+  const autoFormatUrl = row?.twentyAutoFormatUrl ?? true;
+  const baseUrl =
+    configuredBaseUrl && autoFormatUrl
+      ? normalizeTwentyBaseUrl(configuredBaseUrl)
+      : configuredBaseUrl;
   const apiKey = clean(row?.twentyApiKey) ?? clean(env.TWENTY_API_KEY);
   const webhookSecret =
     clean(row?.twentyWebhookSecret) ?? clean(env.TWENTY_WEBHOOK_SECRET);
@@ -54,6 +62,7 @@ export async function getTwentyIntegrationSettings(): Promise<TwentyIntegrationS
 
   return {
     baseUrl,
+    autoFormatUrl,
     apiKey,
     webhookSecret: webhookSecret ?? "",
   };
@@ -90,6 +99,7 @@ export async function getAdminIntegrationSettingsSummary() {
 
   return {
     twentyBaseUrl: clean(row?.twentyBaseUrl) ?? clean(env.TWENTY_BASE_URL) ?? "",
+    twentyAutoFormatUrl: row?.twentyAutoFormatUrl ?? true,
     hasTwentyApiKey: Boolean(clean(row?.twentyApiKey) ?? clean(env.TWENTY_API_KEY)),
     hasTwentyWebhookSecret: Boolean(
       clean(row?.twentyWebhookSecret) ?? clean(env.TWENTY_WEBHOOK_SECRET),

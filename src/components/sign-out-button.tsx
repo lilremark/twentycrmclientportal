@@ -5,12 +5,18 @@ import { useRouter } from "next/navigation";
 
 import { authClient } from "@/lib/auth-client";
 
-export function SignOutButton() {
+export function SignOutButton({
+  className = "icon-button header-sign-out",
+  label,
+}: {
+  className?: string;
+  label?: string;
+}) {
   const router = useRouter();
   return (
     <button
       aria-label="Sign out"
-      className="icon-button header-sign-out"
+      className={className}
       onClick={async () => {
         await authClient.signOut();
         router.push("/login");
@@ -20,6 +26,7 @@ export function SignOutButton() {
       type="button"
     >
       <LogOut size={16} />
+      {label ? <span>{label}</span> : null}
     </button>
   );
 }

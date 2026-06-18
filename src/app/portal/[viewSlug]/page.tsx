@@ -4,13 +4,17 @@ import { Pencil } from "lucide-react";
 
 import {
   createNoteAction,
+  deleteRecordAttachmentAction,
+  uploadRecordAttachmentAction,
   updateNoteAction,
   updateRecordPanelAction,
 } from "@/app/actions/portal";
+import { PortalAttachments } from "@/components/portal-attachments";
 import { PortalDataTable } from "@/components/portal-data-table";
 import { PortalFilterForm } from "@/components/portal-filter-form";
 import { PortalNotes } from "@/components/portal-notes";
 import { PortalRecordValue } from "@/components/portal-record-value";
+import { RefreshButton } from "@/components/refresh-button";
 import { RecordForm } from "@/components/record-form";
 import { RecordSidePanel } from "@/components/record-side-panel";
 import { requirePortalViewContext } from "@/lib/access";
@@ -123,6 +127,11 @@ export default async function PortalListPage({
   const noteTargetsField = object.fields.find(
     (field) => field.name === "noteTargets",
   );
+  const attachmentsField = object.fields.find(
+    (field) =>
+      field.name === "attachments" &&
+      field.relationTargetObjectNameSingular === "attachment",
+  );
   const effectiveRecordTitleField =
     view.recordTitleField ??
     object.fields.find((field) => field.name === "name")?.name ??
@@ -133,6 +142,7 @@ export default async function PortalListPage({
     view.columns,
     view.editFields,
     noteTargetsField ? [{ name: noteTargetsField.name }] : [],
+    attachmentsField ? [{ name: attachmentsField.name }] : [],
   );
 
   let result:
@@ -218,14 +228,7 @@ export default async function PortalListPage({
   return (
     <>
       <div className="page-stack">
-        <div className="page-heading">
-          <div>
-            <p className="eyebrow">{object.labelPlural}</p>
-            <h2 className="text-2xl font-bold">{view.label}</h2>
-            <p>
-              Showing only records shared through this portal.
-            </p>
-          </div>
+        <div className="page-actions">
           {context.role === "contributor" && view.createFields.length ? (
             <Link className="button" href={`/portal/${view.slug}/new`}>
               Add record
@@ -283,6 +286,7 @@ export default async function PortalListPage({
             </div>
             {selectedRecord ? (
               <div className="record-panel-actions">
+                <RefreshButton />
                 {context.role === "contributor" &&
                 view.editFields.length &&
                 panelMode !== "edit" ? (
@@ -319,7 +323,11 @@ export default async function PortalListPage({
             ) : selectedRecord ? (
               <dl className="record-panel-details">
                 {panelFields
-                  .filter((config) => config.name !== "noteTargets")
+                  .filter(
+                    (config) =>
+                      config.name !== "noteTargets" &&
+                      config.name !== "attachments",
+                  )
                   .map((config) => (
                     <div key={config.name}>
                       <dt>
@@ -354,6 +362,24 @@ export default async function PortalListPage({
                   selectedRecordId,
                   listParams.toString(),
                 )}
+              />
+            ) : null}
+            {selectedRecord && attachmentsField ? (
+              <PortalAttachments
+                canUpload={context.role === "contributor"}
+                deleteAttachmentAction={deleteRecordAttachmentAction.bind(
+                  null,
+                  view.slug,
+                  selectedRecordId,
+                  listParams.toString(),
+                )}
+                uploadAction={uploadRecordAttachmentAction.bind(
+                  null,
+                  view.slug,
+                  selectedRecordId,
+                  listParams.toString(),
+                )}
+                value={selectedRecord[attachmentsField.name]}
               />
             ) : null}
           </div>

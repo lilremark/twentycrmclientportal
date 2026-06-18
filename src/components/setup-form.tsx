@@ -52,8 +52,12 @@ export function SetupForm() {
           <div className="grid gap-4">
             <div className="field">
               <label htmlFor="twentyBaseUrl">Twenty base URL</label>
-              <input className="input" id="twentyBaseUrl" name="twentyBaseUrl" placeholder="https://crm.example.com" type="url" />
+              <input className="input" id="twentyBaseUrl" name="twentyBaseUrl" placeholder="https://crm.example.com" type="text" />
             </div>
+            <label className="settings-toggle">
+              <input defaultChecked name="twentyAutoFormatUrl" type="checkbox" />
+              <span>Automatically format Twenty API endpoints</span>
+            </label>
             <div className="field">
               <label htmlFor="twentyApiKey">Twenty API key</label>
               <input className="input" id="twentyApiKey" name="twentyApiKey" type="password" />
@@ -113,6 +117,14 @@ export function SetupForm() {
             <div className="field">
               <label htmlFor="brandLogoUrl">Logo URL</label>
               <input className="input" id="brandLogoUrl" name="brandLogoUrl" />
+            </div>
+            <div className="field">
+              <label htmlFor="loginBackgroundFile">Sign-in background</label>
+              <input accept="image/png" className="input" id="loginBackgroundFile" name="loginBackgroundFile" type="file" />
+            </div>
+            <div className="field">
+              <label htmlFor="loginBackgroundUrl">Background image URL</label>
+              <input className="input" id="loginBackgroundUrl" name="loginBackgroundUrl" />
             </div>
             <div className="field">
               <label htmlFor="primaryColor">Primary color</label>

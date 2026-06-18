@@ -14,8 +14,14 @@ import {
 } from "@/lib/twenty/graphql";
 import {
   getTwentyEndpoint,
+  getTwentyRestRecordEndpoint,
   type TwentyEndpoint,
 } from "@/lib/twenty/url";
+import {
+  clearTwentyReadCache,
+  getCachedTwentyRead,
+  twentyReadCacheKey,
+} from "@/lib/twenty/cache";
 
 type GraphQLError = { message: string; extensions?: { code?: string } };
 
@@ -31,7 +37,11 @@ export class TwentyApiError extends Error {
 
 async function requestTwenty<T>(endpoint: TwentyEndpoint, query: string) {
   const settings = await getTwentyIntegrationSettings();
-  const endpointUrl = getTwentyEndpoint(settings.baseUrl, endpoint);
+  const endpointUrl = getTwentyEndpoint(
+    settings.baseUrl,
+    endpoint,
+    settings.autoFormatUrl,
+  );
   let response: Response;
 
   try {
@@ -195,7 +205,18 @@ export async function listTwentyRecords(input: {
     input.fields.map((field) => field.name),
     fieldSelections(input.metadataFields, input.fields),
   );
-  const data = await requestTwenty<
+  const query = buildListQuery({
+    objectNamePlural: input.objectNamePlural,
+    selection,
+    filter: input.filter,
+    orderBy: input.orderBy,
+    after: input.cursor,
+    first: 50,
+  });
+  const data = await getCachedTwentyRead(
+    twentyReadCacheKey("/graphql", query),
+    () =>
+      requestTwenty<
     Record<
       string,
       {
@@ -208,16 +229,7 @@ export async function listTwentyRecords(input: {
         };
       }
     >
-  >(
-    "/graphql",
-    buildListQuery({
-      objectNamePlural: input.objectNamePlural,
-      selection,
-      filter: input.filter,
-      orderBy: input.orderBy,
-      after: input.cursor,
-      first: 50,
-    }),
+      >("/graphql", query),
   );
   return data[input.objectNamePlural];
 }
@@ -232,13 +244,18 @@ export async function getTwentyRecord(input: {
     input.fields.map((field) => field.name),
     fieldSelections(input.metadataFields, input.fields),
   );
-  const data = await requestTwenty<Record<string, Record<string, unknown> | null>>(
-    "/graphql",
-    buildSingleQuery({
-      objectNameSingular: input.objectNameSingular,
-      selection,
-      filter: input.filter,
-    }),
+  const query = buildSingleQuery({
+    objectNameSingular: input.objectNameSingular,
+    selection,
+    filter: input.filter,
+  });
+  const data = await getCachedTwentyRead(
+    twentyReadCacheKey("/graphql", query),
+    () =>
+      requestTwenty<Record<string, Record<string, unknown> | null>>(
+        "/graphql",
+        query,
+      ),
   );
   return data[input.objectNameSingular];
 }
@@ -271,5 +288,113 @@ export async function writeTwentyRecord(input: {
       selection,
     }),
   );
+  clearTwentyReadCache();
   return response[mutationRoot];
+}
+
+export async function uploadTwentyFilesFieldFile(input: {
+  file: File;
+  fieldMetadataId: string;
+}) {
+  const settings = await getTwentyIntegrationSettings();
+  const endpointUrl = getTwentyEndpoint(
+    settings.baseUrl,
+    "/metadata",
+    settings.autoFormatUrl,
+  );
+  const query = `mutation UploadPortalAttachment($file: Upload!, $fieldMetadataId: String!) {
+    uploadFilesFieldFile(file: $file, fieldMetadataId: $fieldMetadataId) {
+      id
+    }
+  }`;
+  const body = new FormData();
+  body.set(
+    "operations",
+    JSON.stringify({
+      query,
+      variables: { file: null, fieldMetadataId: input.fieldMetadataId },
+    }),
+  );
+  body.set("map", JSON.stringify({ "0": ["variables.file"] }));
+  body.set("0", input.file, input.file.name);
+
+  let response: Response;
+  try {
+    response = await fetch(endpointUrl, {
+      method: "POST",
+      headers: { authorization: `Bearer ${settings.apiKey}` },
+      body,
+      cache: "no-store",
+      redirect: "manual",
+      signal: AbortSignal.timeout(30_000),
+    });
+  } catch {
+    throw new TwentyApiError(
+      "Twenty CRM is temporarily unavailable. Try the upload again.",
+      true,
+    );
+  }
+
+  if (!response.ok) {
+    throw new TwentyApiError(
+      response.status === 429
+        ? "Twenty CRM rate limit reached. Try again shortly."
+        : "Twenty CRM rejected the file upload.",
+      response.status >= 500 || response.status === 429,
+      response.status,
+    );
+  }
+
+  const payload = (await response.json()) as {
+    data?: { uploadFilesFieldFile?: { id?: string } };
+    errors?: GraphQLError[];
+  };
+  const fileId = payload.data?.uploadFilesFieldFile?.id;
+  if (payload.errors?.length || !fileId) {
+    throw new TwentyApiError(
+      payload.errors?.[0]?.message ?? "Twenty CRM did not return a file ID.",
+      false,
+    );
+  }
+  return fileId;
+}
+
+export async function deleteTwentyRecord(input: {
+  objectNamePlural: string;
+  recordId: string;
+}) {
+  const settings = await getTwentyIntegrationSettings();
+  const endpointUrl = getTwentyRestRecordEndpoint(
+    settings.baseUrl,
+    input.objectNamePlural,
+    input.recordId,
+    settings.autoFormatUrl,
+  );
+
+  let response: Response;
+  try {
+    response = await fetch(endpointUrl, {
+      method: "DELETE",
+      headers: { authorization: `Bearer ${settings.apiKey}` },
+      cache: "no-store",
+      redirect: "manual",
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch {
+    throw new TwentyApiError(
+      "Twenty CRM is temporarily unavailable. Try again shortly.",
+      true,
+    );
+  }
+
+  if (!response.ok) {
+    throw new TwentyApiError(
+      response.status === 429
+        ? "Twenty CRM rate limit reached. Try again shortly."
+        : "Twenty CRM rejected the delete request.",
+      response.status >= 500 || response.status === 429,
+      response.status,
+    );
+  }
+  clearTwentyReadCache();
 }

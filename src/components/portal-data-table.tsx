@@ -113,6 +113,15 @@ export function PortalDataTable({
           )
           .find((value) => value && value !== "—")
     : undefined;
+  const recordHref = (recordId: string) =>
+    recordSelectionHref
+      ? `${recordSelectionHref}${encodeURIComponent(recordId)}`
+      : `${recordBaseHref}/${recordId}`;
+  const prefetchRecord = (recordId: string) => {
+    if (recordSelectionHref || recordBaseHref) {
+      router.prefetch(recordHref(recordId));
+    }
+  };
   // TanStack Table owns memoization internally; React Compiler should not wrap it.
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -138,11 +147,7 @@ export function PortalDataTable({
               cell: ({ row }) => (
                 <Link
                   className="table-row-action"
-                  href={
-                    recordSelectionHref
-                      ? `${recordSelectionHref}${encodeURIComponent(row.original.id)}`
-                      : `${recordBaseHref}/${row.original.id}`
-                  }
+                  href={recordHref(row.original.id)}
                   onClick={(event) => {
                     if (recordSelectionHref) {
                       event.preventDefault();
@@ -220,6 +225,7 @@ export function PortalDataTable({
                   openRecord(row.original.id);
                 }
               }}
+              onFocus={() => prefetchRecord(row.original.id)}
               onKeyDown={(event) => {
                 if (
                   recordSelectionHref &&
@@ -229,6 +235,7 @@ export function PortalDataTable({
                   openRecord(row.original.id);
                 }
               }}
+              onMouseEnter={() => prefetchRecord(row.original.id)}
               tabIndex={recordSelectionHref ? 0 : undefined}
             >
               {row.getVisibleCells().map((cell) => {

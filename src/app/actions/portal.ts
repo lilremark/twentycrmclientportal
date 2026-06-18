@@ -6,17 +6,21 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 
-import { requirePortalViewContext } from "@/lib/access";
+import { requirePortalViewContext, requireSession } from "@/lib/access";
 import { writeAuditEvent } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { portalViews, type TwentyFieldMetadata } from "@/lib/db/schema";
+import { extractPortalFiles } from "@/lib/file-values";
 import { noteBelongsToRecord } from "@/lib/portal-notes";
 import { getLatestMetadata, getObjectMetadata } from "@/lib/portal";
 import { enforceWriteRateLimit } from "@/lib/rate-limit";
 import {
+  deleteTwentyRecord,
   getTwentyRecord,
+  uploadTwentyFilesFieldFile,
   writeTwentyRecord,
 } from "@/lib/twenty/client";
+import { clearTwentyReadCache } from "@/lib/twenty/cache";
 import {
   buildPortalScopeFilter,
   buildScopedFilter,
@@ -101,6 +105,7 @@ const noteFields = [
 ];
 
 const noteTargetFields = [{ name: "note", label: "Note" }];
+const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
 
 function noteTargetFieldName(objectNameSingular: string) {
   return `target${
@@ -117,9 +122,54 @@ function notePayload(formData: FormData) {
     title,
     bodyV2: {
       markdown: body,
-      blocknote: body,
+      blocknote: JSON.stringify([]),
     },
   };
+}
+
+function sanitizedFileName(name: string) {
+  return (
+    name
+      .normalize("NFKD")
+      .replace(/[^\w.\- ]+/g, "")
+      .replace(/\s+/g, "-")
+      .slice(0, 120) || "attachment"
+  );
+}
+
+function detectedMimeType(bytes: Uint8Array, fallback: string) {
+  const startsWith = (...signature: number[]) =>
+    signature.every((byte, index) => bytes[index] === byte);
+
+  if (startsWith(0x25, 0x50, 0x44, 0x46)) return "application/pdf";
+  if (startsWith(0x89, 0x50, 0x4e, 0x47)) return "image/png";
+  if (startsWith(0xff, 0xd8, 0xff)) return "image/jpeg";
+  if (startsWith(0x47, 0x49, 0x46, 0x38)) return "image/gif";
+  if (
+    startsWith(0x52, 0x49, 0x46, 0x46) &&
+    String.fromCharCode(...bytes.slice(8, 12)) === "WEBP"
+  ) {
+    return "image/webp";
+  }
+  if (startsWith(0x50, 0x4b, 0x03, 0x04)) {
+    return fallback || "application/zip";
+  }
+  if (fallback.startsWith("text/")) return fallback;
+  return fallback || "application/octet-stream";
+}
+
+async function validatedAttachment(formData: FormData) {
+  const value = formData.get("attachment");
+  if (!(value instanceof File) || value.size === 0) {
+    throw new Error("Choose a file to upload.");
+  }
+  if (value.size > MAX_ATTACHMENT_BYTES) {
+    throw new Error("Files must be 20 MB or smaller.");
+  }
+
+  const bytes = new Uint8Array(await value.arrayBuffer());
+  const mimeType = detectedMimeType(bytes.slice(0, 16), value.type);
+  return new File([bytes], sanitizedFileName(value.name), { type: mimeType });
 }
 
 async function getNoteWriteContext(slug: string, recordId: string) {
@@ -245,6 +295,11 @@ export async function createRecordAction(slug: string, formData: FormData) {
     throw error;
   }
   redirect(`/portal/${slug}/${after.id}`);
+}
+
+export async function refreshPortalDataAction() {
+  await requireSession();
+  clearTwentyReadCache();
 }
 
 export async function updateRecordAction(
@@ -391,6 +446,184 @@ export async function updateNoteAction(
     });
     throw error;
   }
+  revalidatePath(`/portal/${slug}`);
+  redirect(recordPanelReturnHref(slug, recordId, returnQuery));
+}
+
+export async function uploadRecordAttachmentAction(
+  slug: string,
+  recordId: string,
+  returnQuery: string,
+  formData: FormData,
+) {
+  const { context, view, metadata } = await getWriteContext(slug);
+  const latestMetadata = await getLatestMetadata();
+  const attachmentObject = getObjectMetadata(latestMetadata, "attachment");
+  const attachmentFileField = attachmentObject?.fields.find(
+    (field) => field.name === "file",
+  );
+  if (!attachmentObject || !attachmentFileField) {
+    throw new Error("Twenty attachment metadata is unavailable.");
+  }
+
+  const record = await getTwentyRecord({
+    objectNameSingular: view.objectNameSingular,
+    fields: [],
+    metadataFields: metadata.fields,
+    filter: {
+      and: [
+        { id: { eq: recordId } },
+        buildScopedFilter({
+          scopeFilter: buildPortalScopeFilter({
+            scopeMode: view.scopeMode,
+            scopeFieldName: view.scopeFieldName,
+            allowedRecordIds: view.allowedRecordIds,
+            twentyPersonId: context.twentyPersonId,
+            metadataFields: metadata.fields,
+          }),
+          fixedFilters: view.fixedFilters,
+          metadataFields: metadata.fields,
+          configuredFilters: [],
+          requestedFilters: [],
+        }),
+      ],
+    },
+  });
+  if (!record) throw new Error("Record not found.");
+
+  enforceWriteRateLimit(context.session.user.id);
+  const requestId = randomUUID();
+  try {
+    const file = await validatedAttachment(formData);
+    const fileId = await uploadTwentyFilesFieldFile({
+      file,
+      fieldMetadataId: attachmentFileField.id,
+    });
+    const targetFieldName = `target${
+      view.objectNameSingular.charAt(0).toUpperCase() +
+      view.objectNameSingular.slice(1)
+    }Id`;
+    const after = await writeTwentyRecord({
+      operation: "create",
+      objectNameSingular: "attachment",
+      data: {
+        name: file.name,
+        [targetFieldName]: recordId,
+        file: [{ fileId, label: file.name }],
+      },
+      fields: [
+        { name: "name", label: "Name" },
+        { name: "file", label: "File" },
+      ],
+      metadataFields: attachmentObject.fields,
+    });
+    await writeAuditEvent({
+      actorUserId: context.session.user.id,
+      clientAccountId: context.clientAccountId,
+      action: "attachment.created",
+      objectName: view.objectNameSingular,
+      recordId,
+      status: "success",
+      requestId,
+      after,
+    });
+  } catch (error) {
+    await writeAuditEvent({
+      actorUserId: context.session.user.id,
+      clientAccountId: context.clientAccountId,
+      action: "attachment.created",
+      objectName: view.objectNameSingular,
+      recordId,
+      status: "failure",
+      requestId,
+      metadata: { error: error instanceof Error ? error.message : "Unknown" },
+    });
+    throw error;
+  }
+
+  revalidatePath(`/portal/${slug}`);
+  redirect(recordPanelReturnHref(slug, recordId, returnQuery));
+}
+
+export async function deleteRecordAttachmentAction(
+  slug: string,
+  recordId: string,
+  returnQuery: string,
+  attachmentId: string,
+) {
+  const { context, view, metadata } = await getWriteContext(slug);
+  const attachmentsField = metadata.fields.find(
+    (field) =>
+      field.name === "attachments" &&
+      field.relationTargetObjectNameSingular === "attachment",
+  );
+  if (!attachmentsField) {
+    throw new Error("Attachments are not available for this portal object.");
+  }
+
+  const record = await getTwentyRecord({
+    objectNameSingular: view.objectNameSingular,
+    fields: [{ name: attachmentsField.name, label: "Attachments" }],
+    metadataFields: metadata.fields,
+    filter: {
+      and: [
+        { id: { eq: recordId } },
+        buildScopedFilter({
+          scopeFilter: buildPortalScopeFilter({
+            scopeMode: view.scopeMode,
+            scopeFieldName: view.scopeFieldName,
+            allowedRecordIds: view.allowedRecordIds,
+            twentyPersonId: context.twentyPersonId,
+            metadataFields: metadata.fields,
+          }),
+          fixedFilters: view.fixedFilters,
+          metadataFields: metadata.fields,
+          configuredFilters: [],
+          requestedFilters: [],
+        }),
+      ],
+    },
+  });
+  const attachmentIds = new Set(
+    extractPortalFiles(record?.[attachmentsField.name])
+      .map((file) => file.attachmentId)
+      .filter((id): id is string => Boolean(id)),
+  );
+  if (!record || !attachmentIds.has(attachmentId)) {
+    throw new Error("Attachment not found.");
+  }
+
+  enforceWriteRateLimit(context.session.user.id);
+  const requestId = randomUUID();
+  try {
+    await deleteTwentyRecord({
+      objectNamePlural: "attachments",
+      recordId: attachmentId,
+    });
+    await writeAuditEvent({
+      actorUserId: context.session.user.id,
+      clientAccountId: context.clientAccountId,
+      action: "attachment.deleted",
+      objectName: view.objectNameSingular,
+      recordId,
+      status: "success",
+      requestId,
+      before: { attachmentId },
+    });
+  } catch (error) {
+    await writeAuditEvent({
+      actorUserId: context.session.user.id,
+      clientAccountId: context.clientAccountId,
+      action: "attachment.deleted",
+      objectName: view.objectNameSingular,
+      recordId,
+      status: "failure",
+      requestId,
+      metadata: { error: error instanceof Error ? error.message : "Unknown" },
+    });
+    throw error;
+  }
+
   revalidatePath(`/portal/${slug}`);
   redirect(recordPanelReturnHref(slug, recordId, returnQuery));
 }

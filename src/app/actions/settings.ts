@@ -19,7 +19,13 @@ import {
   getSmtpIntegrationSettings,
 } from "@/lib/integration-settings";
 import { testTwentyConnection } from "@/lib/twenty/client";
-import { saveUploadedImage } from "@/lib/uploads";
+import { normalizeTwentyBaseUrl } from "@/lib/twenty/url";
+import {
+  deleteUploadedFile,
+  isLocalUploadReference,
+  saveUploadedImage,
+  saveUploadedPngBackground,
+} from "@/lib/uploads";
 
 export type SettingsActionState = {
   status: "idle" | "success" | "error";
@@ -42,6 +48,7 @@ const profileSchema = z.object({
 const applicationSettingsSchema = z.object({
   brandName: z.string().trim().min(1).max(80),
   brandLogoUrl: imageReferenceSchema,
+  loginBackgroundUrl: imageReferenceSchema,
   primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   portalTitle: z.string().trim().min(1).max(100),
   portalDescription: z.string().trim().min(1).max(240),
@@ -64,7 +71,11 @@ const smtpSettingsSchema = z.object({
 });
 
 const twentySettingsSchema = z.object({
-  twentyBaseUrl: z.union([z.literal(""), z.url()]),
+  twentyBaseUrl: z.string().trim(),
+  twentyAutoFormatUrl: z
+    .union([z.literal("on"), z.literal("true"), z.literal("false"), z.null()])
+    .optional()
+    .transform((value) => value === "on" || value === "true"),
   twentyApiKey: z.string().optional().or(z.literal("")),
   twentyWebhookSecret: z.string().optional().or(z.literal("")),
 });
@@ -86,11 +97,15 @@ export async function updateProfileAction(
     };
   }
 
-  let image = parsed.data.image;
+  const previousImage = current.user.image;
+  let image =
+    parsed.data.image ??
+    (isLocalUploadReference(previousImage) ? previousImage : null);
   try {
-    image =
-      (await saveUploadedImage(formData.get("imageFile") as File | null)) ??
-      image;
+    const uploadedImage = await saveUploadedImage(
+      formData.get("imageFile") as File | null,
+    );
+    if (uploadedImage) image = uploadedImage;
   } catch (error) {
     return {
       status: "error",
@@ -106,6 +121,12 @@ export async function updateProfileAction(
       updatedAt: new Date(),
     })
     .where(eq(user.id, current.user.id));
+  if (
+    isLocalUploadReference(previousImage) &&
+    previousImage !== image
+  ) {
+    await deleteUploadedFile(previousImage);
+  }
 
   revalidatePath("/admin", "layout");
   revalidatePath("/portal", "layout");
@@ -121,6 +142,7 @@ export async function updateApplicationSettingsAction(
   const parsed = applicationSettingsSchema.safeParse({
     brandName: formData.get("brandName"),
     brandLogoUrl: formData.get("brandLogoUrl"),
+    loginBackgroundUrl: formData.get("loginBackgroundUrl"),
     primaryColor: formData.get("primaryColor"),
     portalTitle: formData.get("portalTitle"),
     portalDescription: formData.get("portalDescription"),
@@ -134,11 +156,26 @@ export async function updateApplicationSettingsAction(
     };
   }
 
-  let brandLogoUrl = parsed.data.brandLogoUrl;
+  const before = await getApplicationSettings();
+  let brandLogoUrl =
+    parsed.data.brandLogoUrl ??
+    (isLocalUploadReference(before.brandLogoUrl)
+      ? before.brandLogoUrl
+      : null);
+  let loginBackgroundUrl =
+    parsed.data.loginBackgroundUrl ??
+    (isLocalUploadReference(before.loginBackgroundUrl)
+      ? before.loginBackgroundUrl
+      : null);
   try {
-    brandLogoUrl =
-      (await saveUploadedImage(formData.get("brandLogoFile") as File | null)) ??
-      brandLogoUrl;
+    const uploadedLogo = await saveUploadedImage(
+      formData.get("brandLogoFile") as File | null,
+    );
+    const uploadedBackground = await saveUploadedPngBackground(
+      formData.get("loginBackgroundFile") as File | null,
+    );
+    if (uploadedLogo) brandLogoUrl = uploadedLogo;
+    if (uploadedBackground) loginBackgroundUrl = uploadedBackground;
   } catch (error) {
     return {
       status: "error",
@@ -146,13 +183,13 @@ export async function updateApplicationSettingsAction(
     };
   }
 
-  const before = await getApplicationSettings();
   await db
     .insert(applicationSettings)
     .values({
       id: APPLICATION_SETTINGS_ID,
       ...parsed.data,
       brandLogoUrl,
+      loginBackgroundUrl,
       updatedAt: new Date(),
     })
     .onConflictDoUpdate({
@@ -160,22 +197,87 @@ export async function updateApplicationSettingsAction(
       set: {
         ...parsed.data,
         brandLogoUrl,
+        loginBackgroundUrl,
         updatedAt: new Date(),
       },
     });
+  if (
+    isLocalUploadReference(before.brandLogoUrl) &&
+    before.brandLogoUrl !== brandLogoUrl
+  ) {
+    await deleteUploadedFile(before.brandLogoUrl);
+  }
+  if (
+    isLocalUploadReference(before.loginBackgroundUrl) &&
+    before.loginBackgroundUrl !== loginBackgroundUrl
+  ) {
+    await deleteUploadedFile(before.loginBackgroundUrl);
+  }
 
   await writeAuditEvent({
     actorUserId: current.user.id,
     action: "application.settings.update",
     status: "success",
     before,
-    after: { ...parsed.data, brandLogoUrl },
+    after: { ...parsed.data, brandLogoUrl, loginBackgroundUrl },
   });
 
-  revalidatePath("/admin", "layout");
-  revalidatePath("/portal", "layout");
+  revalidateBranding();
 
   return { status: "success", message: "Application settings updated." };
+}
+
+export async function removeProfileImageAction() {
+  const current = await requireSession();
+  await db
+    .update(user)
+    .set({ image: null, updatedAt: new Date() })
+    .where(eq(user.id, current.user.id));
+  await deleteUploadedFile(current.user.image);
+  revalidatePath("/admin", "layout");
+  revalidatePath("/portal", "layout");
+}
+
+export async function removeBrandLogoAction() {
+  const current = await requireAdmin();
+  const before = await getApplicationSettings();
+  await db
+    .update(applicationSettings)
+    .set({ brandLogoUrl: null, updatedAt: new Date() })
+    .where(eq(applicationSettings.id, APPLICATION_SETTINGS_ID));
+  await deleteUploadedFile(before.brandLogoUrl);
+  await writeAuditEvent({
+    actorUserId: current.user.id,
+    action: "application.brand-logo.delete",
+    status: "success",
+    before: { brandLogoUrl: before.brandLogoUrl },
+  });
+  revalidateBranding();
+}
+
+export async function removeLoginBackgroundAction() {
+  const current = await requireAdmin();
+  const before = await getApplicationSettings();
+  await db
+    .update(applicationSettings)
+    .set({ loginBackgroundUrl: null, updatedAt: new Date() })
+    .where(eq(applicationSettings.id, APPLICATION_SETTINGS_ID));
+  await deleteUploadedFile(before.loginBackgroundUrl);
+  await writeAuditEvent({
+    actorUserId: current.user.id,
+    action: "application.login-background.delete",
+    status: "success",
+    before: { loginBackgroundUrl: before.loginBackgroundUrl },
+  });
+  revalidateBranding();
+}
+
+function revalidateBranding() {
+  revalidatePath("/admin", "layout");
+  revalidatePath("/portal", "layout");
+  revalidatePath("/login");
+  revalidatePath("/forgot-password");
+  revalidatePath("/reset-password");
 }
 
 export async function updateTwentySettingsAction(
@@ -185,6 +287,7 @@ export async function updateTwentySettingsAction(
   const current = await requireAdmin();
   const parsed = twentySettingsSchema.safeParse({
     twentyBaseUrl: formData.get("twentyBaseUrl"),
+    twentyAutoFormatUrl: formData.get("twentyAutoFormatUrl"),
     twentyApiKey: formData.get("twentyApiKey"),
     twentyWebhookSecret: formData.get("twentyWebhookSecret"),
   });
@@ -197,8 +300,22 @@ export async function updateTwentySettingsAction(
   }
 
   const existing = await getAdminIntegrationSettingsSummary();
+  let twentyBaseUrl: string | null = null;
+  if (parsed.data.twentyBaseUrl) {
+    try {
+      twentyBaseUrl = parsed.data.twentyAutoFormatUrl
+        ? normalizeTwentyBaseUrl(parsed.data.twentyBaseUrl)
+        : /^[a-z][a-z0-9+.-]*:\/\//i.test(parsed.data.twentyBaseUrl)
+          ? parsed.data.twentyBaseUrl
+          : `https://${parsed.data.twentyBaseUrl}`;
+      new URL(twentyBaseUrl);
+    } catch {
+      return { status: "error", message: "Enter a valid Twenty CRM URL." };
+    }
+  }
   const set = {
-    twentyBaseUrl: parsed.data.twentyBaseUrl || null,
+    twentyBaseUrl,
+    twentyAutoFormatUrl: parsed.data.twentyAutoFormatUrl,
     twentyApiKey:
       parsed.data.twentyApiKey?.trim() || (existing.hasTwentyApiKey ? undefined : null),
     twentyWebhookSecret:
@@ -232,6 +349,7 @@ export async function updateTwentySettingsAction(
     status: "success",
     metadata: {
       twentyBaseUrl: parsed.data.twentyBaseUrl || null,
+      twentyAutoFormatUrl: parsed.data.twentyAutoFormatUrl,
       apiKeyChanged: Boolean(parsed.data.twentyApiKey?.trim()),
       webhookSecretChanged: Boolean(parsed.data.twentyWebhookSecret?.trim()),
     },

@@ -3,9 +3,9 @@ import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/access";
 import { getTwentyIntegrationSettings } from "@/lib/integration-settings";
 
-function contentDisposition(filename: string | null) {
+function contentDisposition(filename: string | null, download: boolean) {
   const safe = filename?.replace(/["\r\n]/g, "") || "twenty-file";
-  return `inline; filename="${safe}"`;
+  return `${download ? "attachment" : "inline"}; filename="${safe}"`;
 }
 
 export async function GET(request: Request) {
@@ -14,6 +14,7 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const rawUrl = requestUrl.searchParams.get("url");
   const rawPath = requestUrl.searchParams.get("path");
+  const download = requestUrl.searchParams.get("download") === "1";
   if (!rawUrl && !rawPath) {
     return NextResponse.json({ error: "Missing file path" }, { status: 400 });
   }
@@ -43,7 +44,7 @@ export async function GET(request: Request) {
   return new Response(response.body, {
     headers: {
       "cache-control": "private, no-store",
-      "content-disposition": contentDisposition(filename),
+      "content-disposition": contentDisposition(filename, download),
       "content-type": contentType,
     },
   });

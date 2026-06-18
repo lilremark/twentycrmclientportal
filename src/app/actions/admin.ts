@@ -11,12 +11,18 @@ import { writeAuditEvent } from "@/lib/audit";
 import { createOpaqueToken, hashOpaqueToken } from "@/lib/credentials";
 import { db } from "@/lib/db";
 import {
+  account,
   clientAccounts,
   invitations,
+  memberships,
   metadataSnapshots,
+  portalAccess,
+  portalAdministrators,
   portalViews,
+  session,
   type PortalFixedFilter,
   type TwentyObjectMetadata,
+  user,
 } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email";
 import { getEnv } from "@/lib/env";
@@ -283,6 +289,8 @@ export async function createClientAccountAction(formData: FormData) {
     after: input,
   });
   revalidatePath("/admin/clients");
+  revalidatePath("/admin/invitations/clients");
+  revalidatePath("/admin/invitations");
 }
 
 export async function createPortalViewAction(formData: FormData) {
@@ -480,6 +488,203 @@ export async function updatePortalViewAction(
   revalidatePath("/portal");
 }
 
+export async function setPortalViewStatusAction(
+  viewId: string,
+  enabled: boolean,
+) {
+  const current = await requireAdmin();
+  const existing = await db.query.portalViews.findFirst({
+    where: eq(portalViews.id, viewId),
+  });
+  if (!existing) throw new Error("Portal view not found.");
+  if (enabled && existing.validationErrors.length) {
+    throw new Error("Resolve validation errors before enabling this view.");
+  }
+
+  await db
+    .update(portalViews)
+    .set({ isEnabled: enabled, updatedAt: new Date() })
+    .where(eq(portalViews.id, viewId));
+  await writeAuditEvent({
+    actorUserId: current.user.id,
+    action: enabled ? "view.enabled" : "view.suspended",
+    status: "success",
+    recordId: viewId,
+    before: existing,
+    after: { isEnabled: enabled },
+  });
+  revalidatePath("/admin/views");
+  revalidatePath(`/admin/views/${viewId}`);
+  revalidatePath("/portal");
+}
+
+export async function deletePortalViewAction(viewId: string) {
+  const current = await requireAdmin();
+  const existing = await db.query.portalViews.findFirst({
+    where: eq(portalViews.id, viewId),
+  });
+  if (!existing) throw new Error("Portal view not found.");
+
+  await writeAuditEvent({
+    actorUserId: current.user.id,
+    action: "view.deleted",
+    status: "success",
+    recordId: viewId,
+    before: existing,
+  });
+  await db.delete(portalViews).where(eq(portalViews.id, viewId));
+  revalidatePath("/admin/views");
+  revalidatePath("/portal");
+}
+
+export async function setClientAccountStatusAction(
+  clientAccountId: string,
+  active: boolean,
+) {
+  const current = await requireAdmin();
+  const existing = await db.query.clientAccounts.findFirst({
+    where: eq(clientAccounts.id, clientAccountId),
+  });
+  if (!existing) throw new Error("Client account not found.");
+
+  await db
+    .update(clientAccounts)
+    .set({ isActive: active, updatedAt: new Date() })
+    .where(eq(clientAccounts.id, clientAccountId));
+  await writeAuditEvent({
+    actorUserId: current.user.id,
+    clientAccountId,
+    action: active ? "client.activated" : "client.suspended",
+    status: "success",
+    before: existing,
+    after: { isActive: active },
+  });
+  revalidatePath("/admin/invitations");
+  revalidatePath("/admin/invitations/clients");
+  revalidatePath("/admin/clients");
+  revalidatePath("/portal");
+}
+
+export async function deleteClientAccountAction(clientAccountId: string) {
+  const current = await requireAdmin();
+  const existing = await db.query.clientAccounts.findFirst({
+    where: eq(clientAccounts.id, clientAccountId),
+  });
+  if (!existing) throw new Error("Client account not found.");
+
+  await writeAuditEvent({
+    actorUserId: current.user.id,
+    clientAccountId,
+    action: "client.deleted",
+    status: "success",
+    before: existing,
+  });
+  await db.delete(clientAccounts).where(eq(clientAccounts.id, clientAccountId));
+  revalidatePath("/admin/invitations");
+  revalidatePath("/admin/invitations/clients");
+  revalidatePath("/admin/clients");
+  revalidatePath("/portal");
+}
+
+export async function revokeInvitationAction(invitationId: string) {
+  const current = await requireAdmin();
+  const existing = await db.query.invitations.findFirst({
+    where: eq(invitations.id, invitationId),
+  });
+  if (!existing) throw new Error("Invitation not found.");
+
+  await db
+    .update(invitations)
+    .set({ status: "revoked", updatedAt: new Date() })
+    .where(eq(invitations.id, invitationId));
+  await writeAuditEvent({
+    actorUserId: current.user.id,
+    action: "invitation.revoked",
+    status: "success",
+    recordId: invitationId,
+    before: existing,
+    after: { status: "revoked" },
+  });
+  revalidatePath("/admin/invitations");
+}
+
+export async function deleteInvitationAction(invitationId: string) {
+  const current = await requireAdmin();
+  const existing = await db.query.invitations.findFirst({
+    where: eq(invitations.id, invitationId),
+  });
+  if (!existing) throw new Error("Invitation not found.");
+
+  await writeAuditEvent({
+    actorUserId: current.user.id,
+    action: "invitation.deleted",
+    status: "success",
+    recordId: invitationId,
+    before: existing,
+  });
+  await db.delete(invitations).where(eq(invitations.id, invitationId));
+  revalidatePath("/admin/invitations");
+}
+
+export async function setUserStatusAction(userId: string, active: boolean) {
+  const current = await requireAdmin();
+  if (userId === current.user.id) {
+    throw new Error("You cannot suspend your own administrator account.");
+  }
+  const existing = await db.query.user.findFirst({
+    where: eq(user.id, userId),
+  });
+  if (!existing) throw new Error("User not found.");
+
+  await db
+    .update(user)
+    .set({ isActive: active, updatedAt: new Date() })
+    .where(eq(user.id, userId));
+  if (!active) {
+    await db.delete(session).where(eq(session.userId, userId));
+  }
+  await writeAuditEvent({
+    actorUserId: current.user.id,
+    action: active ? "user.activated" : "user.suspended",
+    status: "success",
+    recordId: userId,
+    before: existing,
+    after: { isActive: active },
+  });
+  revalidatePath("/admin/users");
+}
+
+export async function deleteUserAction(userId: string) {
+  const current = await requireAdmin();
+  if (userId === current.user.id) {
+    throw new Error("You cannot delete your own administrator account.");
+  }
+  const existing = await db.query.user.findFirst({
+    where: eq(user.id, userId),
+  });
+  if (!existing) throw new Error("User not found.");
+
+  await writeAuditEvent({
+    actorUserId: current.user.id,
+    action: "user.deleted",
+    status: "success",
+    recordId: userId,
+    before: existing,
+  });
+  await db.delete(invitations).where(eq(invitations.invitedByUserId, userId));
+  await db.delete(portalAccess).where(eq(portalAccess.userId, userId));
+  await db.delete(memberships).where(eq(memberships.userId, userId));
+  await db
+    .delete(portalAdministrators)
+    .where(eq(portalAdministrators.userId, userId));
+  await db.delete(session).where(eq(session.userId, userId));
+  await db.delete(account).where(eq(account.userId, userId));
+  await db.delete(user).where(eq(user.id, userId));
+  revalidatePath("/admin/users");
+  revalidatePath("/admin/invitations");
+  revalidatePath("/portal");
+}
+
 export async function createInvitationAction(
   _previous: InvitationActionState,
   formData: FormData,
@@ -559,6 +764,7 @@ export async function createInvitationAction(
       },
     });
     revalidatePath("/admin/invitations");
+    revalidatePath("/admin/invitations/clients");
     return { inviteUrl };
   } catch (error) {
     return {

@@ -1,6 +1,8 @@
 export type PortalFileValue = {
+  attachmentId?: string;
   label: string;
   href: string;
+  downloadHref: string;
   isPdf: boolean;
 };
 
@@ -48,27 +50,47 @@ function isPdfFile(record: Record<string, unknown>, label: string, path: string)
   );
 }
 
-function proxyHref(path: string) {
+function proxyHref(path: string, download = false) {
   const params = new URLSearchParams();
   if (/^https?:\/\//i.test(path)) {
     params.set("url", path);
   } else {
     params.set("path", path);
   }
+  if (download) params.set("download", "1");
   return `/api/twenty/files?${params.toString()}`;
 }
 
 export function extractPortalFiles(value: unknown): PortalFileValue[] {
+  return extractPortalFilesWithContext(value);
+}
+
+function extractPortalFilesWithContext(
+  value: unknown,
+  attachmentId?: string,
+): PortalFileValue[] {
   if (value === null || value === undefined || value === "") return [];
-  if (Array.isArray(value)) return value.flatMap(extractPortalFiles);
+  if (Array.isArray(value)) {
+    return value.flatMap((item) =>
+      extractPortalFilesWithContext(item, attachmentId),
+    );
+  }
 
   const record = asRecord(value);
   if (!record) return [];
+  const currentAttachmentId =
+    attachmentId ??
+    (("file" in record || "files" in record) && stringValue(record.id)
+      ? String(record.id)
+      : undefined);
 
   if (Array.isArray(record.edges)) {
     return record.edges.flatMap((edge) => {
       const edgeRecord = asRecord(edge);
-      return extractPortalFiles(edgeRecord?.node ?? edge);
+      return extractPortalFilesWithContext(
+        edgeRecord?.node ?? edge,
+        currentAttachmentId,
+      );
     });
   }
 
@@ -77,8 +99,10 @@ export function extractPortalFiles(value: unknown): PortalFileValue[] {
   if (path) {
     const label = fileLabelFromRecord(record, path);
     files.push({
+      attachmentId: currentAttachmentId,
       label,
       href: proxyHref(path),
+      downloadHref: proxyHref(path, true),
       isPdf: Boolean(isPdfFile(record, label, path)),
     });
   }
@@ -100,7 +124,9 @@ export function extractPortalFiles(value: unknown): PortalFileValue[] {
       continue;
     }
     if (nested && typeof nested === "object") {
-      files.push(...extractPortalFiles(nested));
+      files.push(
+        ...extractPortalFilesWithContext(nested, currentAttachmentId),
+      );
     }
   }
 

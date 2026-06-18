@@ -25,12 +25,7 @@ export default async function EditViewPage({
 
   return (
     <div className="page-stack">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">Portal configuration</p>
-          <h2>{view.label}</h2>
-          <p>Update the external experience, then open a live scoped preview.</p>
-        </div>
+      <div className="page-actions">
         <Link
           className="button secondary"
           href={`/admin/views/${view.id}/preview`}

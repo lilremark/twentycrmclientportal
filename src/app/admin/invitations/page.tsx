@@ -1,6 +1,11 @@
 import { desc } from "drizzle-orm";
 
+import {
+  deleteInvitationAction,
+  revokeInvitationAction,
+} from "@/app/actions/admin";
 import { InvitationForm } from "@/components/admin-actions";
+import { ConfirmDeleteForm } from "@/components/confirm-delete-form";
 import { db } from "@/lib/db";
 import {
   clientAccounts,
@@ -39,16 +44,6 @@ export default async function InvitationsPage() {
   ]);
   return (
     <div className="page-stack">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">Portal access</p>
-          <h2>Invitations</h2>
-          <p>
-            Invite viewers and contributors, then monitor acceptance and expiry
-            status.
-          </p>
-        </div>
-      </div>
       <InvitationForm clients={clients} views={views} />
       <section className="card table-shell">
         <div className="section-heading">
@@ -64,6 +59,7 @@ export default async function InvitationsPage() {
                 <th>Client Person</th>
                 <th>Status</th>
                 <th>Expires</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -75,6 +71,24 @@ export default async function InvitationsPage() {
                   <td>{invite.clientName ?? "—"}</td>
                   <td className="capitalize">{invite.status}</td>
                   <td>{invite.expiresAt.toLocaleString()}</td>
+                  <td>
+                    <div className="table-actions">
+                      {invite.status === "pending" ? (
+                        <form
+                          action={revokeInvitationAction.bind(null, invite.id)}
+                        >
+                          <button className="button secondary" type="submit">
+                            Revoke
+                          </button>
+                        </form>
+                      ) : null}
+                      <ConfirmDeleteForm
+                        action={deleteInvitationAction.bind(null, invite.id)}
+                        description={`This permanently deletes the invitation for ${invite.email}.`}
+                        title="Delete invitation?"
+                      />
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>

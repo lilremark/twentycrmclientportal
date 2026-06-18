@@ -12,7 +12,11 @@ import { db } from "@/lib/db";
 import { applicationSettings, portalAdministrators } from "@/lib/db/schema";
 import { getEnv } from "@/lib/env";
 import { APPLICATION_SETTINGS_ID } from "@/lib/application-settings";
-import { saveUploadedImage } from "@/lib/uploads";
+import {
+  saveUploadedImage,
+  saveUploadedPngBackground,
+} from "@/lib/uploads";
+import { normalizeTwentyBaseUrl } from "@/lib/twenty/url";
 
 const passwordSchema = z
   .string()
@@ -59,6 +63,13 @@ export async function setupAction(
             z.string().regex(/^\/api\/uploads\/[A-Za-z0-9-_.]+$/),
           ])
           .optional(),
+        loginBackgroundUrl: z
+          .union([
+            z.literal(""),
+            z.url(),
+            z.string().regex(/^\/api\/uploads\/[A-Za-z0-9-_.]+$/),
+          ])
+          .optional(),
         primaryColor: z
           .string()
           .regex(/^#[0-9a-fA-F]{6}$/)
@@ -71,7 +82,16 @@ export async function setupAction(
           .max(240)
           .default("Secure access to the records shared with your team."),
         supportEmail: z.union([z.literal(""), z.email()]).optional(),
-        twentyBaseUrl: z.union([z.literal(""), z.url()]).optional(),
+        twentyBaseUrl: z.string().trim().optional(),
+        twentyAutoFormatUrl: z
+          .union([
+            z.literal("on"),
+            z.literal("true"),
+            z.literal("false"),
+            z.null(),
+          ])
+          .optional()
+          .transform((value) => value === "on" || value === "true"),
         twentyApiKey: z.string().optional(),
         twentyWebhookSecret: z.string().optional(),
         smtpHost: z.string().trim().optional(),
@@ -99,15 +119,28 @@ export async function setupAction(
     const uploadedLogo = await saveUploadedImage(
       formData.get("brandLogoFile") as File | null,
     );
+    const uploadedBackground = await saveUploadedPngBackground(
+      formData.get("loginBackgroundFile") as File | null,
+    );
     await db.insert(applicationSettings).values({
       id: APPLICATION_SETTINGS_ID,
       brandName: input.brandName,
       brandLogoUrl: uploadedLogo ?? input.brandLogoUrl ?? null,
+      loginBackgroundUrl:
+        uploadedBackground ?? input.loginBackgroundUrl ?? null,
       primaryColor: input.primaryColor,
       portalTitle: input.portalTitle,
       portalDescription: input.portalDescription,
       supportEmail: input.supportEmail || null,
-      twentyBaseUrl: input.twentyBaseUrl || null,
+      twentyBaseUrl:
+        input.twentyBaseUrl && input.twentyAutoFormatUrl
+          ? normalizeTwentyBaseUrl(input.twentyBaseUrl)
+          : input.twentyBaseUrl
+            ? /^[a-z][a-z0-9+.-]*:\/\//i.test(input.twentyBaseUrl)
+              ? input.twentyBaseUrl
+              : `https://${input.twentyBaseUrl}`
+            : null,
+      twentyAutoFormatUrl: input.twentyAutoFormatUrl,
       twentyApiKey: input.twentyApiKey?.trim() || null,
       twentyWebhookSecret: input.twentyWebhookSecret?.trim() || null,
       smtpHost: input.smtpHost || null,

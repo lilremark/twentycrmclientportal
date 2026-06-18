@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { Eye, Pencil } from "lucide-react";
 
-import { createPortalViewAction } from "@/app/actions/admin";
+import {
+  createPortalViewAction,
+  deletePortalViewAction,
+  setPortalViewStatusAction,
+} from "@/app/actions/admin";
+import { ConfirmDeleteForm } from "@/components/confirm-delete-form";
 import { PortalViewForm } from "@/components/portal-view-form";
 import { db } from "@/lib/db";
 import { portalViews } from "@/lib/db/schema";
@@ -14,16 +19,6 @@ export default async function ViewsPage() {
   ]);
   return (
     <div className="page-stack">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">Configuration</p>
-          <h2>Portal views</h2>
-          <p>
-            Configure exactly which Twenty records, fields, filters, and
-            actions are available to external users.
-          </p>
-        </div>
-      </div>
       <PortalViewForm
         action={createPortalViewAction}
         objects={objects}
@@ -39,7 +34,7 @@ export default async function ViewsPage() {
                   {view.objectNameSingular} · /portal/{view.slug}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <span className="badge">
                   {view.isEnabled ? "Enabled" : "Disabled"}
                 </span>
@@ -57,6 +52,22 @@ export default async function ViewsPage() {
                   <Pencil size={16} />
                   Edit
                 </Link>
+                <form
+                  action={setPortalViewStatusAction.bind(
+                    null,
+                    view.id,
+                    !view.isEnabled,
+                  )}
+                >
+                  <button className="button secondary" type="submit">
+                    {view.isEnabled ? "Suspend" : "Enable"}
+                  </button>
+                </form>
+                <ConfirmDeleteForm
+                  action={deletePortalViewAction.bind(null, view.id)}
+                  description={`This permanently deletes the "${view.label}" portal view and its direct access grants.`}
+                  title={`Delete ${view.label}?`}
+                />
               </div>
             </div>
             {view.validationErrors.length ? (

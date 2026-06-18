@@ -97,24 +97,14 @@ export default async function AdminOverviewPage() {
 
   return (
     <div className="page-stack">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">Workspace overview</p>
-          <h2>Portal operations</h2>
-          <p>
-            Monitor active portal experiences, recent external activity, and
-            Twenty CRM metadata health from one place.
-          </p>
-        </div>
-        <div className="form-actions">
-          <ConnectionTestButton />
-          <form action={syncMetadataAction}>
-            <button className="button" type="submit">
-              <Database size={17} />
-              Synchronize metadata
-            </button>
-          </form>
-        </div>
+      <div className="page-actions">
+        <ConnectionTestButton />
+        <form action={syncMetadataAction}>
+          <button className="button" type="submit">
+            <Database size={17} />
+            Synchronize metadata
+          </button>
+        </form>
       </div>
 
       <section className="stat-grid">

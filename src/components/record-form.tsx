@@ -162,16 +162,6 @@ export function RecordForm({
               }
               type={inputType(field.type)}
             />
-            {field.type === "MULTI_SELECT" ? (
-              <span className="field-help">
-                Enter comma-separated values.
-              </span>
-            ) : null}
-            {field.type === "RELATION" ? (
-              <span className="field-help">
-                Enter a record UUID from an approved portal object.
-              </span>
-            ) : null}
           </div>
         );
       })}

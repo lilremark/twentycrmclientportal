@@ -3,7 +3,11 @@
 import { useActionState, useState, useTransition } from "react";
 import { Mail, Palette, PlugZap, Save, Send, UserRound } from "lucide-react";
 
+import { DeleteUploadButton } from "@/components/delete-upload-button";
 import {
+  removeBrandLogoAction,
+  removeLoginBackgroundAction,
+  removeProfileImageAction,
   type SettingsActionState,
   testTwentySettingsAction,
   testSmtpSettingsAction,
@@ -53,6 +57,10 @@ function previewUploadedImage(file: File | undefined, fallback: string) {
   return file ? URL.createObjectURL(file) : fallback;
 }
 
+function isLocalUpload(value: string | null) {
+  return Boolean(value?.startsWith("/api/uploads/"));
+}
+
 export function ProfileSettingsForm({
   initialName,
   initialImage,
@@ -67,7 +75,12 @@ export function ProfileSettingsForm({
     initialState,
   );
   const [name, setName] = useState(initialName);
-  const [image, setImage] = useState(initialImage ?? "");
+  const [storedImage, setStoredImage] = useState(
+    isLocalUpload(initialImage) ? initialImage ?? "" : "",
+  );
+  const [image, setImage] = useState(
+    initialImage && !isLocalUpload(initialImage) ? initialImage : "",
+  );
   const [imageFile, setImageFile] = useState<File>();
 
   return (
@@ -84,9 +97,21 @@ export function ProfileSettingsForm({
       <FormMessage state={state} />
       <div className="profile-editor">
         <AvatarPreview
-          image={previewUploadedImage(imageFile, image)}
+          image={previewUploadedImage(imageFile, image || storedImage)}
           name={name}
         />
+        {storedImage || image || imageFile ? (
+          <DeleteUploadButton
+            action={removeProfileImageAction}
+            confirmMessage="Delete your current profile image?"
+            label="Remove image"
+            onDeleted={() => {
+              setStoredImage("");
+              setImage("");
+              setImageFile(undefined);
+            }}
+          />
+        ) : null}
         <div className="grid flex-1 gap-4">
           <div className="field">
             <label htmlFor="profile-name">Display name</label>
@@ -152,6 +177,7 @@ export function ApplicationSettingsForm({
   settings: {
     brandName: string;
     brandLogoUrl: string | null;
+    loginBackgroundUrl: string | null;
     primaryColor: string;
     portalTitle: string;
     portalDescription: string;
@@ -164,7 +190,26 @@ export function ApplicationSettingsForm({
   );
   const [primaryColor, setPrimaryColor] = useState(settings.primaryColor);
   const [logoFile, setLogoFile] = useState<File>();
-  const [logoUrl, setLogoUrl] = useState(settings.brandLogoUrl ?? "");
+  const [storedLogo, setStoredLogo] = useState(
+    isLocalUpload(settings.brandLogoUrl) ? settings.brandLogoUrl ?? "" : "",
+  );
+  const [logoUrl, setLogoUrl] = useState(
+    settings.brandLogoUrl && !isLocalUpload(settings.brandLogoUrl)
+      ? settings.brandLogoUrl
+      : "",
+  );
+  const [backgroundFile, setBackgroundFile] = useState<File>();
+  const [storedBackground, setStoredBackground] = useState(
+    isLocalUpload(settings.loginBackgroundUrl)
+      ? settings.loginBackgroundUrl ?? ""
+      : "",
+  );
+  const [backgroundUrl, setBackgroundUrl] = useState(
+    settings.loginBackgroundUrl &&
+      !isLocalUpload(settings.loginBackgroundUrl)
+      ? settings.loginBackgroundUrl
+      : "",
+  );
 
   return (
     <form action={action} className="card settings-card" encType="multipart/form-data">
@@ -192,14 +237,16 @@ export function ApplicationSettingsForm({
         </div>
         <div className="field">
           <label htmlFor="brand-logo-file">Upload logo</label>
-          <input
-            accept="image/*"
-            className="input"
-            id="brand-logo-file"
-            name="brandLogoFile"
-            onChange={(event) => setLogoFile(event.target.files?.[0])}
-            type="file"
-          />
+          <label className="settings-file-upload" htmlFor="brand-logo-file">
+            <span>Choose logo file</span>
+            <input
+              accept="image/*"
+              id="brand-logo-file"
+              name="brandLogoFile"
+              onChange={(event) => setLogoFile(event.target.files?.[0])}
+              type="file"
+            />
+          </label>
           <span className="field-help">
             This is used in the sidebar and sign-in screens.
           </span>
@@ -216,13 +263,83 @@ export function ApplicationSettingsForm({
             value={logoUrl}
           />
         </div>
-        {(logoFile || logoUrl) ? (
+        {(logoFile || logoUrl || storedLogo) ? (
           <div className="field">
             <label>Logo preview</label>
             <div className="uploaded-logo-preview">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img alt="" src={previewUploadedImage(logoFile, logoUrl)} />
+              <img
+                alt=""
+                src={previewUploadedImage(logoFile, logoUrl || storedLogo)}
+              />
             </div>
+            <DeleteUploadButton
+              action={removeBrandLogoAction}
+              confirmMessage="Delete the current brand logo?"
+              label="Remove logo"
+              onDeleted={() => {
+                setStoredLogo("");
+                setLogoUrl("");
+                setLogoFile(undefined);
+              }}
+            />
+          </div>
+        ) : null}
+        <div className="field">
+          <label htmlFor="login-background-file">Sign-in background</label>
+          <label
+            className="settings-file-upload"
+            htmlFor="login-background-file"
+          >
+            <span>Choose PNG background</span>
+            <input
+              accept="image/png"
+              id="login-background-file"
+              name="loginBackgroundFile"
+              onChange={(event) =>
+                setBackgroundFile(event.target.files?.[0])
+              }
+              type="file"
+            />
+          </label>
+          <span className="field-help">
+            Upload a PNG used behind the sign-in card.
+          </span>
+        </div>
+        <div className="field">
+          <label htmlFor="login-background-url">Background image URL</label>
+          <input
+            className="input"
+            id="login-background-url"
+            name="loginBackgroundUrl"
+            onChange={(event) => setBackgroundUrl(event.target.value)}
+            placeholder="https://example.com/background.png"
+            value={backgroundUrl}
+          />
+        </div>
+        {(backgroundFile || backgroundUrl || storedBackground) ? (
+          <div className="field settings-span">
+            <label>Background preview</label>
+            <div className="uploaded-background-preview">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                alt=""
+                src={previewUploadedImage(
+                  backgroundFile,
+                  backgroundUrl || storedBackground,
+                )}
+              />
+            </div>
+            <DeleteUploadButton
+              action={removeLoginBackgroundAction}
+              confirmMessage="Delete the current sign-in background?"
+              label="Remove background"
+              onDeleted={() => {
+                setStoredBackground("");
+                setBackgroundUrl("");
+                setBackgroundFile(undefined);
+              }}
+            />
           </div>
         ) : null}
         <div className="field">
@@ -292,6 +409,7 @@ export function TwentySettingsForm({
 }: {
   settings: {
     twentyBaseUrl: string;
+    twentyAutoFormatUrl: boolean;
     hasTwentyApiKey: boolean;
     hasTwentyWebhookSecret: boolean;
   };
@@ -325,9 +443,24 @@ export function TwentySettingsForm({
             id="twenty-base-url"
             name="twentyBaseUrl"
             placeholder="https://crm.example.com"
-            type="url"
+            type="text"
           />
+          <span className="field-help">
+            Cloud workspace URLs are mapped to https://api.twenty.com.
+            Self-hosted URLs use their own origin.
+          </span>
         </div>
+        <label className="settings-toggle settings-span">
+          <input
+            defaultChecked={settings.twentyAutoFormatUrl}
+            name="twentyAutoFormatUrl"
+            type="checkbox"
+          />
+          <span>
+            Automatically format the URL and append the supported GraphQL
+            endpoints
+          </span>
+        </label>
         <div className="field">
           <label htmlFor="twenty-api-key">API key</label>
           <input

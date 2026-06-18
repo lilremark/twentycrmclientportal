@@ -28,7 +28,7 @@ export async function requireSession() {
   const profile = await db.query.user.findFirst({
     where: eq(user.id, current.user.id),
   });
-  if (!profile) {
+  if (!profile || !profile.isActive) {
     redirect("/login");
   }
   return {

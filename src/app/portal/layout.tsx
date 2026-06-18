@@ -17,13 +17,13 @@ export default async function PortalLayout({
   return (
     <AppShell
       title={context.clientName}
-      subtitle={context.role === "contributor" ? "Contributor" : "Viewer"}
       user={{
         name: context.session.user.name,
         email: context.session.user.email,
         image: context.session.user.image ?? null,
       }}
       branding={getSettingsBranding(settings)}
+      variant="portal"
       navigation={[
         { href: "/portal", label: "Home", icon: "home" },
         ...context.views.map((view) => ({

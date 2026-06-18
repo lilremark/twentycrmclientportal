@@ -57,6 +57,20 @@
       "when": 1781715600000,
       "tag": "0007_record_title_field",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1781722800000,
+      "tag": "0008_admin_management",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1781809200000,
+      "tag": "0009_login_branding_and_twenty_url",
+      "breakpoints": true
     }
   ]
 }

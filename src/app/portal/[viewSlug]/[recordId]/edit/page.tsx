@@ -44,13 +44,6 @@ export default async function EditRecordPage({
 
   return (
     <div className="page-stack mx-auto max-w-2xl">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">{view.label}</p>
-          <h2>Edit {object.labelSingular}</h2>
-          <p>Changes are validated and written directly to Twenty CRM.</p>
-        </div>
-      </div>
       <RecordForm
         action={updateRecordAction.bind(null, view.slug, recordId)}
         fields={view.editFields}

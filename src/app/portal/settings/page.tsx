@@ -6,13 +6,6 @@ export default async function PortalSettingsPage() {
 
   return (
     <div className="settings-page">
-      <div className="page-intro">
-        <div>
-          <p className="eyebrow">Your account</p>
-          <h2>Settings</h2>
-          <p>Manage your personal information and portal identity.</p>
-        </div>
-      </div>
       <ProfileSettingsForm
         email={current.user.email}
         initialImage={current.user.image ?? null}

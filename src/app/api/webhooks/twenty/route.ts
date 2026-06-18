@@ -8,6 +8,7 @@ import { writeAuditEvent } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { portalViews, webhookReceipts } from "@/lib/db/schema";
 import { getTwentyIntegrationSettings } from "@/lib/integration-settings";
+import { clearTwentyReadCache } from "@/lib/twenty/cache";
 import {
   isFreshWebhookTimestamp,
   verifyTwentyWebhookSignature,
@@ -70,6 +71,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ received: true, duplicate: true });
   }
 
+  clearTwentyReadCache();
   const objectName = payload.event.split(".")[0];
   const views = await db.query.portalViews.findMany({
     where: eq(portalViews.objectNameSingular, objectName),

@@ -187,7 +187,7 @@ On boot, the portal creates/updates this user, assigns administrator status, and
 │   ├── components/         # Reusable React components (Forms, Tables, UI)
 │   ├── lib/                # Shared utilities
 │   │   ├── db/             # Drizzle schema definitions and DB client
-│   │   ├── twenty/         # Twenty CRM API client and metadata mapping
+│   │   ├── twenty/         # Twenty CRM API client, read cache, and metadata mapping
 │   │   └── auth.ts         # Better Auth initialization logic
 │   └── proxy.ts            # Local endpoint proxies
 ├── tests/
@@ -195,6 +195,13 @@ On boot, the portal creates/updates this user, assigns administrator status, and
 │   └── e2e/                # Playwright E2E and visual regression test files
 └── playwright.config.ts    # E2E test harness configuration
 ```
+
+### Development Notes
+
+- Client portal reads go through `src/lib/twenty/client.ts`, which applies a short in-memory read-through cache in `src/lib/twenty/cache.ts`. This is intentionally scoped for a single app replica and modest usage.
+- The cache is cleared after successful Twenty writes, accepted Twenty webhooks, and the portal record refresh action. Keep new record-list/detail reads behind the Twenty client so they share the same invalidation behavior.
+- Keep browser-facing code out of `src/lib/twenty/*`; Twenty API credentials must remain server-only.
+- See [CONTRIBUTING.md](CONTRIBUTING.md) for authorization, uploads, module boundaries, and verification conventions.
 
 ### Database Schema Reference
 

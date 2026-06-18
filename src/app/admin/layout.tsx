@@ -7,10 +7,9 @@ import {
 
 const navigation = [
   { href: "/admin", label: "Overview", icon: "overview" },
-  { href: "/admin/clients", label: "Clients", icon: "clients" },
   { href: "/admin/views", label: "Portal views", icon: "views" },
   { href: "/admin/invitations", label: "Invitations", icon: "invitations" },
-  { href: "/admin/audit", label: "Audit", icon: "audit" },
+  { href: "/admin/users", label: "Users", icon: "users" },
   { href: "/admin/settings", label: "Settings", icon: "settings" },
 ];
 
@@ -26,7 +25,6 @@ export default async function AdminLayout({
   return (
     <AppShell
       title="Portal administration"
-      subtitle="Administrator"
       user={{
         name: current.user.name,
         email: current.user.email,
@@ -34,6 +32,7 @@ export default async function AdminLayout({
       }}
       navigation={navigation}
       branding={getSettingsBranding(settings)}
+      variant="admin"
     >
       {children}
     </AppShell>

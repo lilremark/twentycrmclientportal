@@ -7,6 +7,7 @@ import type {
 const preferredDisplayNames = [
   "name",
   "title",
+  "file",
   "bodyV2",
   "label",
   "subject",
@@ -25,7 +26,7 @@ function directDisplayFields(
   fields: TwentyFieldMetadata[],
 ): TwentyRelationDisplayField[] {
   const supported = fields.filter((field) =>
-    ["TEXT", "FULL_NAME", "RICH_TEXT"].includes(field.type),
+    ["TEXT", "FULL_NAME", "RICH_TEXT", "FILE", "FILES"].includes(field.type),
   );
   const preferred = preferredDisplayNames
     .map((name) => supported.find((field) => field.name === name))

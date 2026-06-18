@@ -41,16 +41,13 @@ export default async function RecordDetailPage({
 
   return (
     <div className="page-stack mx-auto max-w-3xl">
-      <div className="page-heading">
-        <div>
-          <Link
-            className="text-sm font-semibold text-[#3157d5]"
-            href={`/portal/${view.slug}`}
-          >
-            ← Back to {view.label}
-          </Link>
-          <h2>{object.labelSingular}</h2>
-        </div>
+      <div className="page-actions justify-between">
+        <Link
+          className="text-sm font-semibold text-[#3157d5]"
+          href={`/portal/${view.slug}`}
+        >
+          ← Back to {view.label}
+        </Link>
         {context.role === "contributor" && view.editFields.length ? (
           <Link
             className="button"
