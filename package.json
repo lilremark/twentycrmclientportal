@@ -1,6 +1,6 @@
 {
   "name": "twentycrmclientportal",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "packageManager": "npm@10.9.8",
   "engines": {
@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:runtime": "mkdir -p .runtime && esbuild scripts/migrate.ts --bundle --platform=node --format=esm --target=node22 --outfile=.runtime/migrate.mjs && esbuild scripts/bootstrap-admin.ts --bundle --platform=node --format=esm --target=node22 --outfile=.runtime/bootstrap-admin.mjs",
     "start": "next start --hostname 0.0.0.0 --port 3000",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
@@ -47,6 +48,7 @@
     "@types/react-dom": "^19",
     "@vitest/coverage-v8": "^4.1.8",
     "drizzle-kit": "^0.31.10",
+    "esbuild": "^0.25.12",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "jsdom": "^29.1.1",

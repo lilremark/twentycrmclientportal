@@ -1,14 +1,20 @@
-FROM node:22-alpine AS dependencies
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm install --global npm@10.9.8 \
-    && npm install --package-lock-only --ignore-scripts --no-audit --no-fund \
-    && npm ci
+# syntax=docker/dockerfile:1.7
 
-FROM node:22-alpine AS builder
+FROM node:22-alpine AS base
 WORKDIR /app
+RUN apk add --no-cache libc6-compat
+
+FROM base AS dependencies
+COPY package.json package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm \
+    npm install --global npm@10.9.8 \
+    && npm ci --no-audit --no-fund
+
+FROM base AS builder
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
+
+ARG DEPLOYMENT_ID=v1-0-0
 ARG DATABASE_URL=postgres://build:build@localhost:5432/build
 ARG APP_URL=http://localhost:3000
 ARG AUTH_SECRET=build-only-secret-at-least-32-characters
@@ -16,6 +22,7 @@ ARG SETUP_TOKEN=build-only-setup-token
 ARG TWENTY_BASE_URL=http://localhost:3001
 ARG TWENTY_API_KEY=build-only-api-key
 ARG TWENTY_WEBHOOK_SECRET=build-only-webhook-secret
+
 ENV DATABASE_URL=$DATABASE_URL
 ENV APP_URL=$APP_URL
 ENV AUTH_SECRET=$AUTH_SECRET
@@ -23,22 +30,46 @@ ENV SETUP_TOKEN=$SETUP_TOKEN
 ENV TWENTY_BASE_URL=$TWENTY_BASE_URL
 ENV TWENTY_API_KEY=$TWENTY_API_KEY
 ENV TWENTY_WEBHOOK_SECRET=$TWENTY_WEBHOOK_SECRET
-RUN npm run build
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_DEPLOYMENT_ID=$DEPLOYMENT_ID
+
+RUN npm run build \
+    && npm run build:runtime \
+    && rm -f .next/standalone/.env .next/standalone/.env.*
 
 FROM node:22-alpine AS runner
 WORKDIR /app
+
+ARG VERSION=1.0.0
+LABEL org.opencontainers.image.title="Twenty CRM Client Portal" \
+      org.opencontainers.image.description="Self-hosted external client portal for Twenty CRM" \
+      org.opencontainers.image.source="https://github.com/lilremark/twentycrmclientportal" \
+      org.opencontainers.image.version=$VERSION
+
 ENV NODE_ENV=production
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 portal
-RUN mkdir -p /app/data/uploads && chown -R portal:nodejs /app/data
-COPY --from=dependencies /app/node_modules ./node_modules
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/drizzle ./drizzle
-COPY --from=builder /app/scripts ./scripts
-COPY --from=builder /app/src/lib/password.ts ./src/lib/password.ts
-USER portal
-EXPOSE 3000
+ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
-CMD ["sh", "-c", "npm run db:migrate && npm run admin:bootstrap && npm start"]
+
+RUN apk add --no-cache libc6-compat \
+    && addgroup --system --gid 1001 nodejs \
+    && adduser --system --uid 1001 --ingroup nodejs portal \
+    && mkdir -p /app/data/uploads \
+    && chown -R portal:nodejs /app/data
+
+COPY --from=builder --chown=portal:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=portal:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=portal:nodejs /app/public ./public
+COPY --from=builder --chown=portal:nodejs /app/drizzle ./drizzle
+COPY --from=builder --chown=portal:nodejs /app/.runtime ./scripts
+COPY --chown=portal:nodejs scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+
+RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh
+
+USER portal
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://127.0.0.1:3000/health/ready || exit 1
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

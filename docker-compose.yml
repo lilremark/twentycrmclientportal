@@ -1,7 +1,15 @@
 services:
   portal:
-    build: .
+    image: twentycrmclientportal:${PORTAL_VERSION:-1.0.0}
+    build:
+      context: .
+      target: runner
+      args:
+        VERSION: ${PORTAL_VERSION:-1.0.0}
+        DEPLOYMENT_ID: ${PORTAL_DEPLOYMENT_ID:-v1-0-0}
+    init: true
     restart: unless-stopped
+    stop_grace_period: 30s
     env_file: ${PORTAL_ENV_FILE:-.env}
     environment:
       DATABASE_URL: postgres://portal:${POSTGRES_PASSWORD:-portal}@postgres:5432/portal
@@ -14,6 +22,13 @@ services:
       - "0.0.0.0:${PORTAL_PORT:-3005}:3000"
     volumes:
       - portal_uploads:/app/data/uploads
+    networks:
+      - frontend
+      - backend
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     healthcheck:
       test:
         [
@@ -26,22 +41,31 @@ services:
         ]
       interval: 30s
       timeout: 5s
+      start_period: 20s
       retries: 3
 
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
+    stop_grace_period: 30s
     environment:
       POSTGRES_DB: portal
       POSTGRES_USER: portal
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-portal}
     volumes:
       - portal_postgres:/var/lib/postgresql/data
+    networks:
+      - backend
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U portal -d portal"]
       interval: 5s
       timeout: 5s
       retries: 10
+
+networks:
+  frontend:
+  backend:
+    internal: true
 
 volumes:
   portal_postgres:

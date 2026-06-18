@@ -117,6 +117,11 @@ docker compose up -d --build
 ```
 This builds the Next.js app in production mode and binds port `3005` on the host to port `3000` inside the container.
 
+The image tag and Next.js deployment identifier default to the current release. Next.js deployment IDs only support letters, numbers, hyphens, and underscores, so the SemVer release `1.0.0` uses `v1-0-0`:
+```bash
+PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
+```
+
 #### 2. Fresh Database Reset (Troubleshooting/Rebuilds)
 To permanently drop all PostgreSQL data, rebuild images without cache, apply migrations, verify table schemas, and restart cleanly:
 ```bash
@@ -202,6 +207,7 @@ On boot, the portal creates/updates this user, assigns administrator status, and
 - The cache is cleared after successful Twenty writes, accepted Twenty webhooks, and the portal record refresh action. Keep new record-list/detail reads behind the Twenty client so they share the same invalidation behavior.
 - Keep browser-facing code out of `src/lib/twenty/*`; Twenty API credentials must remain server-only.
 - See [CONTRIBUTING.md](CONTRIBUTING.md) for authorization, uploads, module boundaries, and verification conventions.
+- See [RELEASING.md](RELEASING.md) for semantic versioning and GitHub release steps.
 
 ### Database Schema Reference
 
