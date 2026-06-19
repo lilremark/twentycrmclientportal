@@ -4,6 +4,19 @@ All notable changes to Twenty CRM Client Portal are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-06-19
+
+### Added
+
+- Added a branded, responsive HTML invitation email template that follows the
+  portal's configured identity.
+- Added administrator-managed invitation email subjects and HTML templates
+  with supported recipient, branding, and invitation-link placeholders.
+- Added a Health settings tab with live portal, PostgreSQL, and Docker Hub
+  checks.
+- Added running-version and latest-published-image comparison with update
+  availability reporting.
+
 ## [1.0.2] - 2026-06-19
 
 ### Fixed
@@ -69,6 +82,7 @@ PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
 
 After the health check passes, open the configured `APP_URL` and complete the one-time `/setup` flow.
 
+[1.1.0]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.1.0
 [1.0.2]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.0.2
 [1.0.1]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.0.1
 [1.0.0]: https://github.com/lilremark/twentycrmclientportal/releases/tag/v1.0.0
