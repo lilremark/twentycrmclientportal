@@ -71,6 +71,13 @@
       "when": 1781809200000,
       "tag": "0009_login_branding_and_twenty_url",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1781875920553,
+      "tag": "0010_lyrical_dormammu",
+      "breakpoints": true
     }
   ]
 }

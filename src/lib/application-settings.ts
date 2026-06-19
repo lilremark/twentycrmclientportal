@@ -16,6 +16,8 @@ export type ApplicationSettings = {
   portalTitle: string;
   portalDescription: string;
   supportEmail: string | null;
+  invitationEmailSubject: string | null;
+  invitationEmailHtml: string | null;
 };
 
 export function getDefaultApplicationSettings(): ApplicationSettings {
@@ -28,6 +30,8 @@ export function getDefaultApplicationSettings(): ApplicationSettings {
     portalTitle: "Client portal",
     portalDescription: "Secure access to the records shared with your team.",
     supportEmail: null,
+    invitationEmailSubject: null,
+    invitationEmailHtml: null,
   };
 }
 
@@ -48,6 +52,8 @@ export async function getApplicationSettings(): Promise<ApplicationSettings> {
     portalTitle: current.portalTitle,
     portalDescription: current.portalDescription,
     supportEmail: current.supportEmail,
+    invitationEmailSubject: current.invitationEmailSubject,
+    invitationEmailHtml: current.invitationEmailHtml,
   };
 }
 

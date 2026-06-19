@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { requireAdmin } from "@/lib/access";
 import { writeAuditEvent } from "@/lib/audit";
+import { getApplicationSettings } from "@/lib/application-settings";
 import { createOpaqueToken, hashOpaqueToken } from "@/lib/credentials";
 import { db } from "@/lib/db";
 import {
@@ -26,6 +27,7 @@ import {
 } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email";
 import { getEnv } from "@/lib/env";
+import { renderInvitationEmail } from "@/lib/invitation-email";
 import {
   fieldConfigsFromNames,
   fixedFilterOperatorsForType,
@@ -746,11 +748,19 @@ export async function createInvitationAction(
       invitedByUserId: current.user.id,
     });
     const inviteUrl = `${getEnv().APP_URL}/invite/${token}`;
+    const applicationSettings = await getApplicationSettings();
+    const invitationEmail = renderInvitationEmail(
+      applicationSettings,
+      {
+        name: input.name,
+        email: input.email,
+        inviteUrl,
+      },
+      getEnv().APP_URL,
+    );
     await sendEmail({
       to: input.email,
-      subject: "You are invited to the Twenty Client Portal",
-      text: `Accept your invitation: ${inviteUrl}`,
-      html: `<p>You have been invited to the Twenty Client Portal.</p><p><a href="${inviteUrl}">Accept invitation</a></p>`,
+      ...invitationEmail,
     });
     await writeAuditEvent({
       actorUserId: current.user.id,

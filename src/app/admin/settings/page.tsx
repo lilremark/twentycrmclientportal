@@ -2,6 +2,7 @@ import { KeyRound, Mail, ServerCog, ShieldCheck } from "lucide-react";
 
 import {
   ApplicationSettingsForm,
+  InvitationEmailTemplateForm,
   ProfileSettingsForm,
   SmtpSettingsForm,
   TwentySettingsForm,
@@ -10,6 +11,7 @@ import { requireAdmin } from "@/lib/access";
 import { getApplicationSettings } from "@/lib/application-settings";
 import { getEnv } from "@/lib/env";
 import { getAdminIntegrationSettingsSummary } from "@/lib/integration-settings";
+import { getInvitationEmailEditorValues } from "@/lib/invitation-email";
 
 export default async function AdminSettingsPage() {
   const [current, settings, integrations] = await Promise.all([
@@ -18,12 +20,17 @@ export default async function AdminSettingsPage() {
     getAdminIntegrationSettingsSummary(),
   ]);
   const env = getEnv();
+  const invitationEmailTemplate = getInvitationEmailEditorValues(
+    settings,
+    env.APP_URL,
+  );
 
   return (
     <div className="settings-page">
       <ApplicationSettingsForm settings={settings} />
       <TwentySettingsForm settings={integrations} />
       <SmtpSettingsForm settings={integrations} />
+      <InvitationEmailTemplateForm template={invitationEmailTemplate} />
       <ProfileSettingsForm
         email={current.user.email}
         initialImage={current.user.image ?? null}

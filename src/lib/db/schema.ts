@@ -154,6 +154,8 @@ export const applicationSettings = pgTable("application_setting", {
   smtpUser: text("smtp_user"),
   smtpPassword: text("smtp_password"),
   smtpFrom: text("smtp_from"),
+  invitationEmailSubject: text("invitation_email_subject"),
+  invitationEmailHtml: text("invitation_email_html"),
   ...timestamps,
 });
 

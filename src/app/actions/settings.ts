@@ -74,6 +74,25 @@ const smtpSettingsSchema = z.object({
   testEmail: z.union([z.literal(""), z.email()]).optional(),
 });
 
+const invitationEmailTemplateSchema = z.object({
+  invitationEmailSubject: z
+    .string()
+    .trim()
+    .min(1, "Enter an invitation email subject.")
+    .max(160)
+    .refine((value) => !/[\r\n]/.test(value), {
+      message: "The invitation subject must be a single line.",
+    }),
+  invitationEmailHtml: z
+    .string()
+    .trim()
+    .min(1, "Enter an invitation email HTML template.")
+    .max(200_000)
+    .refine((value) => value.includes("{{invite_url}}"), {
+      message: "The template must include {{invite_url}}.",
+    }),
+});
+
 const twentySettingsSchema = z.object({
   twentyBaseUrl: z.string().trim(),
   twentyAutoFormatUrl: z
@@ -482,4 +501,79 @@ export async function testSmtpSettingsAction(
       message: formatSmtpError(error),
     };
   }
+}
+
+export async function updateInvitationEmailTemplateAction(
+  _previousState: SettingsActionState,
+  formData: FormData,
+): Promise<SettingsActionState> {
+  const current = await requireAdmin();
+  const parsed = invitationEmailTemplateSchema.safeParse({
+    invitationEmailSubject: formData.get("invitationEmailSubject"),
+    invitationEmailHtml: formData.get("invitationEmailHtml"),
+  });
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message:
+        parsed.error.issues[0]?.message ??
+        "Check the invitation email template.",
+    };
+  }
+
+  const before = await getApplicationSettings();
+  await db
+    .insert(applicationSettings)
+    .values({
+      id: APPLICATION_SETTINGS_ID,
+      brandName: "Twenty Portal",
+      primaryColor: "#3157d5",
+      portalTitle: "Client portal",
+      portalDescription: "Secure access to the records shared with your team.",
+      ...parsed.data,
+      updatedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: applicationSettings.id,
+      set: {
+        ...parsed.data,
+        updatedAt: new Date(),
+      },
+    });
+
+  await writeAuditEvent({
+    actorUserId: current.user.id,
+    action: "application.invitation-email.update",
+    status: "success",
+    metadata: {
+      previousCustomized: Boolean(
+        before.invitationEmailSubject || before.invitationEmailHtml,
+      ),
+      templateLength: parsed.data.invitationEmailHtml.length,
+    },
+  });
+  revalidatePath("/admin/settings");
+  return { status: "success", message: "Invitation email template saved." };
+}
+
+export async function resetInvitationEmailTemplateAction(): Promise<SettingsActionState> {
+  const current = await requireAdmin();
+  await db
+    .update(applicationSettings)
+    .set({
+      invitationEmailSubject: null,
+      invitationEmailHtml: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(applicationSettings.id, APPLICATION_SETTINGS_ID));
+  await writeAuditEvent({
+    actorUserId: current.user.id,
+    action: "application.invitation-email.reset",
+    status: "success",
+  });
+  revalidatePath("/admin/settings");
+  return {
+    status: "success",
+    message: "The branding-aware default invitation template is active.",
+  };
 }

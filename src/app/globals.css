@@ -3427,6 +3427,176 @@ select.input[multiple] option {
   grid-column: 1 / -1;
 }
 
+.email-template-editor {
+  min-height: 420px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  tab-size: 2;
+}
+
+.health-page {
+  width: 100%;
+}
+
+.health-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 13px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+
+.health-summary.is-operational {
+  border-color: color-mix(in srgb, #20a464 32%, var(--border));
+  background: color-mix(in srgb, #20a464 7%, var(--surface));
+}
+
+.health-summary.is-degraded {
+  border-color: color-mix(in srgb, #d14343 32%, var(--border));
+  background: color-mix(in srgb, #d14343 7%, var(--surface));
+}
+
+.health-summary-icon {
+  display: grid;
+  place-items: center;
+  color: #20a464;
+}
+
+.health-summary.is-degraded .health-summary-icon {
+  color: #d14343;
+}
+
+.health-summary strong {
+  font-size: 0.86rem;
+}
+
+.health-summary p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.health-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.health-card {
+  display: grid;
+  gap: 18px;
+  min-height: 210px;
+  padding: 20px;
+}
+
+.health-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.health-card h3 {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+
+.health-card p {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 0.73rem;
+  line-height: 1.55;
+}
+
+.health-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.health-status span {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #d14343;
+}
+
+.health-status-operational span {
+  background: #20a464;
+}
+
+.health-status-degraded span {
+  background: #d78b14;
+}
+
+.health-card-meta {
+  align-self: end;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.health-version-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.health-version-value {
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-subtle);
+  padding: 14px;
+}
+
+.health-version-value span {
+  color: var(--muted);
+  font-size: 0.67rem;
+}
+
+.health-version-value strong {
+  font-size: 0.86rem;
+  font-weight: 650;
+}
+
+.health-tone-success {
+  color: #178651;
+}
+
+.health-tone-warning {
+  color: #b46b00;
+}
+
+.health-version-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.health-external-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--brand-primary, var(--primary));
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .auth-shell {
   position: relative;
   display: grid;
@@ -3778,8 +3948,15 @@ select.input[multiple] option {
   .settings-grid,
   .configuration-list,
   .smtp-test-form,
-  .profile-editor {
+  .profile-editor,
+  .health-grid,
+  .health-version-grid {
     grid-template-columns: 1fr;
+  }
+
+  .health-version-footer {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .auth-preview {

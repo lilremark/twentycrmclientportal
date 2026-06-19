@@ -48,6 +48,7 @@ LABEL org.opencontainers.image.title="Twenty CRM Client Portal" \
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV APP_VERSION=$VERSION
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 

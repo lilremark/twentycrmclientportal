@@ -1,17 +1,28 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import { Mail, Palette, PlugZap, Save, Send, UserRound } from "lucide-react";
+import {
+  Code2,
+  Mail,
+  Palette,
+  PlugZap,
+  RotateCcw,
+  Save,
+  Send,
+  UserRound,
+} from "lucide-react";
 
 import { DeleteUploadButton } from "@/components/delete-upload-button";
 import {
   removeBrandLogoAction,
   removeLoginBackgroundAction,
   removeProfileImageAction,
+  resetInvitationEmailTemplateAction,
   type SettingsActionState,
   testTwentySettingsAction,
   testSmtpSettingsAction,
   updateApplicationSettingsAction,
+  updateInvitationEmailTemplateAction,
   updateSmtpSettingsAction,
   updateTwentySettingsAction,
   updateProfileAction,
@@ -630,5 +641,90 @@ export function SmtpSettingsForm({
         </button>
       </form>
     </section>
+  );
+}
+
+export function InvitationEmailTemplateForm({
+  template,
+}: {
+  template: {
+    subject: string;
+    html: string;
+    isCustomized: boolean;
+  };
+}) {
+  const [state, action, pending] = useActionState(
+    updateInvitationEmailTemplateAction,
+    initialState,
+  );
+  const [resetPending, startReset] = useTransition();
+  const [resetState, setResetState] =
+    useState<SettingsActionState>(initialState);
+
+  return (
+    <form action={action} className="card settings-card">
+      <div className="settings-card-heading">
+        <span className="settings-section-icon">
+          <Code2 size={19} />
+        </span>
+        <div>
+          <h2>Invitation email template</h2>
+          <p>
+            Customize the HTML sent to new portal users. The standard template
+            follows the portal branding automatically.
+          </p>
+        </div>
+      </div>
+      <FormMessage state={state} />
+      <FormMessage state={resetState} />
+      <div className="field">
+        <label htmlFor="invitation-email-subject">Subject</label>
+        <input
+          className="input"
+          defaultValue={template.subject}
+          id="invitation-email-subject"
+          maxLength={160}
+          name="invitationEmailSubject"
+          required
+        />
+      </div>
+      <div className="field">
+        <label htmlFor="invitation-email-html">HTML template</label>
+        <textarea
+          className="input email-template-editor"
+          defaultValue={template.html}
+          id="invitation-email-html"
+          name="invitationEmailHtml"
+          required
+          spellCheck={false}
+        />
+        <span className="field-help">
+          Required: {"{{invite_url}}"}. Available: {"{{recipient_name}}"},{" "}
+          {"{{recipient_email}}"}, {"{{brand_name}}"}, {"{{portal_title}}"},
+          and {"{{support_email}}"}.
+        </span>
+      </div>
+      <div className="form-actions">
+        <button className="button" disabled={pending} type="submit">
+          <Save size={17} />
+          {pending ? "Saving..." : "Save email template"}
+        </button>
+        <button
+          className="button secondary"
+          disabled={resetPending || !template.isCustomized}
+          onClick={() =>
+            startReset(async () => {
+              const result = await resetInvitationEmailTemplateAction();
+              setResetState(result);
+              if (result.status === "success") window.location.reload();
+            })
+          }
+          type="button"
+        >
+          <RotateCcw size={17} />
+          {resetPending ? "Resetting..." : "Use standard template"}
+        </button>
+      </div>
+    </form>
   );
 }

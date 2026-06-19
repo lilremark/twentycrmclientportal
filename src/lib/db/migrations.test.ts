@@ -37,4 +37,15 @@ describe("initial database migration", () => {
       'DROP INDEX IF EXISTS "portal_view_object_unique"',
     );
   });
+
+  it("adds configurable invitation email templates", async () => {
+    const migration = await readFile(
+      resolve("drizzle/0010_lyrical_dormammu.sql"),
+      "utf8",
+    );
+
+    expect(migration).toContain('"invitation_email_subject" text');
+    expect(migration).toContain('"invitation_email_html" text');
+    expect(migration).not.toContain('CREATE TABLE "application_setting"');
+  });
 });

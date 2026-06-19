@@ -115,6 +115,7 @@ export function AppShell({
     ? [
         { href: "/admin/settings", label: "Settings" },
         { href: "/admin/settings/audit", label: "Audit" },
+        { href: "/admin/settings/health", label: "Health" },
       ]
     : pathname.startsWith("/admin/invitations")
       ? [
