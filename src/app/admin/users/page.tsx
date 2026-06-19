@@ -2,10 +2,9 @@ import { desc, eq } from "drizzle-orm";
 
 import {
   deleteUserAction,
-  grantUserPortalAccessAction,
-  revokeUserPortalAccessAction,
   setUserStatusAction,
 } from "@/app/actions/admin";
+import { AssignPortals } from "@/components/assign-portals";
 import { ConfirmDeleteForm } from "@/components/confirm-delete-form";
 import { requireAdmin } from "@/lib/access";
 import { db } from "@/lib/db";
@@ -128,28 +127,8 @@ export default async function UserManagementPage() {
                           </span>
                         ))}
                         {userAccess.map((access) => (
-                          <span
-                            className="user-access-grant"
-                            key={access.portalViewId}
-                          >
-                            <span>
-                              {access.portalLabel} · {access.role}
-                            </span>
-                            <form
-                              action={revokeUserPortalAccessAction.bind(
-                                null,
-                                item.id,
-                                access.portalViewId,
-                              )}
-                            >
-                              <button
-                                aria-label={`Revoke access to ${access.portalLabel}`}
-                                className="access-revoke-button"
-                                type="submit"
-                              >
-                                Revoke
-                              </button>
-                            </form>
+                          <span key={access.portalViewId}>
+                            {access.portalLabel} · {access.role}
                           </span>
                         ))}
                         {!userMemberships.length && !userAccess.length ? (
@@ -165,61 +144,38 @@ export default async function UserManagementPage() {
                     <td>{item.createdAt.toLocaleDateString()}</td>
                     <td>
                       <div className="user-management-actions">
-                        <form
-                          action={grantUserPortalAccessAction.bind(
-                            null,
-                            item.id,
-                          )}
-                          className="portal-access-form"
-                        >
-                          <select
-                            aria-label={`Portal for ${item.name}`}
-                            className="input"
-                            name="portalViewId"
-                            required
-                          >
-                            <option value="">Assign portal…</option>
-                            {availableViews.map((view) => (
-                              <option key={view.id} value={view.id}>
-                                {view.label}
-                              </option>
-                            ))}
-                          </select>
-                          <select
-                            aria-label={`Portal role for ${item.name}`}
-                            className="input"
-                            defaultValue="viewer"
-                            name="role"
-                          >
-                            <option value="viewer">Viewer</option>
-                            <option value="contributor">Contributor</option>
-                          </select>
-                          <button className="button secondary" type="submit">
-                            Assign
-                          </button>
-                        </form>
                         <div className="table-actions">
-                        <form
-                          action={setUserStatusAction.bind(
-                            null,
-                            item.id,
-                            !item.isActive,
-                          )}
-                        >
-                          <button
-                            className="button secondary"
-                            disabled={isSelf}
-                            type="submit"
+                          <AssignPortals
+                            assignedPortals={userAccess.map((access) => ({
+                              portalViewId: access.portalViewId,
+                              portalLabel: access.portalLabel,
+                              role: access.role,
+                            }))}
+                            availableViews={availableViews}
+                            userId={item.id}
+                            userName={item.name}
+                          />
+                          <form
+                            action={setUserStatusAction.bind(
+                              null,
+                              item.id,
+                              !item.isActive,
+                            )}
                           >
-                            {item.isActive ? "Suspend" : "Reactivate"}
-                          </button>
-                        </form>
-                        <ConfirmDeleteForm
-                          action={deleteUserAction.bind(null, item.id)}
-                          description={`This permanently deletes ${item.email}, removes their sessions, access grants, memberships, and invitations they created.`}
-                          disabled={isSelf}
-                          title={`Delete ${item.name}?`}
-                        />
+                            <button
+                              className="button secondary"
+                              disabled={isSelf}
+                              type="submit"
+                            >
+                              {item.isActive ? "Suspend" : "Reactivate"}
+                            </button>
+                          </form>
+                          <ConfirmDeleteForm
+                            action={deleteUserAction.bind(null, item.id)}
+                            description={`This permanently deletes ${item.email}, removes their sessions, access grants, memberships, and invitations they created.`}
+                            disabled={isSelf}
+                            title={`Delete ${item.name}?`}
+                          />
                         </div>
                       </div>
                     </td>

@@ -1,6 +1,6 @@
 services:
   portal:
-    image: lilremark/twentycrmclientportal:${PORTAL_VERSION:-1.2.1}
+    image: lilremark/twentycrmclientportal:${PORTAL_VERSION:-1.2.2}
     init: true
     restart: unless-stopped
     stop_grace_period: 30s

@@ -862,3 +862,61 @@ export type InvitationActionState = {
   error?: string;
   inviteUrl?: string;
 };
+
+export async function updateUserPortalAccessAction(
+  userId: string,
+  grants: { portalViewId: string; role: "viewer" | "contributor" }[],
+  revokes: string[],
+) {
+  const current = await requireAdmin();
+  const targetUser = await db.query.user.findFirst({
+    where: eq(user.id, userId),
+  });
+  if (!targetUser) throw new Error("User not found.");
+
+  if (revokes.length) {
+    for (const portalViewId of revokes) {
+      await db
+        .delete(portalAccess)
+        .where(
+          and(
+            eq(portalAccess.userId, userId),
+            eq(portalAccess.portalViewId, portalViewId),
+          ),
+        );
+      await writeAuditEvent({
+        actorUserId: current.user.id,
+        action: "user.portal-access.revoked",
+        status: "success",
+        recordId: userId,
+        metadata: { portalViewId },
+      });
+    }
+  }
+
+  for (const grant of grants) {
+    const targetView = await db.query.portalViews.findFirst({
+      where: eq(portalViews.id, grant.portalViewId),
+    });
+    if (!targetView?.isEnabled) {
+      throw new Error("The selected portal is not available.");
+    }
+    await db
+      .insert(portalAccess)
+      .values({ userId, ...grant })
+      .onConflictDoUpdate({
+        target: [portalAccess.userId, portalAccess.portalViewId],
+        set: { role: grant.role },
+      });
+    await writeAuditEvent({
+      actorUserId: current.user.id,
+      action: "user.portal-access.granted",
+      status: "success",
+      recordId: userId,
+      metadata: grant,
+    });
+  }
+
+  revalidatePath("/admin/users");
+  revalidatePath("/portal");
+}
