@@ -7,6 +7,7 @@ import {
 import { AssignPortals } from "@/components/assign-portals";
 import { ConfirmDeleteForm } from "@/components/confirm-delete-form";
 import { requireAdmin } from "@/lib/access";
+import { getApplicationSettings, getSettingsBranding } from "@/lib/application-settings";
 import { db } from "@/lib/db";
 import {
   clientAccounts,
@@ -19,7 +20,7 @@ import {
 
 export default async function UserManagementPage() {
   const current = await requireAdmin();
-  const [users, admins, clientMemberships, directAccess, availableViews] =
+  const [users, admins, clientMemberships, directAccess, availableViews, settings] =
     await Promise.all([
     db
       .select({
@@ -60,7 +61,9 @@ export default async function UserManagementPage() {
       .from(portalViews)
       .where(eq(portalViews.isEnabled, true))
       .orderBy(portalViews.navigationOrder, portalViews.label),
+    getApplicationSettings(),
   ]);
+  const branding = getSettingsBranding(settings);
   const adminUserIds = new Set(admins.map((admin) => admin.userId));
   const membershipsByUser = new Map<string, typeof clientMemberships>();
   const accessByUser = new Map<string, typeof directAccess>();
@@ -152,6 +155,7 @@ export default async function UserManagementPage() {
                               role: access.role,
                             }))}
                             availableViews={availableViews}
+                            brandColor={branding.primaryColor}
                             userId={item.id}
                             userName={item.name}
                           />

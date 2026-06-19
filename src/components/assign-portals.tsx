@@ -22,11 +22,13 @@ export function AssignPortals({
   userName,
   assignedPortals,
   availableViews,
+  brandColor,
 }: {
   userId: string;
   userName: string;
   assignedPortals: AssignedPortal[];
   availableViews: AvailableView[];
+  brandColor: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [confirmState, setConfirmState] = useState(false);
@@ -158,7 +160,11 @@ export function AssignPortals({
               className="confirmation-card"
               ref={cardRef}
               role="dialog"
-              style={{ width: "min(100%, 540px)", outline: "none" }}
+              style={{
+                width: "min(100%, 540px)",
+                outline: "none",
+                "--brand-primary": brandColor,
+              } as React.CSSProperties}
               tabIndex={-1}
             >
               <button
