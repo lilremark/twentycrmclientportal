@@ -4,6 +4,16 @@ All notable changes to Twenty CRM Client Portal are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] - 2026-06-19
+
+### Fixed
+
+- Clarified SMTP encryption configuration by separating STARTTLS/standard SMTP
+  from implicit TLS.
+- Prevented invalid port and encryption combinations from being saved or tested.
+- Replaced low-level OpenSSL `wrong version number` failures with actionable
+  SMTP configuration guidance.
+
 ## [1.0.1] - 2026-06-18
 
 ### Fixed
@@ -59,5 +69,6 @@ PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
 
 After the health check passes, open the configured `APP_URL` and complete the one-time `/setup` flow.
 
+[1.0.2]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.0.2
 [1.0.1]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.0.1
 [1.0.0]: https://github.com/lilremark/twentycrmclientportal/releases/tag/v1.0.0

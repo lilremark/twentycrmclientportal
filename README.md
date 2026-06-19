@@ -68,8 +68,8 @@ To set up a local development environment running directly on your host machine:
 
 #### 1. Clone the repository and install dependencies
 ```bash
-git clone https://github.com/your-org/twenty-crm-client-portal.git
-cd twenty-crm-client-portal
+git clone https://github.com/lilremark/twentycrmclientportal.git
+cd twentycrmclientportal
 npm install
 ```
 
@@ -126,8 +126,8 @@ and binds port `3005` on the host to port `3000` inside the container.
 
 The image tag defaults to the current release:
 ```bash
-PORTAL_VERSION=1.0.1 docker compose pull portal
-PORTAL_VERSION=1.0.1 docker compose up -d
+PORTAL_VERSION=1.0.2 docker compose pull portal
+PORTAL_VERSION=1.0.2 docker compose up -d
 ```
 
 #### 2. Fresh Database Reset
