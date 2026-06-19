@@ -4,6 +4,24 @@ All notable changes to Twenty CRM Client Portal are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] - 2026-06-19
+
+### Fixed
+
+- Replaced broken corner-positioned deletion prompts with a centered,
+  accessible confirmation modal.
+- Persisted light and dark theme selection across browser reloads and tabs.
+- Corrected invitation acceptance so the newly created account replaces any
+  previously authenticated session.
+- Added spacing around the SMTP save action.
+
+### Changed
+
+- Moved client-facing record filters into a right-side filter panel with an
+  active-filter indicator and one-click disable action.
+- Replaced portal table page navigation with continuous record loading as the
+  user scrolls.
+
 ## [1.1.0] - 2026-06-19
 
 ### Added
@@ -82,6 +100,7 @@ PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
 
 After the health check passes, open the configured `APP_URL` and complete the one-time `/setup` flow.
 
+[1.1.1]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.1.1
 [1.1.0]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.1.0
 [1.0.2]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.0.2
 [1.0.1]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.0.1
