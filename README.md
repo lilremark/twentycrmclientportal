@@ -25,7 +25,9 @@ The administrator panel where system admins trigger schema synchronization, conf
 
 ## Key Capabilities
 
-- **Secure Role-Based Access Control**: Invite-only registration with granular `viewer` and `contributor` access levels per client.
+- **Secure Role-Based Access Control**: Invite-only registration with granular `viewer` and `contributor` access levels for every portal assigned to a user.
+- **Multiple Portal Assignments**: Administrators can grant, change, or revoke access to multiple portal views from the Users screen.
+- **Single Sign-On**: Optional Google and custom OAuth/OpenID Connect sign-in for existing invited users, configured from Admin Settings.
 - **Flexible Data Scope Scenarios**:
   - **All current records**: Expose all records matching filters.
   - **Person-scoped records**: Dynamically filter records linked to the authenticated user's Twenty Person ID.
@@ -126,8 +128,8 @@ and binds port `3005` on the host to port `3000` inside the container.
 
 The image tag defaults to the current release:
 ```bash
-PORTAL_VERSION=1.0.2 docker compose pull portal
-PORTAL_VERSION=1.0.2 docker compose up -d
+PORTAL_VERSION=1.2.0 docker compose pull portal
+PORTAL_VERSION=1.2.0 docker compose up -d
 ```
 
 #### 2. Fresh Database Reset
@@ -213,6 +215,8 @@ On boot, the portal creates/updates this user, assigns administrator status, and
 ### Development Notes
 
 - Client portal reads go through `src/lib/twenty/client.ts`, which applies a short in-memory read-through cache in `src/lib/twenty/cache.ts`. This is intentionally scoped for a single app replica and modest usage.
+- SSO is invite-only. Google and custom OAuth identities are linked by matching email to an existing active user; OAuth sign-in never creates a new portal user.
+- Configure the callback URLs shown in Admin Settings with the identity provider. Custom OAuth works with OpenID discovery or explicit authorization, token, and user-info endpoints.
 - The cache is cleared after successful Twenty writes, accepted Twenty webhooks, and the portal record refresh action. Keep new record-list/detail reads behind the Twenty client so they share the same invalidation behavior.
 - Keep browser-facing code out of `src/lib/twenty/*`; Twenty API credentials must remain server-only.
 - See [CONTRIBUTING.md](CONTRIBUTING.md) for authorization, uploads, module boundaries, and verification conventions.

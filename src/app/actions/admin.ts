@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -654,6 +654,78 @@ export async function setUserStatusAction(userId: string, active: boolean) {
     after: { isActive: active },
   });
   revalidatePath("/admin/users");
+}
+
+export async function grantUserPortalAccessAction(
+  userId: string,
+  formData: FormData,
+) {
+  const current = await requireAdmin();
+  const input = z
+    .object({
+      portalViewId: z.string().uuid(),
+      role: z.enum(["viewer", "contributor"]),
+    })
+    .parse(Object.fromEntries(formData));
+  const [targetUser, targetView] = await Promise.all([
+    db.query.user.findFirst({ where: eq(user.id, userId) }),
+    db.query.portalViews.findFirst({
+      where: eq(portalViews.id, input.portalViewId),
+    }),
+  ]);
+  if (!targetUser) throw new Error("User not found.");
+  if (!targetView?.isEnabled) {
+    throw new Error("The selected portal is not available.");
+  }
+
+  await db
+    .insert(portalAccess)
+    .values({ userId, ...input })
+    .onConflictDoUpdate({
+      target: [portalAccess.userId, portalAccess.portalViewId],
+      set: { role: input.role },
+    });
+  await writeAuditEvent({
+    actorUserId: current.user.id,
+    action: "user.portal-access.granted",
+    status: "success",
+    recordId: userId,
+    metadata: input,
+  });
+  revalidatePath("/admin/users");
+  revalidatePath("/portal");
+}
+
+export async function revokeUserPortalAccessAction(
+  userId: string,
+  portalViewId: string,
+) {
+  const current = await requireAdmin();
+  const existing = await db.query.portalAccess.findFirst({
+    where: and(
+      eq(portalAccess.userId, userId),
+      eq(portalAccess.portalViewId, portalViewId),
+    ),
+  });
+  if (!existing) return;
+
+  await db
+    .delete(portalAccess)
+    .where(
+      and(
+        eq(portalAccess.userId, userId),
+        eq(portalAccess.portalViewId, portalViewId),
+      ),
+    );
+  await writeAuditEvent({
+    actorUserId: current.user.id,
+    action: "user.portal-access.revoked",
+    status: "success",
+    recordId: userId,
+    before: existing,
+  });
+  revalidatePath("/admin/users");
+  revalidatePath("/portal");
 }
 
 export async function deleteUserAction(userId: string) {

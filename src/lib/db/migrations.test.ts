@@ -48,4 +48,17 @@ describe("initial database migration", () => {
     expect(migration).toContain('"invitation_email_html" text');
     expect(migration).not.toContain('CREATE TABLE "application_setting"');
   });
+
+  it("adds Google and custom OAuth configuration", async () => {
+    const migration = await readFile(
+      resolve("drizzle/0011_nebulous_killmonger.sql"),
+      "utf8",
+    );
+
+    expect(migration).toContain('"google_oauth_enabled" boolean');
+    expect(migration).toContain('"google_oauth_client_secret" text');
+    expect(migration).toContain('"custom_oauth_enabled" boolean');
+    expect(migration).toContain('"custom_oauth_discovery_url" text');
+    expect(migration).toContain('"custom_oauth_pkce" boolean');
+  });
 });

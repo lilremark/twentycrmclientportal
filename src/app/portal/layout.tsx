@@ -5,6 +5,8 @@ import {
   getSettingsBranding,
 } from "@/lib/application-settings";
 
+export const dynamic = "force-dynamic";
+
 export default async function PortalLayout({
   children,
 }: {

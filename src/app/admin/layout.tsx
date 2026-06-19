@@ -5,6 +5,8 @@ import {
   getSettingsBranding,
 } from "@/lib/application-settings";
 
+export const dynamic = "force-dynamic";
+
 const navigation = [
   { href: "/admin", label: "Overview", icon: "overview" },
   { href: "/admin/views", label: "Portal views", icon: "views" },

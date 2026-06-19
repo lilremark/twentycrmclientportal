@@ -2828,6 +2828,17 @@ select.input[multiple] option {
   accent-color: var(--brand-primary, var(--primary));
 }
 
+.settings-toggle > span {
+  display: grid;
+  gap: 2px;
+}
+
+.settings-toggle small {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 500;
+}
+
 .smtp-test-form {
   display: flex;
   flex-wrap: wrap;
@@ -3953,6 +3964,60 @@ select.input[multiple] option {
   gap: 16px;
 }
 
+.login-methods,
+.sso-login-options {
+  display: grid;
+  gap: 14px;
+}
+
+.sso-login-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.google-mark {
+  display: inline-grid;
+  height: 20px;
+  width: 20px;
+  place-items: center;
+  border-radius: 50%;
+  background: white;
+  color: #4285f4;
+  font-weight: 800;
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.login-divider::before,
+.login-divider::after {
+  height: 1px;
+  flex: 1;
+  background: var(--border);
+  content: "";
+}
+
+.sso-provider-section {
+  display: grid;
+  gap: 18px;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+}
+
+.sso-provider-section:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.settings-toggle.compact {
+  max-width: 420px;
+}
+
 .login-submit {
   position: relative;
   justify-content: center;
@@ -4148,6 +4213,64 @@ select.input[multiple] option {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+}
+
+.user-management-actions {
+  display: grid;
+  min-width: 360px;
+  gap: 10px;
+}
+
+.users-table {
+  min-width: 1160px;
+}
+
+.users-table th:first-child,
+.users-table td:first-child {
+  min-width: 190px;
+}
+
+.users-table th:nth-child(3),
+.users-table td:nth-child(3) {
+  min-width: 250px;
+}
+
+.users-table th:last-child,
+.users-table td:last-child {
+  min-width: 390px;
+}
+
+.portal-access-form {
+  display: grid;
+  grid-template-columns: minmax(145px, 1fr) 112px auto;
+  gap: 8px;
+}
+
+.portal-access-form .input {
+  min-height: 36px;
+  padding-block: 7px;
+}
+
+.user-access-grant {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.access-revoke-button {
+  border: 0;
+  background: transparent;
+  color: var(--danger, #b42318);
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .portal-access-form {
+    grid-template-columns: 1fr;
+  }
 }
 
 .table-actions .button {

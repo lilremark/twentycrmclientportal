@@ -4,6 +4,7 @@ import {
   ApplicationSettingsForm,
   InvitationEmailTemplateForm,
   ProfileSettingsForm,
+  SsoSettingsForm,
   SmtpSettingsForm,
   TwentySettingsForm,
 } from "@/components/settings-forms";
@@ -30,6 +31,10 @@ export default async function AdminSettingsPage() {
       <ApplicationSettingsForm settings={settings} />
       <TwentySettingsForm settings={integrations} />
       <SmtpSettingsForm settings={integrations} />
+      <SsoSettingsForm
+        callbackBaseUrl={env.APP_URL.replace(/\/$/, "")}
+        settings={integrations}
+      />
       <InvitationEmailTemplateForm template={invitationEmailTemplate} />
       <ProfileSettingsForm
         email={current.user.email}

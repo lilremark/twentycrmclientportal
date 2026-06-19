@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { requireAdmin, requireSession } from "@/lib/access";
+import { invalidateAuthCache } from "@/lib/auth";
 import {
   APPLICATION_SETTINGS_ID,
   getApplicationSettings,
@@ -101,6 +102,40 @@ const twentySettingsSchema = z.object({
     .transform((value) => value === "on" || value === "true"),
   twentyApiKey: z.string().optional().or(z.literal("")),
   twentyWebhookSecret: z.string().optional().or(z.literal("")),
+});
+
+const optionalUrl = z
+  .string()
+  .trim()
+  .refine((value) => !value || z.url().safeParse(value).success, {
+    message: "Enter a valid URL.",
+  });
+
+const ssoSettingsSchema = z.object({
+  googleOauthEnabled: z
+    .union([z.literal("on"), z.literal("true"), z.literal("false"), z.null()])
+    .optional()
+    .transform((value) => value === "on" || value === "true"),
+  googleOauthClientId: z.string().trim().optional().or(z.literal("")),
+  googleOauthClientSecret: z.string().optional().or(z.literal("")),
+  googleOauthHostedDomain: z.string().trim().optional().or(z.literal("")),
+  customOauthEnabled: z
+    .union([z.literal("on"), z.literal("true"), z.literal("false"), z.null()])
+    .optional()
+    .transform((value) => value === "on" || value === "true"),
+  customOauthName: z.string().trim().min(1).max(80),
+  customOauthClientId: z.string().trim().optional().or(z.literal("")),
+  customOauthClientSecret: z.string().optional().or(z.literal("")),
+  customOauthDiscoveryUrl: optionalUrl,
+  customOauthAuthorizationUrl: optionalUrl,
+  customOauthTokenUrl: optionalUrl,
+  customOauthUserInfoUrl: optionalUrl,
+  customOauthIssuer: optionalUrl,
+  customOauthScopes: z.string().trim().min(1),
+  customOauthPkce: z
+    .union([z.literal("on"), z.literal("true"), z.literal("false"), z.null()])
+    .optional()
+    .transform((value) => value === "on" || value === "true"),
 });
 
 export async function updateProfileAction(
@@ -501,6 +536,135 @@ export async function testSmtpSettingsAction(
       message: formatSmtpError(error),
     };
   }
+}
+
+export async function updateSsoSettingsAction(
+  _previousState: SettingsActionState,
+  formData: FormData,
+): Promise<SettingsActionState> {
+  const current = await requireAdmin();
+  const parsed = ssoSettingsSchema.safeParse({
+    googleOauthEnabled: formData.get("googleOauthEnabled"),
+    googleOauthClientId: formData.get("googleOauthClientId"),
+    googleOauthClientSecret: formData.get("googleOauthClientSecret"),
+    googleOauthHostedDomain: formData.get("googleOauthHostedDomain"),
+    customOauthEnabled: formData.get("customOauthEnabled"),
+    customOauthName: formData.get("customOauthName"),
+    customOauthClientId: formData.get("customOauthClientId"),
+    customOauthClientSecret: formData.get("customOauthClientSecret"),
+    customOauthDiscoveryUrl: formData.get("customOauthDiscoveryUrl"),
+    customOauthAuthorizationUrl: formData.get("customOauthAuthorizationUrl"),
+    customOauthTokenUrl: formData.get("customOauthTokenUrl"),
+    customOauthUserInfoUrl: formData.get("customOauthUserInfoUrl"),
+    customOauthIssuer: formData.get("customOauthIssuer"),
+    customOauthScopes: formData.get("customOauthScopes"),
+    customOauthPkce: formData.get("customOauthPkce"),
+  });
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message: parsed.error.issues[0]?.message ?? "Check the SSO fields.",
+    };
+  }
+
+  const existing = await getAdminIntegrationSettingsSummary();
+  const googleSecret =
+    parsed.data.googleOauthClientSecret?.trim() ||
+    (existing.hasGoogleOauthClientSecret ? undefined : null);
+  const customSecret =
+    parsed.data.customOauthClientSecret?.trim() ||
+    (existing.hasCustomOauthClientSecret ? undefined : null);
+
+  if (
+    parsed.data.googleOauthEnabled &&
+    (!parsed.data.googleOauthClientId ||
+      (!googleSecret && !existing.hasGoogleOauthClientSecret))
+  ) {
+    return {
+      status: "error",
+      message: "Google SSO requires a client ID and client secret.",
+    };
+  }
+  if (parsed.data.customOauthEnabled) {
+    if (
+      !parsed.data.customOauthClientId ||
+      (!customSecret && !existing.hasCustomOauthClientSecret)
+    ) {
+      return {
+        status: "error",
+        message: "Custom OAuth requires a client ID and client secret.",
+      };
+    }
+    if (
+      !parsed.data.customOauthDiscoveryUrl &&
+      (!parsed.data.customOauthAuthorizationUrl ||
+        !parsed.data.customOauthTokenUrl)
+    ) {
+      return {
+        status: "error",
+        message:
+          "Add an OpenID discovery URL or both authorization and token URLs.",
+      };
+    }
+  }
+
+  const set = {
+    googleOauthEnabled: parsed.data.googleOauthEnabled,
+    googleOauthClientId: parsed.data.googleOauthClientId || null,
+    googleOauthClientSecret: googleSecret,
+    googleOauthHostedDomain: parsed.data.googleOauthHostedDomain || null,
+    customOauthEnabled: parsed.data.customOauthEnabled,
+    customOauthName: parsed.data.customOauthName,
+    customOauthClientId: parsed.data.customOauthClientId || null,
+    customOauthClientSecret: customSecret,
+    customOauthDiscoveryUrl: parsed.data.customOauthDiscoveryUrl || null,
+    customOauthAuthorizationUrl:
+      parsed.data.customOauthAuthorizationUrl || null,
+    customOauthTokenUrl: parsed.data.customOauthTokenUrl || null,
+    customOauthUserInfoUrl: parsed.data.customOauthUserInfoUrl || null,
+    customOauthIssuer: parsed.data.customOauthIssuer || null,
+    customOauthScopes: parsed.data.customOauthScopes,
+    customOauthPkce: parsed.data.customOauthPkce,
+    updatedAt: new Date(),
+  };
+  const persistedSet = Object.fromEntries(
+    Object.entries(set).filter(([, value]) => value !== undefined),
+  );
+
+  await db
+    .insert(applicationSettings)
+    .values({
+      id: APPLICATION_SETTINGS_ID,
+      brandName: "Twenty Portal",
+      primaryColor: "#3157d5",
+      portalTitle: "Client portal",
+      portalDescription: "Secure access to the records shared with your team.",
+      ...persistedSet,
+    })
+    .onConflictDoUpdate({
+      target: applicationSettings.id,
+      set: persistedSet,
+    });
+
+  invalidateAuthCache();
+  await writeAuditEvent({
+    actorUserId: current.user.id,
+    action: "integration.sso.update",
+    status: "success",
+    metadata: {
+      googleEnabled: parsed.data.googleOauthEnabled,
+      googleSecretChanged: Boolean(
+        parsed.data.googleOauthClientSecret?.trim(),
+      ),
+      customEnabled: parsed.data.customOauthEnabled,
+      customSecretChanged: Boolean(
+        parsed.data.customOauthClientSecret?.trim(),
+      ),
+    },
+  });
+  revalidatePath("/admin/settings");
+  revalidatePath("/login");
+  return { status: "success", message: "Single sign-on settings saved." };
 }
 
 export async function updateInvitationEmailTemplateAction(

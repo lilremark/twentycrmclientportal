@@ -2,6 +2,8 @@ import { desc, eq } from "drizzle-orm";
 
 import {
   deleteUserAction,
+  grantUserPortalAccessAction,
+  revokeUserPortalAccessAction,
   setUserStatusAction,
 } from "@/app/actions/admin";
 import { ConfirmDeleteForm } from "@/components/confirm-delete-form";
@@ -18,7 +20,8 @@ import {
 
 export default async function UserManagementPage() {
   const current = await requireAdmin();
-  const [users, admins, clientMemberships, directAccess] = await Promise.all([
+  const [users, admins, clientMemberships, directAccess, availableViews] =
+    await Promise.all([
     db
       .select({
         id: user.id,
@@ -44,11 +47,20 @@ export default async function UserManagementPage() {
     db
       .select({
         userId: portalAccess.userId,
+        portalViewId: portalAccess.portalViewId,
         role: portalAccess.role,
         portalLabel: portalViews.label,
       })
       .from(portalAccess)
       .innerJoin(portalViews, eq(portalViews.id, portalAccess.portalViewId)),
+    db
+      .select({
+        id: portalViews.id,
+        label: portalViews.label,
+      })
+      .from(portalViews)
+      .where(eq(portalViews.isEnabled, true))
+      .orderBy(portalViews.navigationOrder, portalViews.label),
   ]);
   const adminUserIds = new Set(admins.map((admin) => admin.userId));
   const membershipsByUser = new Map<string, typeof clientMemberships>();
@@ -77,7 +89,7 @@ export default async function UserManagementPage() {
           </p>
         </div>
         <div className="table-scroll">
-          <table className="data-table">
+          <table className="data-table users-table">
             <thead>
               <tr>
                 <th>User</th>
@@ -116,8 +128,28 @@ export default async function UserManagementPage() {
                           </span>
                         ))}
                         {userAccess.map((access) => (
-                          <span key={`${access.portalLabel}-${access.role}`}>
-                            {access.portalLabel} · {access.role}
+                          <span
+                            className="user-access-grant"
+                            key={access.portalViewId}
+                          >
+                            <span>
+                              {access.portalLabel} · {access.role}
+                            </span>
+                            <form
+                              action={revokeUserPortalAccessAction.bind(
+                                null,
+                                item.id,
+                                access.portalViewId,
+                              )}
+                            >
+                              <button
+                                aria-label={`Revoke access to ${access.portalLabel}`}
+                                className="access-revoke-button"
+                                type="submit"
+                              >
+                                Revoke
+                              </button>
+                            </form>
                           </span>
                         ))}
                         {!userMemberships.length && !userAccess.length ? (
@@ -132,7 +164,41 @@ export default async function UserManagementPage() {
                     </td>
                     <td>{item.createdAt.toLocaleDateString()}</td>
                     <td>
-                      <div className="table-actions">
+                      <div className="user-management-actions">
+                        <form
+                          action={grantUserPortalAccessAction.bind(
+                            null,
+                            item.id,
+                          )}
+                          className="portal-access-form"
+                        >
+                          <select
+                            aria-label={`Portal for ${item.name}`}
+                            className="input"
+                            name="portalViewId"
+                            required
+                          >
+                            <option value="">Assign portal…</option>
+                            {availableViews.map((view) => (
+                              <option key={view.id} value={view.id}>
+                                {view.label}
+                              </option>
+                            ))}
+                          </select>
+                          <select
+                            aria-label={`Portal role for ${item.name}`}
+                            className="input"
+                            defaultValue="viewer"
+                            name="role"
+                          >
+                            <option value="viewer">Viewer</option>
+                            <option value="contributor">Contributor</option>
+                          </select>
+                          <button className="button secondary" type="submit">
+                            Assign
+                          </button>
+                        </form>
+                        <div className="table-actions">
                         <form
                           action={setUserStatusAction.bind(
                             null,
@@ -154,6 +220,7 @@ export default async function UserManagementPage() {
                           disabled={isSelf}
                           title={`Delete ${item.name}?`}
                         />
+                        </div>
                       </div>
                     </td>
                   </tr>

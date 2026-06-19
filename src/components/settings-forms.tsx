@@ -9,6 +9,7 @@ import {
   RotateCcw,
   Save,
   Send,
+  ShieldCheck,
   UserRound,
 } from "lucide-react";
 
@@ -24,6 +25,7 @@ import {
   updateApplicationSettingsAction,
   updateInvitationEmailTemplateAction,
   updateSmtpSettingsAction,
+  updateSsoSettingsAction,
   updateTwentySettingsAction,
   updateProfileAction,
 } from "@/app/actions/settings";
@@ -410,6 +412,258 @@ export function ApplicationSettingsForm({
       <button className="button settings-submit" disabled={pending} type="submit">
         <Save size={17} />
         {pending ? "Saving..." : "Save application settings"}
+      </button>
+    </form>
+  );
+}
+
+export function SsoSettingsForm({
+  settings,
+  callbackBaseUrl,
+}: {
+  settings: {
+    googleOauthEnabled: boolean;
+    googleOauthClientId: string;
+    hasGoogleOauthClientSecret: boolean;
+    googleOauthHostedDomain: string;
+    customOauthEnabled: boolean;
+    customOauthName: string;
+    customOauthClientId: string;
+    hasCustomOauthClientSecret: boolean;
+    customOauthDiscoveryUrl: string;
+    customOauthAuthorizationUrl: string;
+    customOauthTokenUrl: string;
+    customOauthUserInfoUrl: string;
+    customOauthIssuer: string;
+    customOauthScopes: string;
+    customOauthPkce: boolean;
+  };
+  callbackBaseUrl: string;
+}) {
+  const [state, action, pending] = useActionState(
+    updateSsoSettingsAction,
+    initialState,
+  );
+
+  return (
+    <form action={action} className="card settings-card">
+      <div className="settings-card-heading">
+        <span className="settings-section-icon">
+          <ShieldCheck size={19} />
+        </span>
+        <div>
+          <h2>Single sign-on</h2>
+          <p>
+            Allow invited users to sign in through Google or an OpenID
+            Connect-compatible OAuth provider.
+          </p>
+        </div>
+      </div>
+      <FormMessage state={state} />
+      <div className="sso-provider-section">
+        <label className="settings-toggle">
+          <input
+            defaultChecked={settings.googleOauthEnabled}
+            name="googleOauthEnabled"
+            type="checkbox"
+          />
+          <span>
+            <strong>Google</strong>
+            <small>Enable Google Workspace or consumer Google sign-in.</small>
+          </span>
+        </label>
+        <div className="settings-grid">
+          <div className="field">
+            <label htmlFor="google-oauth-client-id">Client ID</label>
+            <input
+              className="input"
+              defaultValue={settings.googleOauthClientId}
+              id="google-oauth-client-id"
+              name="googleOauthClientId"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="google-oauth-client-secret">Client secret</label>
+            <input
+              className="input"
+              id="google-oauth-client-secret"
+              name="googleOauthClientSecret"
+              placeholder={
+                settings.hasGoogleOauthClientSecret
+                  ? "Stored securely — enter to replace"
+                  : ""
+              }
+              type="password"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="google-oauth-domain">
+              Workspace domain (optional)
+            </label>
+            <input
+              className="input"
+              defaultValue={settings.googleOauthHostedDomain}
+              id="google-oauth-domain"
+              name="googleOauthHostedDomain"
+              placeholder="example.com"
+            />
+          </div>
+          <div className="field">
+            <label>Authorized callback URL</label>
+            <input
+              className="input"
+              readOnly
+              value={`${callbackBaseUrl}/api/auth/callback/google`}
+            />
+          </div>
+        </div>
+      </div>
+      <div className="sso-provider-section">
+        <label className="settings-toggle">
+          <input
+            defaultChecked={settings.customOauthEnabled}
+            name="customOauthEnabled"
+            type="checkbox"
+          />
+          <span>
+            <strong>Custom OAuth / OpenID Connect</strong>
+            <small>
+              Connect Auth0, Okta, Keycloak, Entra ID, or another standards-based
+              provider.
+            </small>
+          </span>
+        </label>
+        <div className="settings-grid">
+          <div className="field">
+            <label htmlFor="custom-oauth-name">Button label</label>
+            <input
+              className="input"
+              defaultValue={settings.customOauthName}
+              id="custom-oauth-name"
+              name="customOauthName"
+              required
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="custom-oauth-client-id">Client ID</label>
+            <input
+              className="input"
+              defaultValue={settings.customOauthClientId}
+              id="custom-oauth-client-id"
+              name="customOauthClientId"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="custom-oauth-client-secret">Client secret</label>
+            <input
+              className="input"
+              id="custom-oauth-client-secret"
+              name="customOauthClientSecret"
+              placeholder={
+                settings.hasCustomOauthClientSecret
+                  ? "Stored securely — enter to replace"
+                  : ""
+              }
+              type="password"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="custom-oauth-discovery">
+              OpenID discovery URL
+            </label>
+            <input
+              className="input"
+              defaultValue={settings.customOauthDiscoveryUrl}
+              id="custom-oauth-discovery"
+              name="customOauthDiscoveryUrl"
+              placeholder="https://id.example.com/.well-known/openid-configuration"
+              type="url"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="custom-oauth-authorization">
+              Authorization URL
+            </label>
+            <input
+              className="input"
+              defaultValue={settings.customOauthAuthorizationUrl}
+              id="custom-oauth-authorization"
+              name="customOauthAuthorizationUrl"
+              placeholder="Only needed without discovery"
+              type="url"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="custom-oauth-token">Token URL</label>
+            <input
+              className="input"
+              defaultValue={settings.customOauthTokenUrl}
+              id="custom-oauth-token"
+              name="customOauthTokenUrl"
+              placeholder="Only needed without discovery"
+              type="url"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="custom-oauth-user-info">User info URL</label>
+            <input
+              className="input"
+              defaultValue={settings.customOauthUserInfoUrl}
+              id="custom-oauth-user-info"
+              name="customOauthUserInfoUrl"
+              placeholder="Optional when discovery or an ID token is available"
+              type="url"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="custom-oauth-issuer">Issuer URL</label>
+            <input
+              className="input"
+              defaultValue={settings.customOauthIssuer}
+              id="custom-oauth-issuer"
+              name="customOauthIssuer"
+              placeholder="Optional issuer validation"
+              type="url"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="custom-oauth-scopes">Scopes</label>
+            <input
+              className="input"
+              defaultValue={settings.customOauthScopes}
+              id="custom-oauth-scopes"
+              name="customOauthScopes"
+              required
+            />
+          </div>
+          <div className="field">
+            <label>Authorized callback URL</label>
+            <input
+              className="input"
+              readOnly
+              value={`${callbackBaseUrl}/api/auth/oauth2/callback/custom-oauth`}
+            />
+          </div>
+        </div>
+        <label className="settings-toggle compact">
+          <input
+            defaultChecked={settings.customOauthPkce}
+            name="customOauthPkce"
+            type="checkbox"
+          />
+          <span>
+            <strong>Use PKCE</strong>
+            <small>Recommended for providers that support PKCE.</small>
+          </span>
+        </label>
+      </div>
+      <p className="settings-note">
+        SSO never creates portal users. The provider email must match an active
+        account that was created through an invitation.
+      </p>
+      <button className="button settings-submit" disabled={pending} type="submit">
+        <Save size={17} />
+        {pending ? "Saving..." : "Save SSO settings"}
       </button>
     </form>
   );

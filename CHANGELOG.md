@@ -4,6 +4,26 @@ All notable changes to Twenty CRM Client Portal are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-06-19
+
+### Added
+
+- Added per-user management for assigning multiple portal views with independent
+  viewer or contributor roles.
+- Added one-click portal access revocation from the administrator Users screen.
+- Added Google SSO configuration with optional Google Workspace domain
+  restriction.
+- Added custom OAuth/OpenID Connect configuration using discovery metadata or
+  explicit authorization, token, and user-info endpoints.
+- Added provider callback URL guidance and SSO controls to Admin Settings.
+
+### Security
+
+- Kept SSO invite-only by linking provider identities only to existing active
+  users with matching email addresses.
+- Prevented OAuth providers from creating unapproved portal users.
+- Revalidated active-user status before creating authenticated sessions.
+
 ## [1.1.1] - 2026-06-19
 
 ### Fixed
@@ -100,6 +120,7 @@ PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
 
 After the health check passes, open the configured `APP_URL` and complete the one-time `/setup` flow.
 
+[1.2.0]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.2.0
 [1.1.1]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.1.1
 [1.1.0]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.1.0
 [1.0.2]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.0.2

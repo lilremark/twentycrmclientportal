@@ -27,6 +27,29 @@ export type SmtpIntegrationSettings = {
   from: string;
 };
 
+export type OAuthIntegrationSettings = {
+  updatedAt: Date | null;
+  google: {
+    enabled: boolean;
+    clientId: string;
+    clientSecret: string;
+    hostedDomain: string;
+  };
+  custom: {
+    enabled: boolean;
+    name: string;
+    clientId: string;
+    clientSecret: string;
+    discoveryUrl: string;
+    authorizationUrl: string;
+    tokenUrl: string;
+    userInfoUrl: string;
+    issuer: string;
+    scopes: string[];
+    pkce: boolean;
+  };
+};
+
 function clean(value: string | null | undefined) {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
@@ -110,5 +133,49 @@ export async function getAdminIntegrationSettingsSummary() {
     smtpUser: clean(row?.smtpUser) ?? clean(env.SMTP_USER) ?? "",
     hasSmtpPassword: Boolean(clean(row?.smtpPassword) ?? clean(env.SMTP_PASSWORD)),
     smtpFrom: clean(row?.smtpFrom) ?? clean(env.SMTP_FROM) ?? "",
+    googleOauthEnabled: row?.googleOauthEnabled ?? false,
+    googleOauthClientId: clean(row?.googleOauthClientId) ?? "",
+    hasGoogleOauthClientSecret: Boolean(clean(row?.googleOauthClientSecret)),
+    googleOauthHostedDomain: clean(row?.googleOauthHostedDomain) ?? "",
+    customOauthEnabled: row?.customOauthEnabled ?? false,
+    customOauthName: clean(row?.customOauthName) ?? "Single sign-on",
+    customOauthClientId: clean(row?.customOauthClientId) ?? "",
+    hasCustomOauthClientSecret: Boolean(clean(row?.customOauthClientSecret)),
+    customOauthDiscoveryUrl: clean(row?.customOauthDiscoveryUrl) ?? "",
+    customOauthAuthorizationUrl:
+      clean(row?.customOauthAuthorizationUrl) ?? "",
+    customOauthTokenUrl: clean(row?.customOauthTokenUrl) ?? "",
+    customOauthUserInfoUrl: clean(row?.customOauthUserInfoUrl) ?? "",
+    customOauthIssuer: clean(row?.customOauthIssuer) ?? "",
+    customOauthScopes: clean(row?.customOauthScopes) ?? "openid profile email",
+    customOauthPkce: row?.customOauthPkce ?? true,
+  };
+}
+
+export async function getOAuthIntegrationSettings(): Promise<OAuthIntegrationSettings> {
+  const row = await getRawApplicationSettingsRow();
+  return {
+    updatedAt: row?.updatedAt ?? null,
+    google: {
+      enabled: row?.googleOauthEnabled ?? false,
+      clientId: clean(row?.googleOauthClientId) ?? "",
+      clientSecret: clean(row?.googleOauthClientSecret) ?? "",
+      hostedDomain: clean(row?.googleOauthHostedDomain) ?? "",
+    },
+    custom: {
+      enabled: row?.customOauthEnabled ?? false,
+      name: clean(row?.customOauthName) ?? "Single sign-on",
+      clientId: clean(row?.customOauthClientId) ?? "",
+      clientSecret: clean(row?.customOauthClientSecret) ?? "",
+      discoveryUrl: clean(row?.customOauthDiscoveryUrl) ?? "",
+      authorizationUrl: clean(row?.customOauthAuthorizationUrl) ?? "",
+      tokenUrl: clean(row?.customOauthTokenUrl) ?? "",
+      userInfoUrl: clean(row?.customOauthUserInfoUrl) ?? "",
+      issuer: clean(row?.customOauthIssuer) ?? "",
+      scopes: (clean(row?.customOauthScopes) ?? "openid profile email")
+        .split(/[\s,]+/)
+        .filter(Boolean),
+      pkce: row?.customOauthPkce ?? true,
+    },
   };
 }

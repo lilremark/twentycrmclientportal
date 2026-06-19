@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { and, eq } from "drizzle-orm";
 
-import { auth } from "@/lib/auth";
+import { getAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
   clientAccounts,
@@ -17,7 +17,9 @@ import {
 import { getEnabledPortalViews } from "@/lib/portal";
 
 export async function getCurrentSession() {
-  return auth.api.getSession({ headers: await headers() });
+  const requestHeaders = await headers();
+  const auth = await getAuth();
+  return auth.api.getSession({ headers: requestHeaders });
 }
 
 export async function requireSession() {
