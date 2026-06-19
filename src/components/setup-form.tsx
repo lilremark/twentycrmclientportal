@@ -142,7 +142,9 @@ export function SetupForm() {
       "smtpPassword",
     ]) {
       const control = form.elements.namedItem(name);
-      if (
+      if (control instanceof HTMLSelectElement) {
+        formData.set(name, control.value);
+      } else if (
         control instanceof HTMLInputElement &&
         (control.type !== "checkbox" || control.checked)
       ) {
@@ -375,10 +377,24 @@ export function SetupForm() {
                 placeholder="Twenty Portal <portal@example.com>"
               />
             </div>
-            <label className="settings-toggle setup-field-wide">
-              <input name="smtpSecure" type="checkbox" />
-              <span>Use a direct TLS/SSL connection</span>
-            </label>
+            <div className="field setup-field-wide">
+              <label htmlFor="smtpSecure">Encryption mode</label>
+              <select
+                className="input"
+                defaultValue="false"
+                id="smtpSecure"
+                name="smtpSecure"
+              >
+                <option value="false">
+                  STARTTLS / standard SMTP (port 587 or 25)
+                </option>
+                <option value="true">Implicit TLS (port 465)</option>
+              </select>
+              <p className="setup-field-note">
+                Port 587 starts as SMTP and upgrades with STARTTLS. Port 465
+                starts encrypted immediately.
+              </p>
+            </div>
           </div>
           <aside className="setup-callout">
             Email is optional during setup. Verification checks the SMTP server

@@ -4,7 +4,6 @@ import { timingSafeEqual } from "node:crypto";
 
 import { count } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import nodemailer from "nodemailer";
 import { z } from "zod";
 
 import { writeAuditEvent } from "@/lib/audit";
@@ -17,6 +16,11 @@ import {
   saveUploadedImage,
   saveUploadedPngBackground,
 } from "@/lib/uploads";
+import {
+  createSmtpTransport,
+  formatSmtpError,
+  validateSmtpEncryptionMode,
+} from "@/lib/smtp";
 import { normalizeTwentyBaseUrl } from "@/lib/twenty/url";
 
 const passwordSchema = z
@@ -94,14 +98,12 @@ export async function testSetupSmtpAction(
       return { status: "error", message: "The setup token is invalid." };
     }
 
-    const transporter = nodemailer.createTransport({
+    const transporter = createSmtpTransport({
       host: input.smtpHost,
       port: input.smtpPort,
       secure: input.smtpSecure,
-      auth:
-        input.smtpUser && input.smtpPassword
-          ? { user: input.smtpUser, pass: input.smtpPassword }
-          : undefined,
+      user: input.smtpUser,
+      password: input.smtpPassword,
     });
 
     try {
@@ -117,8 +119,7 @@ export async function testSetupSmtpAction(
   } catch (error) {
     return {
       status: "error",
-      message:
-        error instanceof Error ? error.message : "SMTP verification failed.",
+      message: formatSmtpError(error),
     };
   }
 }
@@ -194,6 +195,12 @@ export async function setupAction(
 
     if (!safeTokenEqual(input.setupToken, getEnv().SETUP_TOKEN)) {
       return { error: "The setup token is invalid." };
+    }
+    if (input.smtpHost) {
+      validateSmtpEncryptionMode({
+        port: input.smtpPort,
+        secure: input.smtpSecure,
+      });
     }
 
     const userId = await createCredentialUser({

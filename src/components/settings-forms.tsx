@@ -560,14 +560,20 @@ export function SmtpSettingsForm({
               type="number"
             />
           </div>
-          <label className="settings-toggle">
-            <input
-              defaultChecked={settings.smtpSecure}
+          <div className="field">
+            <label htmlFor="smtp-secure">Encryption mode</label>
+            <select
+              className="input"
+              defaultValue={settings.smtpSecure ? "true" : "false"}
+              id="smtp-secure"
               name="smtpSecure"
-              type="checkbox"
-            />
-            <span>Use TLS/SSL</span>
-          </label>
+            >
+              <option value="false">
+                STARTTLS / standard SMTP (port 587 or 25)
+              </option>
+              <option value="true">Implicit TLS (port 465)</option>
+            </select>
+          </div>
           <div className="field">
             <label htmlFor="smtp-user">Username</label>
             <input

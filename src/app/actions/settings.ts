@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import nodemailer from "nodemailer";
 
 import { requireAdmin, requireSession } from "@/lib/access";
 import {
@@ -18,6 +17,11 @@ import {
   getAdminIntegrationSettingsSummary,
   getSmtpIntegrationSettings,
 } from "@/lib/integration-settings";
+import {
+  createSmtpTransport,
+  formatSmtpError,
+  validateSmtpEncryptionMode,
+} from "@/lib/smtp";
 import { testTwentyConnection } from "@/lib/twenty/client";
 import { normalizeTwentyBaseUrl } from "@/lib/twenty/url";
 import {
@@ -298,7 +302,6 @@ export async function updateTwentySettingsAction(
         parsed.error.issues[0]?.message ?? "Check the Twenty CRM fields.",
     };
   }
-
   const existing = await getAdminIntegrationSettingsSummary();
   let twentyBaseUrl: string | null = null;
   if (parsed.data.twentyBaseUrl) {
@@ -390,6 +393,16 @@ export async function updateSmtpSettingsAction(
       message: parsed.error.issues[0]?.message ?? "Check the SMTP fields.",
     };
   }
+  if (parsed.data.smtpHost) {
+    try {
+      validateSmtpEncryptionMode({
+        port: parsed.data.smtpPort,
+        secure: parsed.data.smtpSecure,
+      });
+    } catch (error) {
+      return { status: "error", message: formatSmtpError(error) };
+    }
+  }
 
   const existing = await getAdminIntegrationSettingsSummary();
   const set = {
@@ -450,27 +463,23 @@ export async function testSmtpSettingsAction(
     return { status: "error", message: "SMTP is not configured." };
   }
   try {
-    const transporter = nodemailer.createTransport({
-      host: settings.host,
-      port: settings.port,
-      secure: settings.secure,
-      auth:
-        settings.user && settings.password
-          ? { user: settings.user, pass: settings.password }
-          : undefined,
-    });
-    await transporter.sendMail({
-      from: settings.from,
-      to: testEmail.data,
-      subject: "Twenty Client Portal SMTP test",
-      text: "SMTP is configured correctly.",
-      html: "<p>SMTP is configured correctly.</p>",
-    });
+    const transporter = createSmtpTransport(settings);
+    try {
+      await transporter.sendMail({
+        from: settings.from,
+        to: testEmail.data,
+        subject: "Twenty Client Portal SMTP test",
+        text: "SMTP is configured correctly.",
+        html: "<p>SMTP is configured correctly.</p>",
+      });
+    } finally {
+      transporter.close();
+    }
     return { status: "success", message: "Test email sent." };
   } catch (error) {
     return {
       status: "error",
-      message: error instanceof Error ? error.message : "SMTP test failed.",
+      message: formatSmtpError(error),
     };
   }
 }

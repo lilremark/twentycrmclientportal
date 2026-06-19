@@ -80,6 +80,10 @@ cp .env.example .env
 ```
 Ensure you fill in `DATABASE_URL` (e.g., `postgresql://portal:portal@localhost:5432/portal`), `AUTH_SECRET`, `SETUP_TOKEN`, and your Twenty API details.
 
+For SMTP encryption, use `SMTP_SECURE=false` with port `587` or `25` so the
+connection can upgrade with STARTTLS. Use `SMTP_SECURE=true` only with port
+`465`, which expects TLS immediately when the connection opens.
+
 #### 3. Spin up local database
 Ensure PostgreSQL is running locally. You can use a temporary Docker PostgreSQL instance:
 ```bash

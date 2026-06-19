@@ -1,8 +1,7 @@
 import "server-only";
 
-import nodemailer from "nodemailer";
-
 import { getSmtpIntegrationSettings } from "@/lib/integration-settings";
+import { createSmtpTransport } from "@/lib/smtp";
 
 type EmailMessage = {
   to: string;
@@ -26,20 +25,16 @@ export async function sendEmail(message: EmailMessage) {
     return false;
   }
 
-  const transporter = nodemailer.createTransport({
-    host: settings.host,
-    port: settings.port,
-    secure: settings.secure,
-    auth:
-      settings.user && settings.password
-        ? { user: settings.user, pass: settings.password }
-        : undefined,
-  });
+  const transporter = createSmtpTransport(settings);
 
-  await transporter.sendMail({
-    from: settings.from,
-    ...message,
-  });
+  try {
+    await transporter.sendMail({
+      from: settings.from,
+      ...message,
+    });
+  } finally {
+    transporter.close();
+  }
 
   return true;
 }
