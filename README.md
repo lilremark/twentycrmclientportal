@@ -113,17 +113,22 @@ The project contains a production-ready multi-stage `Dockerfile` and a `docker-c
 #### 1. Start Services
 Ensure `.env` matches your environment, then run:
 ```bash
-docker compose up -d --build
+docker compose pull
+docker compose up -d
 ```
-This builds the Next.js app in production mode and binds port `3005` on the host to port `3000` inside the container.
+This pulls the published multi-architecture image from
+[`lilremark/twentycrmclientportal`](https://hub.docker.com/r/lilremark/twentycrmclientportal)
+and binds port `3005` on the host to port `3000` inside the container.
 
-The image tag and Next.js deployment identifier default to the current release. Next.js deployment IDs only support letters, numbers, hyphens, and underscores, so the SemVer release `1.0.0` uses `v1-0-0`:
+The image tag defaults to the current release:
 ```bash
-PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
+PORTAL_VERSION=1.0.1 docker compose pull portal
+PORTAL_VERSION=1.0.1 docker compose up -d
 ```
 
-#### 2. Fresh Database Reset (Troubleshooting/Rebuilds)
-To permanently drop all PostgreSQL data, rebuild images without cache, apply migrations, verify table schemas, and restart cleanly:
+#### 2. Fresh Database Reset
+To permanently drop all PostgreSQL data, pull the configured images, apply
+migrations, verify table schemas, and restart cleanly:
 ```bash
 sh scripts/reset-docker.sh --yes
 ```

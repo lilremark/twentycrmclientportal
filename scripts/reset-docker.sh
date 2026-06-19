@@ -19,8 +19,8 @@ docker compose config --quiet
 echo "Stopping the portal and deleting this Compose project's volumes..."
 docker compose down --volumes --remove-orphans
 
-echo "Rebuilding the portal image without cached application layers..."
-docker compose build --no-cache portal
+echo "Pulling the published portal and PostgreSQL images..."
+docker compose pull portal postgres
 
 echo "Starting a fresh PostgreSQL database..."
 docker compose up -d postgres
@@ -42,27 +42,7 @@ if [ "$attempt" -ge 60 ]; then
   exit 1
 fi
 
-echo "Applying migrations in a one-time portal container..."
-if ! docker compose run --rm --no-deps portal npm run db:migrate; then
-  echo "Database migration failed."
-  docker compose logs --tail=100 postgres
-  exit 1
-fi
-
-echo "Verifying the Better Auth schema..."
-defaults="$(
-  docker compose exec -T postgres psql -U portal -d portal -Atc \
-    "select count(*) from information_schema.columns where table_schema = 'public' and table_name in ('user', 'account', 'session', 'verification') and column_name = 'id' and column_default is not null"
-)"
-
-if [ "$defaults" != "4" ]; then
-  echo "Expected four Better Auth ID defaults, but found: $defaults"
-  docker compose exec -T postgres psql -U portal -d portal -c \
-    "select table_name, column_name, column_default from information_schema.columns where table_schema = 'public' and table_name in ('user', 'account', 'session', 'verification') and column_name = 'id' order by table_name"
-  exit 1
-fi
-
-echo "Starting the portal..."
+echo "Starting the portal and applying migrations through its entrypoint..."
 docker compose up -d portal
 
 echo "Waiting for the portal readiness check..."
@@ -70,6 +50,19 @@ attempt=0
 while [ "$attempt" -lt 60 ]; do
   if docker compose exec -T portal wget --quiet --tries=1 --spider \
     http://localhost:3000/health/ready >/dev/null 2>&1; then
+    echo "Verifying the Better Auth schema..."
+    defaults="$(
+      docker compose exec -T postgres psql -U portal -d portal -Atc \
+        "select count(*) from information_schema.columns where table_schema = 'public' and table_name in ('user', 'account', 'session', 'verification') and column_name = 'id' and column_default is not null"
+    )"
+
+    if [ "$defaults" != "4" ]; then
+      echo "Expected four Better Auth ID defaults, but found: $defaults"
+      docker compose exec -T postgres psql -U portal -d portal -c \
+        "select table_name, column_name, column_default from information_schema.columns where table_schema = 'public' and table_name in ('user', 'account', 'session', 'verification') and column_name = 'id' order by table_name"
+      exit 1
+    fi
+
     echo "Fresh database verified: all Better Auth ID defaults are installed."
     echo "Portal readiness check passed."
     echo "Open the APP_URL from .env and complete /setup using SETUP_TOKEN."

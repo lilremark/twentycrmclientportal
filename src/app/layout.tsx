@@ -14,6 +14,11 @@ export const metadata: Metadata = {
     template: "%s | Twenty Client Portal",
   },
   description: "A secure, self-hosted client portal for Twenty CRM.",
+  icons: {
+    icon: "/api/brand-icon",
+    shortcut: "/api/brand-icon",
+    apple: "/api/brand-icon",
+  },
 };
 
 export default function RootLayout({

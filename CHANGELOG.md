@@ -4,6 +4,28 @@ All notable changes to Twenty CRM Client Portal are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] - 2026-06-18
+
+### Fixed
+
+- Corrected the bundled Docker migration runtime for Node.js ESM/CommonJS compatibility.
+- Replaced the initial setup form with a guided administrator, Twenty CRM,
+  email, and branding workflow.
+- Prevented implicit form submission from completing setup before the explicit
+  final action.
+- Added SMTP connection and credential verification during initial setup.
+- Applied the configured brand icon as the application favicon.
+- Published multi-architecture Docker images for Linux AMD64 and ARM64.
+
+### Deployment
+
+Docker Compose now pulls the public image instead of building locally:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
 ## [1.0.0] - 2026-06-18
 
 Initial production release of the self-hosted client portal for Twenty CRM.
@@ -37,4 +59,5 @@ PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
 
 After the health check passes, open the configured `APP_URL` and complete the one-time `/setup` flow.
 
+[1.0.1]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.0.1
 [1.0.0]: https://github.com/lilremark/twentycrmclientportal/releases/tag/v1.0.0

@@ -4,6 +4,7 @@ import { timingSafeEqual } from "node:crypto";
 
 import { count } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import nodemailer from "nodemailer";
 import { z } from "zod";
 
 import { writeAuditEvent } from "@/lib/audit";
@@ -27,6 +28,10 @@ const passwordSchema = z
   .regex(/[0-9]/, "Password must contain a number.");
 
 export type AuthActionState = { error?: string };
+export type SetupSmtpTestState = {
+  status: "success" | "error";
+  message: string;
+};
 
 function safeTokenEqual(actual: string, expected: string) {
   const actualBuffer = Buffer.from(actual);
@@ -35,6 +40,87 @@ function safeTokenEqual(actual: string, expected: string) {
     actualBuffer.length === expectedBuffer.length &&
     timingSafeEqual(actualBuffer, expectedBuffer)
   );
+}
+
+export async function testSetupSmtpAction(
+  formData: FormData,
+): Promise<SetupSmtpTestState> {
+  try {
+    const [{ value: adminCount }] = await db
+      .select({ value: count() })
+      .from(portalAdministrators);
+    if (adminCount > 0) {
+      return {
+        status: "error",
+        message: "Initial setup has already been completed.",
+      };
+    }
+
+    const parsed = z
+      .object({
+        setupToken: z.string().min(1, "Enter the setup token first."),
+        smtpHost: z.string().trim().min(1, "Enter an SMTP host."),
+        smtpPort: z.coerce.number().int().positive(),
+        smtpSecure: z
+          .union([
+            z.literal("on"),
+            z.literal("true"),
+            z.literal("false"),
+            z.null(),
+          ])
+          .optional()
+          .transform((value) => value === "on" || value === "true"),
+        smtpUser: z.string().trim().optional(),
+        smtpPassword: z.string().optional(),
+      })
+      .safeParse({
+        setupToken: formData.get("setupToken"),
+        smtpHost: formData.get("smtpHost"),
+        smtpPort: formData.get("smtpPort"),
+        smtpSecure: formData.get("smtpSecure"),
+        smtpUser: formData.get("smtpUser"),
+        smtpPassword: formData.get("smtpPassword"),
+      });
+    if (!parsed.success) {
+      return {
+        status: "error",
+        message:
+          parsed.error.issues[0]?.message ?? "Check the SMTP connection fields.",
+      };
+    }
+    const input = parsed.data;
+
+    if (!safeTokenEqual(input.setupToken, getEnv().SETUP_TOKEN)) {
+      return { status: "error", message: "The setup token is invalid." };
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: input.smtpHost,
+      port: input.smtpPort,
+      secure: input.smtpSecure,
+      auth:
+        input.smtpUser && input.smtpPassword
+          ? { user: input.smtpUser, pass: input.smtpPassword }
+          : undefined,
+    });
+
+    try {
+      await transporter.verify();
+    } finally {
+      transporter.close();
+    }
+
+    return {
+      status: "success",
+      message: "SMTP connection and credentials verified.",
+    };
+  } catch (error) {
+    return {
+      status: "error",
+      message:
+        error instanceof Error ? error.message : "SMTP verification failed.",
+    };
+  }
 }
 
 export async function setupAction(

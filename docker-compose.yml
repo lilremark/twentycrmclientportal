@@ -1,12 +1,6 @@
 services:
   portal:
-    image: twentycrmclientportal:${PORTAL_VERSION:-1.0.0}
-    build:
-      context: .
-      target: runner
-      args:
-        VERSION: ${PORTAL_VERSION:-1.0.0}
-        DEPLOYMENT_ID: ${PORTAL_DEPLOYMENT_ID:-v1-0-0}
+    image: lilremark/twentycrmclientportal:${PORTAL_VERSION:-1.0.1}
     init: true
     restart: unless-stopped
     stop_grace_period: 30s
