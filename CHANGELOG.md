@@ -4,6 +4,13 @@ All notable changes to Twenty CRM Client Portal are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.2.1] - 2026-06-19
+
+### Changed
+
+- Moved the exposed Portal View creation settings from the views list page to a dedicated page `/admin/views/new`.
+- Replaced the inline creation form in the Portal Views list with an "Add portal view" button.
+
 ## [1.2.0] - 2026-06-19
 
 ### Added
@@ -120,6 +127,7 @@ PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
 
 After the health check passes, open the configured `APP_URL` and complete the one-time `/setup` flow.
 
+[1.2.1]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.2.1
 [1.2.0]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.2.0
 [1.1.1]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.1.1
 [1.1.0]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.1.0

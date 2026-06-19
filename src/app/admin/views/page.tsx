@@ -1,29 +1,24 @@
 import Link from "next/link";
-import { Eye, Pencil } from "lucide-react";
+import { Eye, Pencil, Plus } from "lucide-react";
 
 import {
-  createPortalViewAction,
   deletePortalViewAction,
   setPortalViewStatusAction,
 } from "@/app/actions/admin";
 import { ConfirmDeleteForm } from "@/components/confirm-delete-form";
-import { PortalViewForm } from "@/components/portal-view-form";
 import { db } from "@/lib/db";
 import { portalViews } from "@/lib/db/schema";
-import { getLatestMetadata } from "@/lib/portal";
 
 export default async function ViewsPage() {
-  const [views, objects] = await Promise.all([
-    db.select().from(portalViews),
-    getLatestMetadata(),
-  ]);
+  const views = await db.select().from(portalViews);
   return (
     <div className="page-stack">
-      <PortalViewForm
-        action={createPortalViewAction}
-        objects={objects}
-        submitLabel="Create view"
-      />
+      <div className="page-actions">
+        <Link className="button primary" href="/admin/views/new">
+          <Plus size={17} />
+          Add portal view
+        </Link>
+      </div>
       <section className="grid gap-3">
         {views.map((view) => (
           <article className="card p-5" key={view.id}>
@@ -81,7 +76,11 @@ export default async function ViewsPage() {
         ))}
         {!views.length ? (
           <div className="card empty-state">
-            <p>Create your first portal view using the configuration above.</p>
+            <p>No portal views have been created yet.</p>
+            <Link className="button primary mt-4" href="/admin/views/new">
+              <Plus size={17} />
+              Add portal view
+            </Link>
           </div>
         ) : null}
       </section>

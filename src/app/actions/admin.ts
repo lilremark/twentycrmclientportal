@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 
 import { and, desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/access";
@@ -390,6 +391,7 @@ export async function createPortalViewAction(formData: FormData) {
   });
   revalidatePath("/admin/views");
   revalidatePath("/portal");
+  redirect("/admin/views");
 }
 
 export async function updatePortalViewAction(

@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import { listShareableRecordsAction } from "@/app/actions/admin";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import type {
   PortalFieldConfig,
   PortalFixedFilter,
@@ -637,6 +638,9 @@ export function PortalViewForm({
             : "Portal view has been created.",
         };
       } catch (error) {
+        if (isRedirectError(error)) {
+          throw error;
+        }
         return {
           status: "error",
           message:
