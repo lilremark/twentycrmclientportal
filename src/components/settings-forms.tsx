@@ -616,7 +616,11 @@ export function SmtpSettingsForm({
             />
           </div>
         </div>
-        <button className="button settings-submit" disabled={pending} type="submit">
+        <button
+          className="button settings-submit smtp-settings-submit"
+          disabled={pending}
+          type="submit"
+        >
           <Save size={17} />
           {pending ? "Saving..." : "Save SMTP settings"}
         </button>

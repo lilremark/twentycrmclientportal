@@ -17,6 +17,7 @@ import { enforceWriteRateLimit } from "@/lib/rate-limit";
 import {
   deleteTwentyRecord,
   getTwentyRecord,
+  listTwentyRecords,
   uploadTwentyFilesFieldFile,
   writeTwentyRecord,
 } from "@/lib/twenty/client";
@@ -24,6 +25,7 @@ import { clearTwentyReadCache } from "@/lib/twenty/cache";
 import {
   buildPortalScopeFilter,
   buildScopedFilter,
+  type PortalFilterInput,
 } from "@/lib/twenty/filters";
 import { validateRecordInput } from "@/lib/twenty/validation";
 import { gqlEnum } from "@/lib/twenty/graphql";
@@ -106,6 +108,65 @@ const noteFields = [
 
 const noteTargetFields = [{ name: "note", label: "Note" }];
 const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
+
+export type PortalRecordPage = {
+  records: Array<Record<string, unknown> & { id: string }>;
+  endCursor: string | null;
+  hasNextPage: boolean;
+};
+
+export async function loadMorePortalRecordsAction(
+  viewSlug: string,
+  requestedFilters: PortalFilterInput[],
+  cursor: string,
+): Promise<PortalRecordPage> {
+  const [context, metadata] = await Promise.all([
+    requirePortalViewContext(viewSlug),
+    getLatestMetadata(),
+  ]);
+  const view = context.view;
+  const object = getObjectMetadata(metadata, view.objectNameSingular);
+  if (!object) throw new Error("The portal metadata is unavailable.");
+
+  const filter = buildScopedFilter({
+    scopeFilter: buildPortalScopeFilter({
+      scopeMode: view.scopeMode,
+      scopeFieldName: view.scopeFieldName,
+      allowedRecordIds: view.allowedRecordIds,
+      twentyPersonId: context.twentyPersonId,
+      metadataFields: object.fields,
+    }),
+    fixedFilters: view.fixedFilters,
+    metadataFields: object.fields,
+    configuredFilters: view.filterFields,
+    requestedFilters,
+  });
+  const orderBy = view.defaultSortField
+    ? {
+        [view.defaultSortField]: gqlEnum(
+          view.defaultSortDirection === "desc"
+            ? "DescNullsLast"
+            : "AscNullsLast",
+        ),
+      }
+    : undefined;
+  const result = await listTwentyRecords({
+    objectNamePlural: view.objectNamePlural,
+    fields: view.columns,
+    metadataFields: object.fields,
+    filter,
+    orderBy,
+    cursor,
+  });
+
+  return {
+    records: result.edges.map(
+      ({ node }) => node as Record<string, unknown> & { id: string },
+    ),
+    endCursor: result.pageInfo.endCursor ?? null,
+    hasNextPage: result.pageInfo.hasNextPage,
+  };
+}
 
 function noteTargetFieldName(objectNameSingular: string) {
   return `target${

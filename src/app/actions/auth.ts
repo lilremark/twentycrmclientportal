@@ -31,7 +31,10 @@ const passwordSchema = z
   .regex(/[a-z]/, "Password must contain a lowercase letter.")
   .regex(/[0-9]/, "Password must contain a number.");
 
-export type AuthActionState = { error?: string };
+export type AuthActionState = {
+  error?: string;
+  acceptedEmail?: string;
+};
 export type SetupSmtpTestState = {
   status: "success" | "error";
   message: string;
@@ -264,18 +267,17 @@ export async function acceptInvitationAction(
 ): Promise<AuthActionState> {
   try {
     const password = passwordSchema.parse(formData.get("password"));
-    const userId = await acceptInvitation({ token, password });
+    const accepted = await acceptInvitation({ token, password });
     await writeAuditEvent({
-      actorUserId: userId,
+      actorUserId: accepted.userId,
       action: "invitation.accepted",
       status: "success",
     });
+    return { acceptedEmail: accepted.email };
   } catch (error) {
     return {
       error:
         error instanceof Error ? error.message : "Invitation acceptance failed.",
     };
   }
-
-  redirect("/login?invitation=accepted");
 }

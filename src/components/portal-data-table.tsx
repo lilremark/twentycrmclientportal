@@ -2,8 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { ArrowRight } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+import { ArrowRight, LoaderCircle } from "lucide-react";
 import {
   createColumnHelper,
   flexRender,
@@ -16,6 +22,7 @@ import { formatPortalValue } from "@/lib/format-value";
 import { RecordSidePanel } from "@/components/record-side-panel";
 import { PortalRecordValue } from "@/components/portal-record-value";
 import { extractPortalFiles } from "@/lib/file-values";
+import type { PortalRecordPage } from "@/app/actions/portal";
 
 type RecordRow = Record<string, unknown> & { id: string };
 
@@ -78,6 +85,10 @@ export function PortalDataTable({
   recordCloseHref,
   selectedRecordId,
   recordTitleField,
+  hasNextPage = false,
+  endCursor = null,
+  loadMoreAction,
+  listKey = "",
 }: {
   records: RecordRow[];
   columns: Array<{ name: string; label?: string }>;
@@ -87,8 +98,19 @@ export function PortalDataTable({
   recordCloseHref?: string | null;
   selectedRecordId?: string | null;
   recordTitleField?: string | null;
+  hasNextPage?: boolean;
+  endCursor?: string | null;
+  loadMoreAction?: (cursor: string) => Promise<PortalRecordPage>;
+  listKey?: string;
 }) {
   const router = useRouter();
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
+  const [loadedRecords, setLoadedRecords] = useState(records);
+  const [nextCursor, setNextCursor] = useState(endCursor);
+  const [moreAvailable, setMoreAvailable] = useState(hasNextPage);
+  const [loadError, setLoadError] = useState("");
+  const [loadingMore, setLoadingMore] = useState(false);
   const [pendingRecordId, setPendingRecordId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const helper = createColumnHelper<RecordRow>();
@@ -96,7 +118,7 @@ export function PortalDataTable({
     metadataFields.map((field) => [field.name, field]),
   );
   const pendingRecord = pendingRecordId
-    ? records.find((record) => record.id === pendingRecordId)
+    ? loadedRecords.find((record) => record.id === pendingRecordId)
     : undefined;
   const pendingTitle = pendingRecord
     ? recordTitleField
@@ -122,10 +144,66 @@ export function PortalDataTable({
       router.prefetch(recordHref(recordId));
     }
   };
+  useEffect(() => {
+    setLoadedRecords(records);
+    setNextCursor(endCursor);
+    setMoreAvailable(hasNextPage);
+    setLoadError("");
+    loadingRef.current = false;
+  }, [endCursor, hasNextPage, listKey, records]);
+
+  const loadMore = useCallback(async () => {
+    if (
+      loadingRef.current ||
+      !loadMoreAction ||
+      !moreAvailable ||
+      !nextCursor
+    ) {
+      return;
+    }
+    loadingRef.current = true;
+    setLoadingMore(true);
+    setLoadError("");
+    try {
+      const nextPage = await loadMoreAction(nextCursor);
+      setLoadedRecords((current) => {
+        const existing = new Set(current.map((record) => record.id));
+        return [
+          ...current,
+          ...nextPage.records.filter((record) => !existing.has(record.id)),
+        ];
+      });
+      setNextCursor(nextPage.endCursor);
+      setMoreAvailable(nextPage.hasNextPage);
+    } catch (error) {
+      setLoadError(
+        error instanceof Error
+          ? error.message
+          : "More records could not be loaded.",
+      );
+    } finally {
+      loadingRef.current = false;
+      setLoadingMore(false);
+    }
+  }, [loadMoreAction, moreAvailable, nextCursor]);
+
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target || !moreAvailable) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) void loadMore();
+      },
+      { rootMargin: "320px 0px" },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [loadMore, moreAvailable]);
+
   // TanStack Table owns memoization internally; React Compiler should not wrap it.
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
-    data: records,
+    data: loadedRecords,
     columns: [
       ...columns.map((column) =>
         helper.accessor((row) => row[column.name], {
@@ -249,11 +327,45 @@ export function PortalDataTable({
           ))}
         </tbody>
       </table>
-      {!records.length ? (
+      {!loadedRecords.length ? (
         <p className="p-8 text-center text-sm text-[#68758a]">
           No records match the current filters.
         </p>
       ) : null}
+      {loadError ? (
+        <div className="infinite-scroll-status is-error">
+          <span>{loadError}</span>
+          <button
+            className="button secondary compact-button"
+            onClick={loadMore}
+            type="button"
+          >
+            Try again
+          </button>
+        </div>
+      ) : null}
+      <div
+        aria-live="polite"
+        className="infinite-scroll-status"
+        ref={loadMoreRef}
+      >
+        {loadingMore ? (
+          <>
+            <LoaderCircle className="spin-icon" size={15} />
+            Loading more records…
+          </>
+        ) : moreAvailable ? (
+          <button
+            className="infinite-scroll-fallback"
+            onClick={loadMore}
+            type="button"
+          >
+            Load more records
+          </button>
+        ) : loadedRecords.length ? (
+          <span>All records loaded</span>
+        ) : null}
+      </div>
       {isPending &&
       pendingRecordId &&
       recordCloseHref &&

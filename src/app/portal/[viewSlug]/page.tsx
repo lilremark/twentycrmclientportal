@@ -5,6 +5,7 @@ import { Pencil } from "lucide-react";
 import {
   createNoteAction,
   deleteRecordAttachmentAction,
+  loadMorePortalRecordsAction,
   uploadRecordAttachmentAction,
   updateNoteAction,
   updateRecordPanelAction,
@@ -42,7 +43,14 @@ function listSearchParams(
 ) {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
-    if (key === "record" || key === "mode" || value === undefined) continue;
+    if (
+      key === "record" ||
+      key === "mode" ||
+      key === "cursor" ||
+      value === undefined
+    ) {
+      continue;
+    }
     for (const item of Array.isArray(value) ? value : [value]) {
       params.append(key, item);
     }
@@ -97,8 +105,6 @@ export default async function PortalListPage({
     configuredFilters: view.filterFields,
     requestedFilters,
   });
-  const cursor =
-    typeof query.cursor === "string" ? query.cursor : undefined;
   const orderBy = view.defaultSortField
     ? {
         [view.defaultSortField]: gqlEnum(
@@ -157,7 +163,6 @@ export default async function PortalListPage({
     metadataFields: object.fields,
     filter,
     orderBy,
-    cursor,
   });
   const recordRequest = selectedRecordId
     ? getScopedPortalRecord({
@@ -251,24 +256,18 @@ export default async function PortalListPage({
               metadataFields={object.fields}
               recordTitleField={effectiveRecordTitleField}
               records={result.edges.map(({ node }) => node as { id: string })}
+              endCursor={result.pageInfo.endCursor ?? null}
+              hasNextPage={result.pageInfo.hasNextPage}
+              listKey={listParams.toString()}
+              loadMoreAction={loadMorePortalRecordsAction.bind(
+                null,
+                view.slug,
+                requestedFilters,
+              )}
               recordCloseHref={closeHref}
               recordSelectionHref={recordSelectionHref}
               selectedRecordId={selectedRecordId}
             />
-            {result.pageInfo.hasNextPage && result.pageInfo.endCursor ? (
-              <div className="border-t border-[var(--border)] p-4 text-right">
-                <Link
-                  className="button secondary"
-                  href={(() => {
-                    const next = new URLSearchParams(listParams);
-                    next.set("cursor", result.pageInfo.endCursor);
-                    return `/portal/${view.slug}?${next.toString()}`;
-                  })()}
-                >
-                  Next page
-                </Link>
-              </div>
-            ) : null}
           </section>
         ) : null}
       </div>

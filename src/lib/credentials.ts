@@ -128,5 +128,5 @@ export async function acceptInvitation(input: {
     })
     .where(eq(invitations.id, invitation.id));
 
-  return userId;
+  return { userId, email: invitation.email };
 }

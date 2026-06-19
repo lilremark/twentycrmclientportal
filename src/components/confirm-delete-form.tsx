@@ -1,6 +1,8 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useCallback, useId, useState } from "react";
+
+import { ConfirmationModal } from "@/components/confirmation-modal";
 
 export function ConfirmDeleteForm({
   action,
@@ -17,11 +19,12 @@ export function ConfirmDeleteForm({
   title: string;
   triggerLabel?: string;
 }) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const inputId = useId();
   const [value, setValue] = useState("");
+  const [open, setOpen] = useState(false);
   const normalizedConfirmText = confirmText.toLowerCase();
   const confirmed = value.trim().toLowerCase() === normalizedConfirmText;
+  const close = useCallback(() => setOpen(false), []);
 
   return (
     <>
@@ -30,19 +33,19 @@ export function ConfirmDeleteForm({
         disabled={disabled}
         onClick={() => {
           setValue("");
-          dialogRef.current?.showModal();
+          setOpen(true);
         }}
         type="button"
       >
         {triggerLabel}
       </button>
-      <dialog className="confirm-dialog" ref={dialogRef}>
-        <form action={action} className="confirm-dialog-card">
-          <div>
-            <p className="eyebrow">Confirm deletion</p>
-            <h2>{title}</h2>
-            <p>{description}</p>
-          </div>
+      {open ? (
+        <ConfirmationModal
+          description={description}
+          onClose={close}
+          title={title}
+        >
+          <form action={action} className="confirmation-form">
           <label className="field" htmlFor={inputId}>
             <span>
               Type <strong>{confirmText}</strong> to confirm.
@@ -58,7 +61,7 @@ export function ConfirmDeleteForm({
           <div className="form-actions">
             <button
               className="button secondary"
-              onClick={() => dialogRef.current?.close()}
+              onClick={close}
               type="button"
             >
               Cancel
@@ -72,8 +75,9 @@ export function ConfirmDeleteForm({
               Delete
             </button>
           </div>
-        </form>
-      </dialog>
+          </form>
+        </ConfirmationModal>
+      ) : null}
     </>
   );
 }

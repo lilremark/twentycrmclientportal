@@ -66,8 +66,17 @@ export function AppShell({
         document.documentElement.dataset.theme === "dark" ? "dark" : "light",
       );
     });
+    const syncTheme = (event: StorageEvent) => {
+      if (event.key !== "theme") return;
+      const next = event.newValue === "dark" ? "dark" : "light";
+      document.documentElement.dataset.theme = next;
+      document.documentElement.style.colorScheme = next;
+      setTheme(next);
+    };
+    window.addEventListener("storage", syncTheme);
     return () => {
       cancelAnimationFrame(frame);
+      window.removeEventListener("storage", syncTheme);
       if (closeTimerRef.current) {
         window.clearTimeout(closeTimerRef.current);
       }
@@ -101,7 +110,9 @@ export function AppShell({
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = next;
+    document.documentElement.style.colorScheme = next;
     localStorage.setItem("theme", next);
+    document.cookie = `theme=${next}; Path=/; Max-Age=31536000; SameSite=Lax`;
     setTheme(next);
   };
   const isActiveNavigation = (href: string) =>

@@ -3427,6 +3427,151 @@ select.input[multiple] option {
   grid-column: 1 / -1;
 }
 
+.smtp-settings-submit {
+  margin-top: 16px;
+}
+
+.portal-filter-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.filter-count {
+  display: inline-grid;
+  min-width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--brand-primary, var(--primary));
+  color: #fff;
+  font-size: 0.66rem;
+  font-weight: 750;
+  padding-inline: 6px;
+}
+
+.active-filter-banner {
+  display: flex;
+  min-height: 42px;
+  flex: 1 1 320px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid
+    color-mix(in srgb, var(--brand-primary, var(--primary)) 24%, var(--border));
+  border-radius: 10px;
+  background: color-mix(
+    in srgb,
+    var(--brand-primary, var(--primary)) 7%,
+    var(--surface)
+  );
+  padding: 7px 8px 7px 13px;
+}
+
+.active-filter-banner > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--foreground);
+  font-size: 0.74rem;
+  font-weight: 650;
+}
+
+.filter-panel-layer {
+  position: fixed;
+  z-index: 120;
+  inset: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.filter-side-panel {
+  position: relative;
+  display: flex;
+  width: min(480px, calc(100vw - 32px));
+  height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  border-left: 1px solid var(--border-strong);
+  background: var(--surface);
+  box-shadow: -8px 0 32px rgb(0 0 0 / 12%);
+  outline: none;
+  animation: record-panel-slide-in 140ms cubic-bezier(0.2, 0.8, 0.2, 1)
+    both;
+}
+
+.filter-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  border-bottom: 1px solid var(--border);
+  padding: 24px;
+}
+
+.filter-panel-header h2 {
+  margin: 4px 0 0;
+  font-size: 1rem;
+  font-weight: 750;
+}
+
+.filter-panel-header p:not(.eyebrow) {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.filter-panel-form {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.filter-panel-fields {
+  display: grid;
+  gap: 18px;
+  overflow-y: auto;
+  padding: 22px 24px;
+}
+
+.filter-panel-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding: 16px 24px;
+}
+
+.infinite-scroll-status {
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.infinite-scroll-status.is-error {
+  justify-content: space-between;
+  color: var(--danger);
+  padding: 10px 16px;
+}
+
+.infinite-scroll-fallback {
+  border: 0;
+  background: transparent;
+  color: var(--brand-primary, var(--primary));
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+}
+
 .email-template-editor {
   min-height: 420px;
   resize: vertical;
@@ -4234,48 +4379,89 @@ select.input[multiple] option {
   display: none;
 }
 
-.confirm-dialog {
-  width: min(92vw, 440px);
-  border: 0;
-  border-radius: 18px;
-  background: transparent;
-  color: var(--foreground);
-  padding: 0;
+.confirmation-layer {
+  position: fixed;
+  z-index: 200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
 }
 
-.confirm-dialog::backdrop {
-  background: rgb(15 23 42 / 0.42);
+.confirmation-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgb(15 23 42 / 0.5);
   backdrop-filter: blur(6px);
 }
 
-.confirm-dialog-card {
+.confirmation-card {
+  position: relative;
   display: grid;
   gap: 18px;
+  width: min(100%, 460px);
+  max-height: min(720px, calc(100vh - 40px));
+  overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: 18px;
   background: var(--surface);
   box-shadow: 0 24px 80px rgb(15 23 42 / 0.22);
   padding: 22px;
+  outline: none;
+  animation: confirmation-enter 150ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-.confirm-dialog-card h2 {
+.confirmation-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.confirmation-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--danger) 12%, var(--surface));
+  color: var(--danger);
+}
+
+.confirmation-card h2 {
   margin: 4px 0 0;
   font-size: 1rem;
   font-weight: 820;
   letter-spacing: -0.02em;
 }
 
-.confirm-dialog-card p:not(.eyebrow) {
+.confirmation-card p:not(.eyebrow) {
   margin: 8px 0 0;
   color: var(--muted);
   font-size: 0.82rem;
   line-height: 1.55;
 }
 
-.confirm-dialog-card .field span {
+.confirmation-form {
+  display: grid;
+  gap: 18px;
+}
+
+.confirmation-form .field span {
   color: var(--muted);
   font-size: 0.76rem;
   font-weight: 650;
+}
+
+@keyframes confirmation-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .toast-message {
