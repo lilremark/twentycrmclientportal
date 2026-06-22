@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { FileText, Plus, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { FileText, Maximize2, Plus, X } from "lucide-react";
 
 import type { PortalNote } from "@/lib/portal-notes";
 
@@ -19,14 +20,17 @@ export function PortalNotes({
   updateAction: (noteId: string, formData: FormData) => void | Promise<void>;
 }) {
   const [selectedId, setSelectedId] = useState(notes[0]?.id ?? null);
+  const [openNoteId, setOpenNoteId] = useState<string | null>(null);
   const [mode, setMode] = useState<NoteMode>("view");
   const selectedNote =
     notes.find((note) => note.id === selectedId) ?? notes[0] ?? null;
 
-  const selectNote = (noteId: string) => {
+  const openNote = (noteId: string) => {
     setSelectedId(noteId);
     setMode("view");
+    setOpenNoteId(noteId);
   };
+  const modalNote = notes.find((note) => note.id === openNoteId) ?? null;
 
   return (
     <section className="record-notes-section">
@@ -58,7 +62,7 @@ export function PortalNotes({
                   : ""
               }`}
               key={note.id}
-              onClick={() => selectNote(note.id)}
+              onClick={() => openNote(note.id)}
               type="button"
             >
               <span className="record-note-list-icon">
@@ -95,7 +99,16 @@ export function PortalNotes({
             <article className="record-note-view">
               <div className="record-note-view-heading">
                 <h4>{selectedNote.title}</h4>
-                {canEdit ? (
+                <div className="record-note-view-actions">
+                  <button
+                    className="button secondary compact-button"
+                    onClick={() => setOpenNoteId(selectedNote.id)}
+                    type="button"
+                  >
+                    <Maximize2 size={13} />
+                    View full note
+                  </button>
+                  {canEdit ? (
                   <button
                     className="button secondary compact-button"
                     onClick={() => setMode("edit")}
@@ -103,7 +116,8 @@ export function PortalNotes({
                   >
                     Edit
                   </button>
-                ) : null}
+                  ) : null}
+                </div>
               </div>
               <p>{selectedNote.body || "No note body."}</p>
             </article>
@@ -119,7 +133,99 @@ export function PortalNotes({
           ) : null}
         </div>
       </div>
+      {modalNote ? (
+        <NoteDetailModal
+          note={modalNote}
+          onClose={() => setOpenNoteId(null)}
+          onEdit={
+            canEdit
+              ? () => {
+                  setSelectedId(modalNote.id);
+                  setOpenNoteId(null);
+                  setMode("edit");
+                }
+              : undefined
+          }
+        />
+      ) : null}
     </section>
+  );
+}
+
+function NoteDetailModal({
+  note,
+  onClose,
+  onEdit,
+}: {
+  note: PortalNote;
+  onClose: () => void;
+  onEdit?: () => void;
+}) {
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    document.body.style.overflow = "hidden";
+    modalRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus();
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <div className="note-modal-layer">
+      <button
+        aria-label="Close note"
+        className="note-modal-backdrop"
+        onClick={onClose}
+        type="button"
+      />
+      <div
+        aria-labelledby="note-modal-title"
+        aria-modal="true"
+        className="note-modal-card"
+        ref={modalRef}
+        role="dialog"
+        tabIndex={-1}
+      >
+        <div className="note-modal-heading">
+          <div>
+            <p className="eyebrow">Record note</p>
+            <h2 id="note-modal-title">{note.title}</h2>
+          </div>
+          <button
+            aria-label="Close note"
+            className="icon-button"
+            onClick={onClose}
+            type="button"
+          >
+            <X size={17} />
+          </button>
+        </div>
+        <div className="note-modal-body">
+          {note.body || "No note body."}
+        </div>
+        <div className="note-modal-actions">
+          <button className="button secondary" onClick={onClose} type="button">
+            Close
+          </button>
+          {onEdit ? (
+            <button className="button" onClick={onEdit} type="button">
+              Edit note
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
 

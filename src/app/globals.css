@@ -6315,6 +6315,13 @@ select.input[multiple] option {
   gap: 10px;
 }
 
+.record-note-view-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
 .record-note-form label {
   display: grid;
   gap: 6px;
@@ -6352,6 +6359,66 @@ select.input[multiple] option {
   background: transparent;
   color: var(--muted);
   cursor: pointer;
+}
+
+.note-modal-layer {
+  position: fixed;
+  z-index: 130;
+  display: grid;
+  place-items: center;
+  inset: 0;
+  padding: 24px;
+}
+
+.note-modal-backdrop {
+  position: absolute;
+  border: 0;
+  background: rgb(15 23 42 / 58%);
+  cursor: pointer;
+  inset: 0;
+}
+
+.note-modal-card {
+  position: relative;
+  display: grid;
+  width: min(720px, 100%);
+  max-height: min(78vh, 760px);
+  gap: 18px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 24px 70px rgb(15 23 42 / 28%);
+  padding: 22px;
+}
+
+.note-modal-heading,
+.note-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.note-modal-heading h2 {
+  margin: 3px 0 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.note-modal-body {
+  overflow-y: auto;
+  color: var(--foreground);
+  font-size: 0.9rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.note-modal-actions {
+  justify-content: flex-end;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
 }
 
 .compact-button {
