@@ -31,6 +31,7 @@ import {
   saveUploadedImage,
   saveUploadedPngBackground,
 } from "@/lib/uploads";
+import { isHttpUrl } from "@/lib/url-security";
 
 export type SettingsActionState = {
   status: "idle" | "success" | "error";
@@ -40,7 +41,7 @@ export type SettingsActionState = {
 const imageReferenceSchema = z
   .union([
     z.literal(""),
-    z.url(),
+    z.url().refine(isHttpUrl, "Image URLs must use HTTP or HTTPS."),
     z.string().regex(/^\/api\/uploads\/[A-Za-z0-9-_.]+$/),
   ])
   .transform((value) => value || null);
@@ -107,8 +108,8 @@ const twentySettingsSchema = z.object({
 const optionalUrl = z
   .string()
   .trim()
-  .refine((value) => !value || z.url().safeParse(value).success, {
-    message: "Enter a valid URL.",
+  .refine((value) => !value || isHttpUrl(value), {
+    message: "Enter a valid HTTP or HTTPS URL.",
   });
 
 const ssoSettingsSchema = z.object({

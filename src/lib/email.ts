@@ -30,6 +30,8 @@ export async function sendEmail(message: EmailMessage) {
   try {
     await transporter.sendMail({
       from: settings.from,
+      disableFileAccess: true,
+      disableUrlAccess: true,
       ...message,
     });
   } finally {

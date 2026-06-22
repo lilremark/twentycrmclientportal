@@ -15,21 +15,32 @@ export async function GET(request: Request) {
       return new Response(file.bytes, {
         headers: {
           "cache-control": "no-store",
+          "content-security-policy":
+            file.contentType === "image/svg+xml"
+              ? "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+              : "default-src 'none'; sandbox",
           "content-type": file.contentType,
+          "x-content-type-options": "nosniff",
         },
       });
     }
   }
 
   if (settings.brandLogoUrl) {
-    const location = new URL(settings.brandLogoUrl, request.url);
-    return new Response(null, {
-      status: 307,
-      headers: {
-        "cache-control": "no-store",
-        location: location.toString(),
-      },
-    });
+    try {
+      const location = new URL(settings.brandLogoUrl, request.url);
+      if (location.protocol === "http:" || location.protocol === "https:") {
+        return new Response(null, {
+          status: 307,
+          headers: {
+            "cache-control": "no-store",
+            location: location.toString(),
+          },
+        });
+      }
+    } catch {
+      // Fall back to the generated brand initials for invalid legacy values.
+    }
   }
 
   const initials =
@@ -49,7 +60,9 @@ export async function GET(request: Request) {
   return new Response(svg, {
     headers: {
       "cache-control": "no-store",
+      "content-security-policy": "default-src 'none'; sandbox",
       "content-type": "image/svg+xml; charset=utf-8",
+      "x-content-type-options": "nosniff",
     },
   });
 }

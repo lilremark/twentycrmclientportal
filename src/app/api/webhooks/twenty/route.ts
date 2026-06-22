@@ -8,6 +8,10 @@ import { writeAuditEvent } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { portalViews, webhookReceipts } from "@/lib/db/schema";
 import { getTwentyIntegrationSettings } from "@/lib/integration-settings";
+import {
+  readRequestText,
+  RequestBodyTooLargeError,
+} from "@/lib/request-body";
 import { clearTwentyReadCache } from "@/lib/twenty/cache";
 import {
   isFreshWebhookTimestamp,
@@ -17,7 +21,18 @@ import {
 export async function POST(request: Request) {
   const timestamp = request.headers.get("x-twenty-webhook-timestamp") ?? "";
   const signature = request.headers.get("x-twenty-webhook-signature") ?? "";
-  const body = await request.text();
+  let body: string;
+  try {
+    body = await readRequestText(request, 1_000_000);
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return NextResponse.json(
+        { error: "Webhook payload is too large" },
+        { status: 413 },
+      );
+    }
+    throw error;
+  }
   const settings = await getTwentyIntegrationSettings();
 
   if (!isFreshWebhookTimestamp(timestamp)) {

@@ -22,6 +22,7 @@ import {
   validateSmtpEncryptionMode,
 } from "@/lib/smtp";
 import { normalizeTwentyBaseUrl } from "@/lib/twenty/url";
+import { isHttpUrl } from "@/lib/url-security";
 
 const passwordSchema = z
   .string()
@@ -149,14 +150,14 @@ export async function setupAction(
         brandLogoUrl: z
           .union([
             z.literal(""),
-            z.url(),
+            z.url().refine(isHttpUrl, "Image URLs must use HTTP or HTTPS."),
             z.string().regex(/^\/api\/uploads\/[A-Za-z0-9-_.]+$/),
           ])
           .optional(),
         loginBackgroundUrl: z
           .union([
             z.literal(""),
-            z.url(),
+            z.url().refine(isHttpUrl, "Image URLs must use HTTP or HTTPS."),
             z.string().regex(/^\/api\/uploads\/[A-Za-z0-9-_.]+$/),
           ])
           .optional(),

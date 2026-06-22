@@ -1,10 +1,12 @@
 import { z } from "zod";
 
+import { isHttpUrl } from "@/lib/url-security";
+
 const optionalString = z.string().trim().optional().or(z.literal(""));
 
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
-  APP_URL: z.url(),
+  APP_URL: z.url().refine(isHttpUrl, "APP_URL must use HTTP or HTTPS."),
   TRUSTED_ORIGINS: optionalString,
   AUTH_SECRET: z.string().min(32),
   SETUP_TOKEN: z.string().min(16),

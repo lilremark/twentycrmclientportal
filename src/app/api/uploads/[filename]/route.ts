@@ -13,7 +13,12 @@ export async function GET(
   return new Response(file.bytes, {
     headers: {
       "cache-control": "public, max-age=31536000, immutable",
+      "content-security-policy":
+        file.contentType === "image/svg+xml"
+          ? "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+          : "default-src 'none'; sandbox",
       "content-type": file.contentType,
+      "x-content-type-options": "nosniff",
     },
   });
 }

@@ -28,7 +28,9 @@ export function proxy(request: NextRequest) {
       "img-src 'self' data: https:",
       "font-src 'self'",
       "style-src 'self' 'unsafe-inline'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      `script-src 'self' 'unsafe-inline'${
+        process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""
+      }`,
       "connect-src 'self'",
     ].join("; "),
   );

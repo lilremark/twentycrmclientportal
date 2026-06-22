@@ -13,14 +13,13 @@ const imageTypes = new Map([
   ["image/png", ".png"],
   ["image/webp", ".webp"],
   ["image/gif", ".gif"],
-  ["image/svg+xml", ".svg"],
 ]);
 
 export async function saveUploadedImage(file: File | null | undefined) {
   if (!file || file.size === 0) return null;
   const extension = imageTypes.get(file.type);
   if (!extension) {
-    throw new Error("Upload a JPG, PNG, WEBP, GIF, or SVG image.");
+    throw new Error("Upload a JPG, PNG, WEBP, or GIF image.");
   }
   if (file.size > 2_000_000) {
     throw new Error("Images must be smaller than 2 MB.");
