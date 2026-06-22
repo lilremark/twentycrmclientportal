@@ -225,7 +225,7 @@ function NoteDetailModal({
         </div>
       </div>
     </div>,
-    document.body,
+    document.querySelector<HTMLElement>(".app-frame") ?? document.body,
   );
 }
 

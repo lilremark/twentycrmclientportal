@@ -40,6 +40,31 @@ describe("PortalNotes", () => {
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
+
+  it("renders the dialog inside the branded application shell", () => {
+    const shell = document.createElement("div");
+    shell.className = "app-frame";
+    shell.style.setProperty("--brand-primary", "#c2410c");
+    document.body.append(shell);
+
+    render(
+      <PortalNotes
+        canEdit={false}
+        createAction={vi.fn()}
+        notes={[{ id: "note-1", title: "Project update", body: "Complete." }]}
+        updateAction={vi.fn()}
+      />,
+      { container: shell },
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /project update/i }));
+
+    expect(screen.getByRole("dialog", { name: "Project update" }).parentElement)
+      .toHaveClass("note-modal-layer");
+    expect(shell).toContainElement(
+      screen.getByRole("dialog", { name: "Project update" }),
+    );
+  });
 });
 // @vitest-environment jsdom
 

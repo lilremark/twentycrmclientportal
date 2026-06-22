@@ -4,6 +4,15 @@ All notable changes to Twenty CRM Client Portal are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.3.1] - 2026-06-22
+
+### Changed
+
+- Updated the full-note pop-up to inherit the configured portal branding color.
+- Applied the brand color to the note modal accent, backdrop tint, border,
+  controls, divider, shadow, and primary action for consistency with the rest
+  of the client portal.
+
 ## [1.3.0] - 2026-06-22
 
 ### Added
@@ -171,6 +180,7 @@ PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
 
 After the health check passes, open the configured `APP_URL` and complete the one-time `/setup` flow.
 
+[1.3.1]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.1
 [1.3.0]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.0
 [1.2.3]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.2.3
 [1.2.2]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.2.2
