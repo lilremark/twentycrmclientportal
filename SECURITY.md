@@ -6,7 +6,8 @@ We actively support and patch security vulnerabilities on the following versions
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.2.x   | :white_check_mark: |
+| 1.3.x   | :white_check_mark: |
+| 1.2.x   | :x:                |
 | 1.1.x   | :x:                |
 | 1.0.x   | :x:                |
 | < 1.0.0 | :x:                |
