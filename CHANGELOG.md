@@ -4,6 +4,29 @@ All notable changes to Twenty CRM Client Portal are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.3.3] - 2026-06-22
+
+### Added
+
+- Added bounded LRU caching for individual Twenty CRM records with a five-minute
+  expiration and a 500-record maximum.
+- Added client-controlled sorting by any displayed portal field in ascending or
+  descending order.
+- Added per-user saved portal views that retain the current filters and sorting
+  selection.
+
+### Changed
+
+- Invalidated cached Twenty CRM reads after record writes, deletes, webhook
+  updates, manual refreshes, and integration-setting changes.
+- Removed the empty Appearance section from client portal Settings.
+
+### Security
+
+- Restricted saved views to the current authenticated user and assigned portal.
+- Revalidated saved filter operators and sort fields against the active portal
+  configuration before querying Twenty CRM.
+
 ## [1.3.2] - 2026-06-22
 
 ### Added
@@ -207,6 +230,7 @@ PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
 
 After the health check passes, open the configured `APP_URL` and complete the one-time `/setup` flow.
 
+[1.3.3]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.3
 [1.3.2]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.2
 [1.3.1]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.1
 [1.3.0]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.0

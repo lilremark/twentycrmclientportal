@@ -72,4 +72,19 @@ describe("initial database migration", () => {
       '"format_select_values" boolean DEFAULT true NOT NULL',
     );
   });
+
+  it("adds per-user saved portal views", async () => {
+    const migration = await readFile(
+      resolve("drizzle/0013_dizzy_sauron.sql"),
+      "utf8",
+    );
+
+    expect(migration).toContain('CREATE TABLE "portal_saved_view"');
+    expect(migration).toContain(
+      '"portal_saved_view_user_portal_name_unique"',
+    );
+    expect(migration).toContain(
+      'REFERENCES "public"."portal_view"("id") ON DELETE cascade',
+    );
+  });
 });

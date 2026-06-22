@@ -260,6 +260,12 @@ export type PortalFixedFilter = {
   value: string;
 };
 
+export type PortalSavedFilter = {
+  field: string;
+  operator: string;
+  value: string;
+};
+
 export const portalViews = pgTable(
   "portal_view",
   {
@@ -327,6 +333,39 @@ export const portalAccess = pgTable(
       table.portalViewId,
     ),
     index("portal_access_view_idx").on(table.portalViewId),
+  ],
+);
+
+export const portalSavedViews = pgTable(
+  "portal_saved_view",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    portalViewId: uuid("portal_view_id")
+      .notNull()
+      .references(() => portalViews.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    filters: jsonb("filters")
+      .$type<PortalSavedFilter[]>()
+      .default([])
+      .notNull(),
+    sortField: text("sort_field"),
+    sortDirection: text("sort_direction").default("asc").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("portal_saved_view_user_portal_name_unique").on(
+      table.userId,
+      table.portalViewId,
+      table.name,
+    ),
+    index("portal_saved_view_user_portal_idx").on(
+      table.userId,
+      table.portalViewId,
+      table.updatedAt,
+    ),
   ],
 );
 

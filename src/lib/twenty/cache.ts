@@ -3,7 +3,8 @@ import "server-only";
 import { createHash } from "node:crypto";
 
 const DEFAULT_TTL_MS = 20_000;
-const MAX_CACHE_ENTRIES = 250;
+export const RECORD_CACHE_TTL_MS = 5 * 60_000;
+const MAX_CACHE_ENTRIES = 500;
 
 type ReadCacheEntry<T> = {
   expiresAt: number;
@@ -36,9 +37,12 @@ export async function getCachedTwentyRead<T>(
   const cached = readCache.get(key) as ReadCacheEntry<T> | undefined;
 
   if (cached && cached.expiresAt > now) {
+    readCache.delete(key);
+    readCache.set(key, cached);
     if (cached.value !== undefined) return cached.value;
     if (cached.promise) return cached.promise;
   }
+  if (cached) readCache.delete(key);
 
   const promise = loader()
     .then((value) => {
@@ -65,6 +69,10 @@ export async function getCachedTwentyRead<T>(
 }
 
 function trimTwentyReadCache() {
+  const now = Date.now();
+  for (const [key, entry] of readCache) {
+    if (entry.expiresAt <= now) readCache.delete(key);
+  }
   while (readCache.size > MAX_CACHE_ENTRIES) {
     const [firstKey] = readCache.keys();
     if (!firstKey) return;

@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Pencil } from "lucide-react";
+import { and, asc, eq } from "drizzle-orm";
 
 import {
   createNoteAction,
+  deletePortalFilterViewAction,
   deleteRecordAttachmentAction,
   loadMorePortalRecordsAction,
+  savePortalFilterViewAction,
   uploadRecordAttachmentAction,
   updateNoteAction,
   updateRecordPanelAction,
@@ -18,6 +21,8 @@ import { PortalRecordValue } from "@/components/portal-record-value";
 import { RefreshButton } from "@/components/refresh-button";
 import { RecordForm } from "@/components/record-form";
 import { requirePortalViewContext } from "@/lib/access";
+import { db } from "@/lib/db";
+import { portalSavedViews } from "@/lib/db/schema";
 import {
   displayValue,
   getLatestMetadata,
@@ -77,6 +82,37 @@ export default async function PortalListPage({
   const metadataByName = new Map(
     object.fields.map((field) => [field.name, field]),
   );
+  const savedViews = await db
+    .select({
+      id: portalSavedViews.id,
+      name: portalSavedViews.name,
+      filters: portalSavedViews.filters,
+      sortField: portalSavedViews.sortField,
+      sortDirection: portalSavedViews.sortDirection,
+    })
+    .from(portalSavedViews)
+    .where(
+      and(
+        eq(portalSavedViews.userId, context.session.user.id),
+        eq(portalSavedViews.portalViewId, view.id),
+      ),
+    )
+    .orderBy(asc(portalSavedViews.name));
+  const requestedSavedViewId =
+    typeof query.saved === "string" ? query.saved : null;
+  const activeSavedView =
+    savedViews.find((saved) => saved.id === requestedSavedViewId) ?? null;
+  const effectiveQuery = { ...query };
+  if (activeSavedView) {
+    for (const filter of activeSavedView.filters) {
+      effectiveQuery[`f_${filter.field}`] = filter.value;
+      effectiveQuery[`op_${filter.field}`] = filter.operator;
+    }
+    if (activeSavedView.sortField) {
+      effectiveQuery.sort = activeSavedView.sortField;
+      effectiveQuery.direction = activeSavedView.sortDirection;
+    }
+  }
 
   const requestedFilters: PortalFilterInput[] = view.filterFields.map(
     (config) => {
@@ -84,10 +120,10 @@ export default async function PortalListPage({
       return {
         field: config.name,
         operator: String(
-          query[`op_${config.name}`] ??
+          effectiveQuery[`op_${config.name}`] ??
             (field ? defaultFilterOperator(field, config) : "eq"),
         ),
-        value: String(query[`f_${config.name}`] ?? ""),
+        value: String(effectiveQuery[`f_${config.name}`] ?? ""),
       };
     },
   );
@@ -104,10 +140,22 @@ export default async function PortalListPage({
     configuredFilters: view.filterFields,
     requestedFilters,
   });
-  const orderBy = view.defaultSortField
+  const allowedSortFields = new Set(view.columns.map((field) => field.name));
+  const requestedSortField =
+    typeof effectiveQuery.sort === "string" &&
+    allowedSortFields.has(effectiveQuery.sort)
+      ? effectiveQuery.sort
+      : null;
+  const requestedSortDirection =
+    effectiveQuery.direction === "desc" ? "desc" : "asc";
+  const effectiveSortField = requestedSortField ?? view.defaultSortField;
+  const effectiveSortDirection = requestedSortField
+    ? requestedSortDirection
+    : view.defaultSortDirection;
+  const orderBy = effectiveSortField
     ? {
-        [view.defaultSortField]: gqlEnum(
-          view.defaultSortDirection === "desc"
+        [effectiveSortField]: gqlEnum(
+          effectiveSortDirection === "desc"
             ? "DescNullsLast"
             : "AscNullsLast",
         ),
@@ -116,7 +164,7 @@ export default async function PortalListPage({
   const selectedRecordId =
     typeof query.record === "string" ? query.record : null;
   const panelMode = query.mode === "edit" ? "edit" : "detail";
-  const listParams = listSearchParams(query);
+  const listParams = listSearchParams(effectiveQuery);
   const closeHref = `/portal/${view.slug}${
     listParams.size ? `?${listParams.toString()}` : ""
   }`;
@@ -248,12 +296,40 @@ export default async function PortalListPage({
             </Link>
           ) : null}
         </div>
-        {view.filterFields.length ? (
+        {view.filterFields.length || view.columns.length || savedViews.length ? (
           <PortalFilterForm
             fields={object.fields}
             filters={view.filterFields}
-            query={query}
+            query={effectiveQuery}
             clearHref={`/portal/${view.slug}`}
+            activeSavedViewId={activeSavedView?.id ?? null}
+            deleteSavedViewAction={
+              activeSavedView
+                ? deletePortalFilterViewAction.bind(
+                    null,
+                    view.slug,
+                    activeSavedView.id,
+                  )
+                : undefined
+            }
+            saveViewAction={savePortalFilterViewAction.bind(
+              null,
+              view.slug,
+              listParams.toString(),
+            )}
+            savedViews={savedViews.map((saved) => ({
+              id: saved.id,
+              name: saved.name,
+            }))}
+            sortDirection={requestedSortDirection}
+            sortField={requestedSortField}
+            sortFields={view.columns.map((column) => ({
+              name: column.name,
+              label:
+                column.label ??
+                metadataByName.get(column.name)?.label ??
+                column.name,
+            }))}
           />
         ) : null}
         {error ? <p className="error">{error}</p> : null}
@@ -272,6 +348,8 @@ export default async function PortalListPage({
                 null,
                 view.slug,
                 requestedFilters,
+                requestedSortField,
+                requestedSortDirection,
               )}
               recordCloseHref={closeHref}
               recordPanel={

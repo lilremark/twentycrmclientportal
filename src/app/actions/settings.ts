@@ -24,6 +24,7 @@ import {
   validateSmtpEncryptionMode,
 } from "@/lib/smtp";
 import { testTwentyConnection } from "@/lib/twenty/client";
+import { clearTwentyReadCache } from "@/lib/twenty/cache";
 import { normalizeTwentyBaseUrl } from "@/lib/twenty/url";
 import {
   deleteUploadedFile,
@@ -412,6 +413,7 @@ export async function updateTwentySettingsAction(
       webhookSecretChanged: Boolean(parsed.data.twentyWebhookSecret?.trim()),
     },
   });
+  clearTwentyReadCache();
   revalidatePath("/admin/settings");
   return { status: "success", message: "Twenty CRM settings saved." };
 }

@@ -4,12 +4,17 @@ import { randomUUID } from "node:crypto";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 
 import { requirePortalViewContext, requireSession } from "@/lib/access";
 import { writeAuditEvent } from "@/lib/audit";
 import { db } from "@/lib/db";
-import { portalViews, type TwentyFieldMetadata } from "@/lib/db/schema";
+import {
+  portalSavedViews,
+  portalViews,
+  type TwentyFieldMetadata,
+} from "@/lib/db/schema";
 import { extractPortalFiles } from "@/lib/file-values";
 import { noteBelongsToRecord } from "@/lib/portal-notes";
 import { getLatestMetadata, getObjectMetadata } from "@/lib/portal";
@@ -118,6 +123,8 @@ export type PortalRecordPage = {
 export async function loadMorePortalRecordsAction(
   viewSlug: string,
   requestedFilters: PortalFilterInput[],
+  requestedSortField: string | null,
+  requestedSortDirection: "asc" | "desc",
   cursor: string,
 ): Promise<PortalRecordPage> {
   const [context, metadata] = await Promise.all([
@@ -141,10 +148,19 @@ export async function loadMorePortalRecordsAction(
     configuredFilters: view.filterFields,
     requestedFilters,
   });
-  const orderBy = view.defaultSortField
+  const allowedSortFields = new Set(view.columns.map((field) => field.name));
+  const sortField =
+    requestedSortField && allowedSortFields.has(requestedSortField)
+      ? requestedSortField
+      : view.defaultSortField;
+  const sortDirection =
+    requestedSortField && allowedSortFields.has(requestedSortField)
+      ? requestedSortDirection
+      : view.defaultSortDirection;
+  const orderBy = sortField
     ? {
-        [view.defaultSortField]: gqlEnum(
-          view.defaultSortDirection === "desc"
+        [sortField]: gqlEnum(
+          sortDirection === "desc"
             ? "DescNullsLast"
             : "AscNullsLast",
         ),
@@ -166,6 +182,90 @@ export async function loadMorePortalRecordsAction(
     endCursor: result.pageInfo.endCursor ?? null,
     hasNextPage: result.pageInfo.hasNextPage,
   };
+}
+
+const savedViewSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+});
+
+export async function savePortalFilterViewAction(
+  slug: string,
+  returnQuery: string,
+  formData: FormData,
+) {
+  const context = await requirePortalViewContext(slug);
+  const parsed = savedViewSchema.parse({ name: formData.get("name") });
+  const query = new URLSearchParams(returnQuery);
+  const filters = context.view.filterFields
+    .map((config) => ({
+      field: config.name,
+      operator: String(query.get(`op_${config.name}`) ?? ""),
+      value: String(query.get(`f_${config.name}`) ?? "").trim(),
+    }))
+    .filter((filter) => filter.value)
+    .map((filter) => {
+      const config = context.view.filterFields.find(
+        (item) => item.name === filter.field,
+      );
+      const operator = config?.operators.includes(filter.operator)
+        ? filter.operator
+        : config?.operators[0] ?? "eq";
+      return { ...filter, operator };
+    });
+  const allowedSortFields = new Set(
+    context.view.columns.map((field) => field.name),
+  );
+  const requestedSortField = query.get("sort");
+  const sortField =
+    requestedSortField && allowedSortFields.has(requestedSortField)
+      ? requestedSortField
+      : null;
+  const sortDirection = query.get("direction") === "desc" ? "desc" : "asc";
+
+  const [saved] = await db
+    .insert(portalSavedViews)
+    .values({
+      userId: context.session.user.id,
+      portalViewId: context.view.id,
+      name: parsed.name,
+      filters,
+      sortField,
+      sortDirection,
+    })
+    .onConflictDoUpdate({
+      target: [
+        portalSavedViews.userId,
+        portalSavedViews.portalViewId,
+        portalSavedViews.name,
+      ],
+      set: {
+        filters,
+        sortField,
+        sortDirection,
+        updatedAt: new Date(),
+      },
+    })
+    .returning({ id: portalSavedViews.id });
+
+  if (!saved) throw new Error("The saved view could not be created.");
+  redirect(`/portal/${slug}?saved=${saved.id}`);
+}
+
+export async function deletePortalFilterViewAction(
+  slug: string,
+  savedViewId: string,
+) {
+  const context = await requirePortalViewContext(slug);
+  await db
+    .delete(portalSavedViews)
+    .where(
+      and(
+        eq(portalSavedViews.id, savedViewId),
+        eq(portalSavedViews.userId, context.session.user.id),
+        eq(portalSavedViews.portalViewId, context.view.id),
+      ),
+    );
+  redirect(`/portal/${slug}`);
 }
 
 function noteTargetFieldName(objectNameSingular: string) {
@@ -383,6 +483,9 @@ function recordPanelReturnHref(
   for (const [key, value] of requested) {
     if (
       key === "cursor" ||
+      key === "saved" ||
+      key === "sort" ||
+      key === "direction" ||
       key.startsWith("f_") ||
       key.startsWith("op_")
     ) {

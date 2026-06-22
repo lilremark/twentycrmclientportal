@@ -3547,6 +3547,64 @@ select.input[multiple] option {
   gap: 12px;
 }
 
+.portal-sort-controls,
+.portal-saved-view-controls {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.portal-sort-controls label,
+.portal-saved-view-controls label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.portal-sort-controls label > span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.portal-sort-controls .input,
+.portal-saved-view-controls .input {
+  min-height: 38px;
+  width: auto;
+  min-width: 142px;
+  padding-block: 7px;
+}
+
+.portal-sort-controls > .input {
+  min-width: 126px;
+}
+
+.portal-saved-view-controls {
+  border-left: 1px solid var(--border);
+  padding-left: 12px;
+}
+
+.save-portal-view-form {
+  display: flex;
+  flex: 1 1 100%;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid
+    color-mix(in srgb, var(--brand-primary, var(--primary)) 22%, var(--border));
+  border-radius: 10px;
+  background: color-mix(
+    in srgb,
+    var(--brand-primary, var(--primary)) 5%,
+    var(--surface)
+  );
+  padding: 10px;
+}
+
+.save-portal-view-form .input {
+  min-width: 180px;
+  max-width: 320px;
+}
+
 .filter-count {
   display: inline-grid;
   min-width: 20px;
@@ -6639,6 +6697,21 @@ select.input[multiple] option {
 
   .record-panel-resize-handle {
     display: none;
+  }
+
+  .portal-sort-controls,
+  .portal-saved-view-controls,
+  .save-portal-view-form {
+    width: 100%;
+  }
+
+  .portal-sort-controls label,
+  .portal-sort-controls .input,
+  .portal-saved-view-controls label,
+  .portal-saved-view-controls .input,
+  .save-portal-view-form .input {
+    min-width: 0;
+    flex: 1;
   }
 }
 

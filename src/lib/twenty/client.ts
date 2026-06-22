@@ -20,6 +20,7 @@ import {
 import {
   clearTwentyReadCache,
   getCachedTwentyRead,
+  RECORD_CACHE_TTL_MS,
   twentyReadCacheKey,
 } from "@/lib/twenty/cache";
 
@@ -256,6 +257,7 @@ export async function getTwentyRecord(input: {
         "/graphql",
         query,
       ),
+    RECORD_CACHE_TTL_MS,
   );
   return data[input.objectNameSingular];
 }

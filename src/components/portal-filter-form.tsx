@@ -3,8 +3,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
-import { Filter, RotateCcw, SlidersHorizontal, X } from "lucide-react";
+import {
+  Bookmark,
+  Filter,
+  RotateCcw,
+  Save,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 
+import { DeleteUploadButton } from "@/components/delete-upload-button";
 import type {
   PortalFilterConfig,
   TwentyFieldMetadata,
@@ -39,17 +47,32 @@ export function PortalFilterForm({
   query,
   clearHref,
   hiddenParams = {},
+  sortFields = [],
+  sortField = null,
+  sortDirection = "asc",
+  savedViews = [],
+  activeSavedViewId = null,
+  saveViewAction,
+  deleteSavedViewAction,
 }: {
   fields: TwentyFieldMetadata[];
   filters: PortalFilterConfig[];
   query: Record<string, string | string[] | undefined>;
   clearHref: string;
   hiddenParams?: Record<string, string>;
+  sortFields?: Array<{ name: string; label: string }>;
+  sortField?: string | null;
+  sortDirection?: "asc" | "desc";
+  savedViews?: Array<{ id: string; name: string }>;
+  activeSavedViewId?: string | null;
+  saveViewAction?: (formData: FormData) => void | Promise<void>;
+  deleteSavedViewAction?: () => void | Promise<void>;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const panelRef = useRef<HTMLElement>(null);
   const [open, setOpen] = useState(false);
+  const [savingView, setSavingView] = useState(false);
   const metadata = useMemo(
     () => new Map(fields.map((field) => [field.name, field])),
     [fields],
@@ -58,6 +81,36 @@ export function PortalFilterForm({
     String(query[`f_${config.name}`] ?? "").trim(),
   ).length;
   const close = useCallback(() => setOpen(false), []);
+  const currentParams = useCallback(
+    (includeSaved = false) => {
+      const next = new URLSearchParams();
+      for (const [name, value] of Object.entries(query)) {
+        if (
+          value === undefined ||
+          name === "record" ||
+          name === "mode" ||
+          name === "cursor" ||
+          (!includeSaved && name === "saved")
+        ) {
+          continue;
+        }
+        for (const item of Array.isArray(value) ? value : [value]) {
+          next.append(name, item);
+        }
+      }
+      return next;
+    },
+    [query],
+  );
+  const pushParams = useCallback(
+    (params: URLSearchParams) => {
+      router.push(
+        params.size ? `${pathname}?${params.toString()}` : clearHref,
+        { scroll: false },
+      );
+    },
+    [clearHref, pathname, router],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -79,17 +132,98 @@ export function PortalFilterForm({
   return (
     <>
       <div className="portal-filter-toolbar">
-        <button
-          className="button secondary"
-          onClick={() => setOpen(true)}
-          type="button"
-        >
-          <Filter size={15} />
-          Filter
-          {activeCount ? (
-            <span className="filter-count">{activeCount}</span>
+        {filters.length ? (
+          <button
+            className="button secondary"
+            onClick={() => setOpen(true)}
+            type="button"
+          >
+            <Filter size={15} />
+            Filter
+            {activeCount ? (
+              <span className="filter-count">{activeCount}</span>
+            ) : null}
+          </button>
+        ) : null}
+        {sortFields.length ? (
+          <div className="portal-sort-controls">
+            <label>
+              <span>Sort</span>
+              <select
+                className="input"
+                onChange={(event) => {
+                  const next = currentParams();
+                  if (event.target.value) next.set("sort", event.target.value);
+                  else next.delete("sort");
+                  next.delete("direction");
+                  pushParams(next);
+                }}
+                value={sortField ?? ""}
+              >
+                <option value="">Portal default</option>
+                {sortFields.map((field) => (
+                  <option key={field.name} value={field.name}>
+                    {field.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <select
+              aria-label="Sort direction"
+              className="input"
+              disabled={!sortField}
+              onChange={(event) => {
+                const next = currentParams();
+                if (sortField) next.set("sort", sortField);
+                next.set("direction", event.target.value);
+                pushParams(next);
+              }}
+              value={sortDirection}
+            >
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+          </div>
+        ) : null}
+        <div className="portal-saved-view-controls">
+          <label>
+            <Bookmark size={14} />
+            <select
+              aria-label="Saved view"
+              className="input"
+              onChange={(event) => {
+                const next = new URLSearchParams();
+                if (event.target.value) next.set("saved", event.target.value);
+                pushParams(next);
+              }}
+              value={activeSavedViewId ?? ""}
+            >
+              <option value="">Saved views</option>
+              {savedViews.map((view) => (
+                <option key={view.id} value={view.id}>
+                  {view.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          {saveViewAction ? (
+            <button
+              aria-label="Save current view"
+              className="icon-button"
+              onClick={() => setSavingView((current) => !current)}
+              type="button"
+            >
+              <Save size={15} />
+            </button>
           ) : null}
-        </button>
+          {activeSavedViewId && deleteSavedViewAction ? (
+            <DeleteUploadButton
+              action={deleteSavedViewAction}
+              confirmMessage="Delete this saved filter and sorting view?"
+              label="Delete view"
+            />
+          ) : null}
+        </div>
         {activeCount ? (
           <div className="active-filter-banner">
             <span>
@@ -98,13 +232,41 @@ export function PortalFilterForm({
             </span>
             <button
               className="button secondary compact-button"
-              onClick={() => router.push(clearHref, { scroll: false })}
+              onClick={() => {
+                const next = new URLSearchParams();
+                if (sortField) next.set("sort", sortField);
+                if (sortField) next.set("direction", sortDirection);
+                pushParams(next);
+              }}
               type="button"
             >
               <RotateCcw size={13} />
               Disable filter
             </button>
           </div>
+        ) : null}
+        {savingView && saveViewAction ? (
+          <form action={saveViewAction} className="save-portal-view-form">
+            <input
+              aria-label="Saved view name"
+              autoFocus
+              className="input"
+              maxLength={80}
+              name="name"
+              placeholder="View name"
+              required
+            />
+            <button className="button" type="submit">
+              Save view
+            </button>
+            <button
+              className="button secondary"
+              onClick={() => setSavingView(false)}
+              type="button"
+            >
+              Cancel
+            </button>
+          </form>
         ) : null}
       </div>
 
@@ -149,6 +311,8 @@ export function PortalFilterForm({
                     for (const [name, value] of Object.entries(hiddenParams)) {
                       next.set(name, value);
                     }
+                    if (sortField) next.set("sort", sortField);
+                    if (sortField) next.set("direction", sortDirection);
                     for (const config of filters) {
                       const value = String(
                         formData.get(`f_${config.name}`) ?? "",
@@ -275,7 +439,10 @@ export function PortalFilterForm({
                       className="button secondary"
                       onClick={() => {
                         close();
-                        router.push(clearHref, { scroll: false });
+                        const next = new URLSearchParams();
+                        if (sortField) next.set("sort", sortField);
+                        if (sortField) next.set("direction", sortDirection);
+                        pushParams(next);
                       }}
                       type="button"
                     >

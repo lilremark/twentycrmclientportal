@@ -11,13 +11,6 @@ export default async function PortalSettingsPage() {
         initialImage={current.user.image ?? null}
         initialName={current.user.name}
       />
-      <section className="card settings-card compact-settings-card">
-        <h2>Appearance</h2>
-        <p>
-          Use the sun or moon icon in the application header to choose your
-          preferred theme. Your selection is saved in this browser.
-        </p>
-      </section>
     </div>
   );
 }
