@@ -25,10 +25,9 @@ export function PortalNotes({
   const selectedNote =
     notes.find((note) => note.id === selectedId) ?? notes[0] ?? null;
 
-  const openNote = (noteId: string) => {
+  const selectNote = (noteId: string) => {
     setSelectedId(noteId);
     setMode("view");
-    setOpenNoteId(noteId);
   };
   const modalNote = notes.find((note) => note.id === openNoteId) ?? null;
 
@@ -62,7 +61,7 @@ export function PortalNotes({
                   : ""
               }`}
               key={note.id}
-              onClick={() => openNote(note.id)}
+              onClick={() => selectNote(note.id)}
               type="button"
             >
               <span className="record-note-list-icon">
@@ -137,14 +136,8 @@ export function PortalNotes({
         <NoteDetailModal
           note={modalNote}
           onClose={() => setOpenNoteId(null)}
-          onEdit={
-            canEdit
-              ? () => {
-                  setSelectedId(modalNote.id);
-                  setOpenNoteId(null);
-                  setMode("edit");
-                }
-              : undefined
+          updateAction={
+            canEdit ? updateAction.bind(null, modalNote.id) : undefined
           }
         />
       ) : null}
@@ -155,13 +148,14 @@ export function PortalNotes({
 function NoteDetailModal({
   note,
   onClose,
-  onEdit,
+  updateAction,
 }: {
   note: PortalNote;
   onClose: () => void;
-  onEdit?: () => void;
+  updateAction?: (formData: FormData) => void | Promise<void>;
 }) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -210,19 +204,71 @@ function NoteDetailModal({
             <X size={17} />
           </button>
         </div>
-        <div className="note-modal-body">
-          {note.body || "No note body."}
-        </div>
-        <div className="note-modal-actions">
-          <button className="button secondary" onClick={onClose} type="button">
-            Close
-          </button>
-          {onEdit ? (
-            <button className="button" onClick={onEdit} type="button">
-              Edit note
-            </button>
-          ) : null}
-        </div>
+        {editing && updateAction ? (
+          <form
+            action={async (formData) => {
+              await updateAction(formData);
+              onClose();
+            }}
+            className="note-modal-edit-form"
+          >
+            <label>
+              <span>Title</span>
+              <input
+                className="input"
+                defaultValue={note.title}
+                name="title"
+                required
+              />
+            </label>
+            <label>
+              <span>Body</span>
+              <textarea
+                autoFocus
+                className="input"
+                defaultValue={note.body}
+                name="body"
+                rows={12}
+              />
+            </label>
+            <div className="note-modal-actions">
+              <button
+                className="button secondary"
+                onClick={() => setEditing(false)}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button className="button" type="submit">
+                Save note
+              </button>
+            </div>
+          </form>
+        ) : (
+          <>
+            <div className="note-modal-body">
+              {note.body || "No note body."}
+            </div>
+            <div className="note-modal-actions">
+              <button
+                className="button secondary"
+                onClick={onClose}
+                type="button"
+              >
+                Close
+              </button>
+              {updateAction ? (
+                <button
+                  className="button"
+                  onClick={() => setEditing(true)}
+                  type="button"
+                >
+                  Edit note
+                </button>
+              ) : null}
+            </div>
+          </>
+        )}
       </div>
     </div>,
     document.querySelector<HTMLElement>(".app-frame") ?? document.body,

@@ -14,7 +14,7 @@ FROM base AS builder
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 
-ARG DEPLOYMENT_ID=v1-3-1
+ARG DEPLOYMENT_ID=v1-3-2
 ARG DATABASE_URL=postgres://build:build@localhost:5432/build
 ARG APP_URL=http://localhost:3000
 ARG AUTH_SECRET=build-only-secret-at-least-32-characters
@@ -40,7 +40,7 @@ RUN npm run build \
 FROM node:22-alpine AS runner
 WORKDIR /app
 
-ARG VERSION=1.3.1
+ARG VERSION=1.3.2
 LABEL org.opencontainers.image.title="Twenty CRM Client Portal" \
       org.opencontainers.image.description="Self-hosted external client portal for Twenty CRM" \
       org.opencontainers.image.source="https://github.com/lilremark/twentycrmclientportal" \
@@ -56,7 +56,9 @@ RUN apk add --no-cache libc6-compat \
     && addgroup --system --gid 1001 nodejs \
     && adduser --system --uid 1001 --ingroup nodejs portal \
     && mkdir -p /app/data/uploads \
-    && chown -R portal:nodejs /app/data
+    && chown -R portal:nodejs /app/data \
+    && rm -rf /usr/local/lib/node_modules/npm \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx
 
 COPY --from=builder --chown=portal:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=portal:nodejs /app/.next/static ./.next/static

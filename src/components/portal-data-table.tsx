@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
   useTransition,
+  type ReactNode,
 } from "react";
 import { ArrowRight, LoaderCircle } from "lucide-react";
 import {
@@ -104,6 +105,8 @@ export function PortalDataTable({
   loadMoreAction,
   listKey = "",
   formatSelectValues = true,
+  recordPanel = null,
+  recordPanelTitle = "Record details",
 }: {
   records: RecordRow[];
   columns: Array<{ name: string; label?: string }>;
@@ -118,6 +121,8 @@ export function PortalDataTable({
   loadMoreAction?: (cursor: string) => Promise<PortalRecordPage>;
   listKey?: string;
   formatSelectValues?: boolean;
+  recordPanel?: ReactNode;
+  recordPanelTitle?: string;
 }) {
   const router = useRouter();
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -167,6 +172,12 @@ export function PortalDataTable({
     setLoadError("");
     loadingRef.current = false;
   }, [endCursor, hasNextPage, listKey, records]);
+
+  useEffect(() => {
+    if (pendingRecordId && selectedRecordId === pendingRecordId) {
+      setPendingRecordId(null);
+    }
+  }, [pendingRecordId, selectedRecordId]);
 
   const loadMore = useCallback(async () => {
     if (
@@ -384,36 +395,48 @@ export function PortalDataTable({
           <span>All records loaded</span>
         ) : null}
       </div>
-      {isPending &&
-      pendingRecordId &&
-      recordCloseHref &&
-      selectedRecordId !== pendingRecordId ? (
+      {recordCloseHref &&
+      ((isPending &&
+        pendingRecordId &&
+        selectedRecordId !== pendingRecordId) ||
+        (selectedRecordId && recordPanel)) ? (
         <RecordSidePanel
           closeHref={recordCloseHref}
-          loading
-          title="Loading record details"
+          loading={
+            Boolean(isPending && pendingRecordId) &&
+            selectedRecordId !== pendingRecordId
+          }
+          title={recordPanelTitle}
         >
-          <header className="record-panel-header">
-            <div className="record-panel-heading">
-              <p className="eyebrow">Record</p>
-              <h2>{pendingTitle || "Loading record"}</h2>
-              <p title={pendingRecordId}>{pendingRecordId}</p>
-            </div>
-          </header>
-          <div className="record-panel-body">
-            <div
-              aria-label="Loading record details"
-              className="record-panel-loading"
-              role="status"
-            >
-              {Array.from({ length: 8 }, (_, index) => (
-                <div className="record-panel-loading-row" key={index}>
-                  <span />
-                  <span />
+          {isPending &&
+          pendingRecordId &&
+          selectedRecordId !== pendingRecordId ? (
+            <>
+              <header className="record-panel-header">
+                <div className="record-panel-heading">
+                  <p className="eyebrow">Record</p>
+                  <h2>{pendingTitle || "Loading record"}</h2>
+                  <p title={pendingRecordId}>{pendingRecordId}</p>
                 </div>
-              ))}
-            </div>
-          </div>
+              </header>
+              <div className="record-panel-body">
+                <div
+                  aria-label="Loading record details"
+                  className="record-panel-loading"
+                  role="status"
+                >
+                  {Array.from({ length: 8 }, (_, index) => (
+                    <div className="record-panel-loading-row" key={index}>
+                      <span />
+                      <span />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : (
+            recordPanel
+          )}
         </RecordSidePanel>
       ) : null}
     </div>

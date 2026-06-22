@@ -4,6 +4,33 @@ All notable changes to Twenty CRM Client Portal are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.3.2] - 2026-06-22
+
+### Added
+
+- Added a draggable and keyboard-accessible record sidebar resize handle.
+- Persisted the preferred record sidebar width locally, with a maximum width
+  of half the browser viewport.
+- Added note editing directly inside the full-note pop-up.
+
+### Changed
+
+- Kept the record sidebar mounted while loading so its skeleton transitions
+  directly into the loaded record without replaying the opening animation.
+- Refined the record sidebar header, field layout, notes, attachments, spacing,
+  and surfaces to match the rest of the portal interface.
+- Changed note list clicks to select a note in the sidebar; the full-note
+  pop-up now opens only from the explicit "View full note" action.
+- Reduced the brightness and brand tint of the full-note pop-up background.
+
+### Security
+
+- Removed the unused npm and npx runtime tooling from the production image,
+  eliminating five Docker Scout findings including high-severity
+  `CVE-2026-33671`.
+- Verified the production image with Docker Scout at zero critical, high,
+  medium, and low vulnerabilities.
+
 ## [1.3.1] - 2026-06-22
 
 ### Changed
@@ -180,6 +207,7 @@ PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
 
 After the health check passes, open the configured `APP_URL` and complete the one-time `/setup` flow.
 
+[1.3.2]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.2
 [1.3.1]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.1
 [1.3.0]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.0
 [1.2.3]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.2.3

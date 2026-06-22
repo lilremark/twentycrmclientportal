@@ -2169,6 +2169,11 @@ select.input[multiple] option {
   pointer-events: none;
 }
 
+.record-panel-layer.is-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
 .record-panel-backdrop {
   position: absolute;
   inset: 0;
@@ -2186,11 +2191,16 @@ select.input[multiple] option {
 .record-side-panel {
   position: relative;
   display: flex;
-  width: min(560px, calc(100vw - 48px));
+  width: min(var(--record-panel-width, 560px), 50vw);
   height: 100%;
   flex-direction: column;
   overflow: hidden;
-  border-left: 1px solid var(--border-strong);
+  border-left: 1px solid
+    color-mix(
+      in srgb,
+      var(--brand-primary, var(--primary)) 18%,
+      var(--border-strong)
+    );
   background: var(--surface);
   box-shadow: -8px 0 32px rgb(0 0 0 / 12%);
   outline: none;
@@ -2198,6 +2208,62 @@ select.input[multiple] option {
     both;
   contain: layout paint;
   will-change: transform, opacity;
+}
+
+.record-panel-resize-handle {
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  bottom: 0;
+  left: -6px;
+  display: grid;
+  width: 12px;
+  place-items: center;
+  cursor: col-resize;
+  outline: none;
+  touch-action: none;
+}
+
+.record-panel-resize-handle::before {
+  position: absolute;
+  width: 2px;
+  height: 100%;
+  background: transparent;
+  content: "";
+  transition: background 140ms ease;
+}
+
+.record-panel-resize-handle span {
+  position: relative;
+  width: 4px;
+  height: 52px;
+  border-radius: 999px;
+  background: color-mix(
+    in srgb,
+    var(--brand-primary, var(--primary)) 22%,
+    var(--border-strong)
+  );
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--surface) 88%, transparent);
+  opacity: 0;
+  transition:
+    opacity 140ms ease,
+    background 140ms ease;
+}
+
+.record-panel-resize-handle:hover span,
+.record-panel-resize-handle:focus-visible span,
+.record-panel-layer.is-resizing .record-panel-resize-handle span {
+  background: var(--brand-primary, var(--primary));
+  opacity: 1;
+}
+
+.record-panel-resize-handle:focus-visible::before,
+.record-panel-layer.is-resizing .record-panel-resize-handle::before {
+  background: color-mix(
+    in srgb,
+    var(--brand-primary, var(--primary)) 42%,
+    transparent
+  );
 }
 
 .record-side-panel.is-loading {
@@ -2218,7 +2284,21 @@ select.input[multiple] option {
 .record-panel-header {
   display: grid;
   gap: 14px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid
+    color-mix(
+      in srgb,
+      var(--brand-primary, var(--primary)) 14%,
+      var(--border)
+    );
+  background: linear-gradient(
+    135deg,
+    color-mix(
+      in srgb,
+      var(--brand-primary, var(--primary)) 7%,
+      var(--surface)
+    ),
+    var(--surface) 64%
+  );
   padding: 24px 48px 16px 24px;
 }
 
@@ -2231,7 +2311,7 @@ select.input[multiple] option {
   overflow: hidden;
   color: var(--foreground);
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: 750;
   letter-spacing: -0.015em;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2256,12 +2336,19 @@ select.input[multiple] option {
 .record-panel-body {
   flex: 1;
   overflow-y: auto;
+  background: color-mix(in srgb, var(--surface-subtle) 55%, var(--surface));
+  padding: 16px;
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;
 }
 
 .record-panel-details {
+  overflow: hidden;
   margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgb(15 23 42 / 4%);
 }
 
 .record-panel-details > div {
@@ -2269,13 +2356,17 @@ select.input[multiple] option {
   grid-template-columns: minmax(120px, 0.42fr) minmax(0, 1fr);
   gap: 16px;
   border-bottom: 1px solid var(--border);
-  padding: 12px 24px;
+  padding: 13px 14px;
+}
+
+.record-panel-details > div:last-child {
+  border-bottom: 0;
 }
 
 .record-panel-details dt {
   color: var(--muted);
   font-size: 0.7rem;
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .record-panel-details dd {
@@ -2290,16 +2381,19 @@ select.input[multiple] option {
 .record-panel-form {
   display: grid;
   gap: 16px;
-  padding: 20px 24px 28px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 18px 18px 24px;
 }
 
 .record-panel-form .form-actions {
   position: sticky;
   bottom: -1px;
-  margin: 4px -24px -28px;
+  margin: 4px -18px -24px;
   border-top: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface) 96%, transparent);
-  padding: 12px 24px;
+  padding: 12px 18px;
   backdrop-filter: blur(8px);
 }
 
@@ -2324,6 +2418,10 @@ select.input[multiple] option {
 
 .record-panel-loading {
   display: grid;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
 }
 
 .record-panel-loading-row {
@@ -2331,7 +2429,7 @@ select.input[multiple] option {
   grid-template-columns: minmax(120px, 0.42fr) minmax(0, 1fr);
   gap: 16px;
   border-bottom: 1px solid var(--border);
-  padding: 14px 24px;
+  padding: 14px;
 }
 
 .record-panel-loading-row span {
@@ -4056,6 +4154,16 @@ select.input[multiple] option {
   gap: 14px;
   border-top: 1px solid var(--border);
   padding: 18px 24px 24px;
+}
+
+.record-panel-body .record-notes-section,
+.record-panel-body .record-attachments-section {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 14px;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 4%);
 }
 
 .record-notes-heading {
@@ -6375,10 +6483,10 @@ select.input[multiple] option {
   border: 0;
   background:
     linear-gradient(
-      color-mix(in srgb, var(--brand-primary, var(--primary)) 10%, transparent),
+      color-mix(in srgb, var(--brand-primary, var(--primary)) 4%, transparent),
       transparent
     ),
-    rgb(15 23 42 / 58%);
+    rgb(15 23 42 / 52%);
   backdrop-filter: blur(5px);
   cursor: pointer;
   inset: 0;
@@ -6403,7 +6511,7 @@ select.input[multiple] option {
       180deg,
       color-mix(
           in srgb,
-          var(--brand-primary, var(--primary)) 8%,
+          var(--brand-primary, var(--primary)) 3%,
           var(--surface)
         )
         0,
@@ -6476,6 +6584,29 @@ select.input[multiple] option {
   overflow-wrap: anywhere;
 }
 
+.note-modal-edit-form {
+  display: grid;
+  min-height: 0;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.note-modal-edit-form label {
+  display: grid;
+  gap: 7px;
+}
+
+.note-modal-edit-form label > span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.note-modal-edit-form textarea {
+  min-height: 240px;
+  resize: vertical;
+}
+
 .note-modal-actions {
   justify-content: flex-end;
   border-top: 1px solid
@@ -6504,6 +6635,10 @@ select.input[multiple] option {
 
   .record-attachment-upload .button {
     grid-column: 1 / -1;
+  }
+
+  .record-panel-resize-handle {
+    display: none;
   }
 }
 

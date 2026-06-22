@@ -17,7 +17,6 @@ import { PortalNotes } from "@/components/portal-notes";
 import { PortalRecordValue } from "@/components/portal-record-value";
 import { RefreshButton } from "@/components/refresh-button";
 import { RecordForm } from "@/components/record-form";
-import { RecordSidePanel } from "@/components/record-side-panel";
 import { requirePortalViewContext } from "@/lib/access";
 import {
   displayValue,
@@ -275,6 +274,128 @@ export default async function PortalListPage({
                 requestedFilters,
               )}
               recordCloseHref={closeHref}
+              recordPanel={
+                selectedRecordId ? (
+                  <>
+                    <header className="record-panel-header">
+                      <div className="record-panel-heading">
+                        <p className="eyebrow">{object.labelSingular}</p>
+                        <h2>{recordTitle || object.labelSingular}</h2>
+                        <p title={selectedRecordId}>{selectedRecordId}</p>
+                      </div>
+                      {selectedRecord ? (
+                        <div className="record-panel-actions">
+                          <RefreshButton />
+                          {context.role === "contributor" &&
+                          view.editFields.length &&
+                          panelMode !== "edit" ? (
+                            <Link
+                              className="button"
+                              href={editHref}
+                              scroll={false}
+                            >
+                              <Pencil size={14} />
+                              Edit
+                            </Link>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </header>
+
+                    <div className="record-panel-body">
+                      {selectedRecordError ? (
+                        <div className="record-panel-message">
+                          <strong>Record unavailable</strong>
+                          <p>{selectedRecordError}</p>
+                        </div>
+                      ) : selectedRecord && panelMode === "edit" ? (
+                        <RecordForm
+                          action={updateRecordPanelAction.bind(
+                            null,
+                            view.slug,
+                            selectedRecordId,
+                            listParams.toString(),
+                          )}
+                          appearance="panel"
+                          cancelHref={detailHref}
+                          fields={view.editFields}
+                          metadataFields={object.fields}
+                          submitLabel="Save changes"
+                          values={selectedRecord}
+                        />
+                      ) : selectedRecord ? (
+                        <dl className="record-panel-details">
+                          {panelFields
+                            .filter(
+                              (config) =>
+                                config.name !== "noteTargets" &&
+                                config.name !== "attachments",
+                            )
+                            .map((config) => (
+                              <div key={config.name}>
+                                <dt>
+                                  {config.label ??
+                                    metadataByName.get(config.name)?.label ??
+                                    config.name}
+                                </dt>
+                                <dd>
+                                  <PortalRecordValue
+                                    formatSelectValues={view.formatSelectValues}
+                                    pdfPreview
+                                    selectOptions={
+                                      metadataByName.get(config.name)?.options
+                                    }
+                                    type={
+                                      metadataByName.get(config.name)?.type
+                                    }
+                                    value={selectedRecord[config.name]}
+                                  />
+                                </dd>
+                              </div>
+                            ))}
+                        </dl>
+                      ) : null}
+                      {selectedRecord && noteTargetsField ? (
+                        <PortalNotes
+                          canEdit={context.role === "contributor"}
+                          createAction={createNoteAction.bind(
+                            null,
+                            view.slug,
+                            selectedRecordId,
+                            listParams.toString(),
+                          )}
+                          notes={selectedNotes}
+                          updateAction={updateNoteAction.bind(
+                            null,
+                            view.slug,
+                            selectedRecordId,
+                            listParams.toString(),
+                          )}
+                        />
+                      ) : null}
+                      {selectedRecord && attachmentsField ? (
+                        <PortalAttachments
+                          canUpload={context.role === "contributor"}
+                          deleteAttachmentAction={deleteRecordAttachmentAction.bind(
+                            null,
+                            view.slug,
+                            selectedRecordId,
+                            listParams.toString(),
+                          )}
+                          uploadAction={uploadRecordAttachmentAction.bind(
+                            null,
+                            view.slug,
+                            selectedRecordId,
+                            listParams.toString(),
+                          )}
+                          value={selectedRecord[attachmentsField.name]}
+                        />
+                      ) : null}
+                    </div>
+                  </>
+                ) : null
+              }
+              recordPanelTitle={`${object.labelSingular} details`}
               recordSelectionHref={recordSelectionHref}
               selectedRecordId={selectedRecordId}
             />
@@ -282,122 +403,6 @@ export default async function PortalListPage({
         ) : null}
       </div>
 
-      {selectedRecordId ? (
-        <RecordSidePanel
-          closeHref={closeHref}
-          title={`${object.labelSingular} details`}
-        >
-          <header className="record-panel-header">
-            <div className="record-panel-heading">
-              <p className="eyebrow">{object.labelSingular}</p>
-              <h2>{recordTitle || object.labelSingular}</h2>
-              <p title={selectedRecordId}>{selectedRecordId}</p>
-            </div>
-            {selectedRecord ? (
-              <div className="record-panel-actions">
-                <RefreshButton />
-                {context.role === "contributor" &&
-                view.editFields.length &&
-                panelMode !== "edit" ? (
-                  <Link className="button" href={editHref} scroll={false}>
-                    <Pencil size={14} />
-                    Edit
-                  </Link>
-                ) : null}
-              </div>
-            ) : null}
-          </header>
-
-          <div className="record-panel-body">
-            {selectedRecordError ? (
-              <div className="record-panel-message">
-                <strong>Record unavailable</strong>
-                <p>{selectedRecordError}</p>
-              </div>
-            ) : selectedRecord && panelMode === "edit" ? (
-              <RecordForm
-                action={updateRecordPanelAction.bind(
-                  null,
-                  view.slug,
-                  selectedRecordId,
-                  listParams.toString(),
-                )}
-                appearance="panel"
-                cancelHref={detailHref}
-                fields={view.editFields}
-                metadataFields={object.fields}
-                submitLabel="Save changes"
-                values={selectedRecord}
-              />
-            ) : selectedRecord ? (
-              <dl className="record-panel-details">
-                {panelFields
-                  .filter(
-                    (config) =>
-                      config.name !== "noteTargets" &&
-                      config.name !== "attachments",
-                  )
-                  .map((config) => (
-                    <div key={config.name}>
-                      <dt>
-                        {config.label ??
-                          metadataByName.get(config.name)?.label ??
-                          config.name}
-                      </dt>
-                      <dd>
-                        <PortalRecordValue
-                          formatSelectValues={view.formatSelectValues}
-                          pdfPreview
-                          selectOptions={
-                            metadataByName.get(config.name)?.options
-                          }
-                          type={metadataByName.get(config.name)?.type}
-                          value={selectedRecord[config.name]}
-                        />
-                      </dd>
-                    </div>
-                  ))}
-              </dl>
-            ) : null}
-            {selectedRecord && noteTargetsField ? (
-              <PortalNotes
-                canEdit={context.role === "contributor"}
-                createAction={createNoteAction.bind(
-                  null,
-                  view.slug,
-                  selectedRecordId,
-                  listParams.toString(),
-                )}
-                notes={selectedNotes}
-                updateAction={updateNoteAction.bind(
-                  null,
-                  view.slug,
-                  selectedRecordId,
-                  listParams.toString(),
-                )}
-              />
-            ) : null}
-            {selectedRecord && attachmentsField ? (
-              <PortalAttachments
-                canUpload={context.role === "contributor"}
-                deleteAttachmentAction={deleteRecordAttachmentAction.bind(
-                  null,
-                  view.slug,
-                  selectedRecordId,
-                  listParams.toString(),
-                )}
-                uploadAction={uploadRecordAttachmentAction.bind(
-                  null,
-                  view.slug,
-                  selectedRecordId,
-                  listParams.toString(),
-                )}
-                value={selectedRecord[attachmentsField.name]}
-              />
-            ) : null}
-          </div>
-        </RecordSidePanel>
-      ) : null}
     </>
   );
 }
