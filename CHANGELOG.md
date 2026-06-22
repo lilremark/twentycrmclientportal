@@ -4,6 +4,37 @@ All notable changes to Twenty CRM Client Portal are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-06-22
+
+### Added
+
+- Added readable labels for Select and Multi-select values by converting API
+  names to properly spaced and capitalized text.
+- Added a per-portal option to retain raw API names when integrations require
+  exact values.
+- Added a full-note modal in client portal record details so truncated note
+  previews can be opened and read without leaving the record.
+
+### Changed
+
+- Updated supported production and development dependencies within the
+  project's Node.js 22, TypeScript 5, and ESLint 9 compatibility range.
+- Improved note interactions, keyboard dismissal, focus restoration, and
+  contributor access to note editing.
+- Disabled new SVG uploads; existing SVG branding remains available with
+  sandboxed response headers.
+
+### Security
+
+- Resolved all npm audit findings, including transitive PostCSS and esbuild
+  advisories.
+- Restricted branding and OAuth URLs to HTTP and HTTPS schemes.
+- Forced unsafe proxied CRM file types to download and added MIME-sniffing and
+  sandbox protections to file responses.
+- Limited signed webhook request bodies to 1 MB.
+- Disabled Nodemailer filesystem and URL access and removed `unsafe-eval` from
+  the production Content Security Policy.
+
 ## [1.2.3] - 2026-06-19
 
 ### Fixed
@@ -140,6 +171,7 @@ PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
 
 After the health check passes, open the configured `APP_URL` and complete the one-time `/setup` flow.
 
+[1.3.0]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.0
 [1.2.3]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.2.3
 [1.2.2]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.2.2
 [1.2.1]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.2.1

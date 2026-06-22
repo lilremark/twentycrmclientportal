@@ -18,21 +18,27 @@ export function proxy(request: NextRequest) {
     "permissions-policy",
     "camera=(), microphone=(), geolocation=()",
   );
+  const servesUntrustedContent =
+    request.nextUrl.pathname === "/api/brand-icon" ||
+    request.nextUrl.pathname.startsWith("/api/twenty/files") ||
+    request.nextUrl.pathname.startsWith("/api/uploads/");
   response.headers.set(
     "content-security-policy",
-    [
-      "default-src 'self'",
-      "base-uri 'self'",
-      "frame-ancestors 'none'",
-      "form-action 'self'",
-      "img-src 'self' data: https:",
-      "font-src 'self'",
-      "style-src 'self' 'unsafe-inline'",
-      `script-src 'self' 'unsafe-inline'${
-        process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""
-      }`,
-      "connect-src 'self'",
-    ].join("; "),
+    servesUntrustedContent
+      ? "default-src 'none'; sandbox"
+      : [
+          "default-src 'self'",
+          "base-uri 'self'",
+          "frame-ancestors 'none'",
+          "form-action 'self'",
+          "img-src 'self' data: https:",
+          "font-src 'self'",
+          "style-src 'self' 'unsafe-inline'",
+          `script-src 'self' 'unsafe-inline'${
+            process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""
+          }`,
+          "connect-src 'self'",
+        ].join("; "),
   );
   return response;
 }
