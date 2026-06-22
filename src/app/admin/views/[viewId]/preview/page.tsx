@@ -203,6 +203,7 @@ export default async function PortalViewPreviewPage({
             <section className="card table-shell">
               <PortalDataTable
                 columns={view.columns}
+                formatSelectValues={view.formatSelectValues}
                 metadataFields={object.fields}
                 records={result.edges.map(({ node }) => node as { id: string })}
                 recordBaseHref={null}

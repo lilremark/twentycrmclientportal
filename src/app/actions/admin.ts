@@ -308,6 +308,15 @@ export async function createPortalViewAction(formData: FormData) {
       recordTitleField: z.string().trim().optional(),
       defaultSortField: z.string().trim().optional(),
       defaultSortDirection: z.enum(["asc", "desc"]).default("asc"),
+      formatSelectValues: z
+        .union([
+          z.literal("on"),
+          z.literal("true"),
+          z.literal("false"),
+          z.null(),
+        ])
+        .optional()
+        .transform((value) => value === "on" || value === "true"),
       navigationOrder: z.coerce.number().int().default(0),
     })
     .parse(Object.fromEntries(formData));
@@ -414,6 +423,15 @@ export async function updatePortalViewAction(
       recordTitleField: z.string().trim().optional(),
       defaultSortField: z.string().trim().optional(),
       defaultSortDirection: z.enum(["asc", "desc"]).default("asc"),
+      formatSelectValues: z
+        .union([
+          z.literal("on"),
+          z.literal("true"),
+          z.literal("false"),
+          z.null(),
+        ])
+        .optional()
+        .transform((value) => value === "on" || value === "true"),
       navigationOrder: z.coerce.number().int().default(0),
     })
     .parse(Object.fromEntries(formData));

@@ -1,0 +1,1 @@
+ALTER TABLE "portal_view" ADD COLUMN "format_select_values" boolean DEFAULT true NOT NULL;

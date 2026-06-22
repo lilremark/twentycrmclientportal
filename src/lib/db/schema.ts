@@ -288,6 +288,7 @@ export const portalViews = pgTable(
     defaultSortDirection: text("default_sort_direction")
       .default("asc")
       .notNull(),
+    formatSelectValues: boolean("format_select_values").default(true).notNull(),
     navigationOrder: integer("navigation_order").default(0).notNull(),
     isEnabled: boolean("is_enabled").default(true).notNull(),
     validationErrors: jsonb("validation_errors")

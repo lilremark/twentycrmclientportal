@@ -70,6 +70,10 @@ export function getObjectMetadata(
   );
 }
 
-export function displayValue(value: unknown, type?: string) {
-  return formatPortalValue(value, type);
+export function displayValue(
+  value: unknown,
+  type?: string,
+  options?: Parameters<typeof formatPortalValue>[2],
+) {
+  return formatPortalValue(value, type, options);
 }

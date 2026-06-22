@@ -9,11 +9,15 @@ export function PortalRecordValue({
   type,
   pdfPreview = false,
   deleteAttachmentAction,
+  selectOptions,
+  formatSelectValues = true,
 }: {
   value: unknown;
   type?: string;
   pdfPreview?: boolean;
   deleteAttachmentAction?: (attachmentId: string) => void | Promise<void>;
+  selectOptions?: Array<{ value: string; label: string }>;
+  formatSelectValues?: boolean;
 }) {
   const files = extractPortalFiles(value);
   if (files.length) {
@@ -62,7 +66,10 @@ export function PortalRecordValue({
     );
   }
 
-  const formatted = formatPortalValue(value, type);
+  const formatted = formatPortalValue(value, type, {
+    selectOptions,
+    formatSelectValues,
+  });
   if (formatted === "—") return <span className="table-empty-value">—</span>;
   return <span>{formatted}</span>;
 }

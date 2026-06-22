@@ -41,6 +41,7 @@ type InitialView = {
   editFields: PortalFieldConfig[];
   defaultSortField: string | null;
   defaultSortDirection: string;
+  formatSelectValues: boolean;
   navigationOrder: number;
 };
 
@@ -1008,6 +1009,20 @@ export function PortalViewForm({
               type="number"
             />
           </div>
+          <label className="settings-toggle settings-span">
+            <input
+              defaultChecked={initial?.formatSelectValues ?? true}
+              name="formatSelectValues"
+              type="checkbox"
+            />
+            <span>
+              <strong>Use readable Select labels</strong>
+              <small>
+                Show synchronized labels and clean capitalization instead of
+                raw API values for Select and Multi-select fields.
+              </small>
+            </span>
+          </label>
         </div>
       </section>
 

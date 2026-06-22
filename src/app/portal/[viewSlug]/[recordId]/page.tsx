@@ -72,6 +72,10 @@ export default async function RecordDetailPage({
               {displayValue(
                 record[config.name],
                 metadataByName.get(config.name)?.type,
+                {
+                  selectOptions: metadataByName.get(config.name)?.options,
+                  formatSelectValues: view.formatSelectValues,
+                },
               )}
             </dd>
           </div>

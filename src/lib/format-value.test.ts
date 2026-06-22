@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatPortalValue } from "@/lib/format-value";
+import { formatPortalValue, humanizeApiValue } from "@/lib/format-value";
 
 describe("formatPortalValue", () => {
   it("formats date-only values without shifting the calendar date", () => {
@@ -90,5 +90,34 @@ describe("formatPortalValue", () => {
         "RELATION",
       ),
     ).toBe("Customer requested updated pricing.");
+  });
+
+  it("uses synchronized labels for select values", () => {
+    expect(
+      formatPortalValue("IN_PROGRESS", "SELECT", {
+        selectOptions: [{ value: "IN_PROGRESS", label: "In progress" }],
+      }),
+    ).toBe("In progress");
+  });
+
+  it("humanizes select API values when metadata has no label", () => {
+    expect(humanizeApiValue("WAITING_FOR_CUSTOMER")).toBe(
+      "Waiting For Customer",
+    );
+    expect(humanizeApiValue("followUpRequired")).toBe("Follow Up Required");
+  });
+
+  it("formats every multi-select value", () => {
+    expect(
+      formatPortalValue(["PRIORITY_CLIENT", "renewalDue"], "MULTI_SELECT"),
+    ).toBe("Priority Client, Renewal Due");
+  });
+
+  it("can preserve exact select API values", () => {
+    expect(
+      formatPortalValue(["PRIORITY_CLIENT", "renewalDue"], "MULTI_SELECT", {
+        formatSelectValues: false,
+      }),
+    ).toBe("PRIORITY_CLIENT, renewalDue");
   });
 });

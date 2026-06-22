@@ -82,7 +82,42 @@ function descriptiveObjectValue(value: unknown): string {
   return hasRelationId ? "Related record" : "";
 }
 
-export function formatPortalValue(value: unknown, type?: string) {
+type SelectOption = {
+  value: string;
+  label: string;
+};
+
+type FormatPortalValueOptions = {
+  selectOptions?: SelectOption[];
+  formatSelectValues?: boolean;
+};
+
+export function humanizeApiValue(value: string) {
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function formatSelectValue(
+  value: unknown,
+  options: FormatPortalValueOptions,
+) {
+  const rawValue = String(value);
+  if (options.formatSelectValues === false) return rawValue;
+  return (
+    options.selectOptions?.find((option) => option.value === rawValue)?.label ||
+    humanizeApiValue(rawValue)
+  );
+}
+
+export function formatPortalValue(
+  value: unknown,
+  type?: string,
+  options: FormatPortalValueOptions = {},
+) {
   if (value === null || value === undefined || value === "") return "—";
   if (type === "DATE") return formatDate(value, false) ?? String(value);
   if (type === "DATE_TIME") return formatDate(value, true) ?? String(value);
@@ -93,6 +128,11 @@ export function formatPortalValue(value: unknown, type?: string) {
       .join(", ") || "—";
   }
   if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (type === "SELECT") return formatSelectValue(value, options);
+  if (type === "MULTI_SELECT") {
+    const values = Array.isArray(value) ? value : [value];
+    return values.map((item) => formatSelectValue(item, options)).join(", ");
+  }
   if (Array.isArray(value)) return value.join(", ");
   if (typeof value === "object") {
     const object = value as Record<string, unknown>;

@@ -29,15 +29,29 @@ type RecordRow = Record<string, unknown> & { id: string };
 function PortalTableValue({
   value,
   type,
+  selectOptions,
+  formatSelectValues,
 }: {
   value: unknown;
   type?: string;
+  selectOptions?: Array<{ value: string; label: string }>;
+  formatSelectValues: boolean;
 }) {
   const files = extractPortalFiles(value);
   if (files.length) {
-    return <PortalRecordValue type={type} value={value} />;
+    return (
+      <PortalRecordValue
+        formatSelectValues={formatSelectValues}
+        selectOptions={selectOptions}
+        type={type}
+        value={value}
+      />
+    );
   }
-  const formatted = formatPortalValue(value, type);
+  const formatted = formatPortalValue(value, type, {
+    selectOptions,
+    formatSelectValues,
+  });
 
   if (type === "SELECT" || type === "MULTI_SELECT") {
     const values = formatted
@@ -89,6 +103,7 @@ export function PortalDataTable({
   endCursor = null,
   loadMoreAction,
   listKey = "",
+  formatSelectValues = true,
 }: {
   records: RecordRow[];
   columns: Array<{ name: string; label?: string }>;
@@ -102,6 +117,7 @@ export function PortalDataTable({
   endCursor?: string | null;
   loadMoreAction?: (cursor: string) => Promise<PortalRecordPage>;
   listKey?: string;
+  formatSelectValues?: boolean;
 }) {
   const router = useRouter();
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -211,6 +227,8 @@ export function PortalDataTable({
           header: column.label ?? column.name,
           cell: (info) => (
             <PortalTableValue
+              formatSelectValues={formatSelectValues}
+              selectOptions={metadataByName.get(column.name)?.options}
               type={metadataByName.get(column.name)?.type}
               value={info.getValue()}
             />

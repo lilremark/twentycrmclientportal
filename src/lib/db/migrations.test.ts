@@ -61,4 +61,15 @@ describe("initial database migration", () => {
     expect(migration).toContain('"custom_oauth_discovery_url" text');
     expect(migration).toContain('"custom_oauth_pkce" boolean');
   });
+
+  it("adds configurable Select value formatting", async () => {
+    const migration = await readFile(
+      resolve("drizzle/0012_unusual_network.sql"),
+      "utf8",
+    );
+
+    expect(migration).toContain(
+      '"format_select_values" boolean DEFAULT true NOT NULL',
+    );
+  });
 });

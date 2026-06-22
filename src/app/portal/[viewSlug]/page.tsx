@@ -211,6 +211,11 @@ export default async function PortalListPage({
       ? displayValue(
           selectedRecord[effectiveRecordTitleField],
           metadataByName.get(effectiveRecordTitleField)?.type,
+          {
+            selectOptions:
+              metadataByName.get(effectiveRecordTitleField)?.options,
+            formatSelectValues: view.formatSelectValues,
+          },
         )
       : undefined;
   const fallbackRecordTitle = selectedRecord
@@ -219,6 +224,10 @@ export default async function PortalListPage({
           displayValue(
             selectedRecord[config.name],
             metadataByName.get(config.name)?.type,
+            {
+              selectOptions: metadataByName.get(config.name)?.options,
+              formatSelectValues: view.formatSelectValues,
+            },
           ),
         )
         .find((value) => value && value !== "—")
@@ -253,6 +262,7 @@ export default async function PortalListPage({
           <section className="card table-shell">
             <PortalDataTable
               columns={view.columns}
+              formatSelectValues={view.formatSelectValues}
               metadataFields={object.fields}
               recordTitleField={effectiveRecordTitleField}
               records={result.edges.map(({ node }) => node as { id: string })}
@@ -336,7 +346,11 @@ export default async function PortalListPage({
                       </dt>
                       <dd>
                         <PortalRecordValue
+                          formatSelectValues={view.formatSelectValues}
                           pdfPreview
+                          selectOptions={
+                            metadataByName.get(config.name)?.options
+                          }
                           type={metadataByName.get(config.name)?.type}
                           value={selectedRecord[config.name]}
                         />
