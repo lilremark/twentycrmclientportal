@@ -14,7 +14,7 @@ FROM base AS builder
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 
-ARG DEPLOYMENT_ID=v1-3-4
+ARG DEPLOYMENT_ID=v1-3-5
 ARG DATABASE_URL=postgres://build:build@localhost:5432/build
 ARG APP_URL=http://localhost:3000
 ARG AUTH_SECRET=build-only-secret-at-least-32-characters
@@ -40,7 +40,7 @@ RUN npm run build \
 FROM node:22-alpine AS runner
 WORKDIR /app
 
-ARG VERSION=1.3.4
+ARG VERSION=1.3.5
 LABEL org.opencontainers.image.title="Twenty CRM Client Portal" \
       org.opencontainers.image.description="Self-hosted external client portal for Twenty CRM" \
       org.opencontainers.image.source="https://github.com/lilremark/twentycrmclientportal" \
@@ -67,7 +67,8 @@ COPY --from=builder --chown=portal:nodejs /app/drizzle ./drizzle
 COPY --from=builder --chown=portal:nodejs /app/.runtime ./scripts
 COPY --chown=portal:nodejs scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
-RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh \
+    && chmod 0755 /usr/local/bin/docker-entrypoint.sh
 
 USER portal
 EXPOSE 3000

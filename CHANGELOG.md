@@ -4,6 +4,15 @@ All notable changes to Twenty CRM Client Portal are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.3.5] - 2026-06-24
+
+### Fixed
+
+- Fixed the Docker runtime entrypoint on Windows-built release contexts by
+  normalizing the shell script to Linux line endings inside the image.
+- Added repository line-ending attributes for shell scripts and Dockerfile
+  content so future Docker images keep executable Linux entrypoints.
+
 ## [1.3.4] - 2026-06-24
 
 ### Added
@@ -248,6 +257,7 @@ PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
 
 After the health check passes, open the configured `APP_URL` and complete the one-time `/setup` flow.
 
+[1.3.5]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.5
 [1.3.4]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.4
 [1.3.3]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.3
 [1.3.2]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.2

@@ -128,8 +128,8 @@ and binds port `3005` on the host to port `3000` inside the container.
 
 The image tag defaults to the current release:
 ```bash
-PORTAL_VERSION=1.3.4 docker compose pull portal
-PORTAL_VERSION=1.3.4 docker compose up -d
+PORTAL_VERSION=1.3.5 docker compose pull portal
+PORTAL_VERSION=1.3.5 docker compose up -d
 ```
 
 #### 2. Fresh Database Reset
