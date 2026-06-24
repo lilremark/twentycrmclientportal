@@ -60,6 +60,9 @@ export function AppShell({
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
+    const root = document.documentElement;
+    const previousBrand = root.style.getPropertyValue("--brand-primary");
+    root.style.setProperty("--brand-primary", branding.primaryColor);
     const frame = requestAnimationFrame(() => {
       setCollapsed(localStorage.getItem("sidebar-collapsed") === "true");
       setTheme(
@@ -80,8 +83,13 @@ export function AppShell({
       if (closeTimerRef.current) {
         window.clearTimeout(closeTimerRef.current);
       }
+      if (previousBrand) {
+        root.style.setProperty("--brand-primary", previousBrand);
+      } else {
+        root.style.removeProperty("--brand-primary");
+      }
     };
-  }, []);
+  }, [branding.primaryColor]);
 
   const openAccountDrawer = () => {
     if (closeTimerRef.current) {

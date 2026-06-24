@@ -21,6 +21,27 @@ type ExportColumn = {
 type ExportScope = "filtered" | "all";
 type ExportFormat = "csv" | "xlsx";
 
+const exportSteps = [
+  {
+    label: "Records",
+    title: "Choose the record set",
+    description:
+      "Start with the same records on screen, or export every shared record in this portal.",
+  },
+  {
+    label: "Columns",
+    title: "Pick the fields",
+    description:
+      "Only visible portal columns are available, so the export stays inside this view's permissions.",
+  },
+  {
+    label: "Format",
+    title: "Select the file type",
+    description:
+      "Choose CSV for imports and automation, or XLSX for spreadsheet review.",
+  },
+];
+
 export function PortalExportButton({
   columns,
   currentQueryString,
@@ -107,7 +128,9 @@ export function PortalExportButton({
     return `/api/portal/${encodeURIComponent(viewSlug)}/export?${params.toString()}`;
   };
 
-  const steps = ["Records", "Columns", "Format"];
+  const currentStep = exportSteps[step];
+  const formatLabel = format === "xlsx" ? "XLSX" : "CSV";
+  const scopeLabel = scope === "filtered" ? "current view" : "all shared records";
 
   return (
     <>
@@ -153,8 +176,9 @@ export function PortalExportButton({
                 </div>
 
                 <div className="export-steps" aria-label="Export steps">
-                  {steps.map((label, index) => (
+                  {exportSteps.map((item, index) => (
                     <span
+                      aria-current={index === step ? "step" : undefined}
                       className={[
                         "export-step",
                         index === step ? "is-active" : "",
@@ -162,11 +186,17 @@ export function PortalExportButton({
                       ]
                         .filter(Boolean)
                         .join(" ")}
-                      key={label}
+                      key={item.label}
                     >
-                      {index + 1}. {label}
+                      <span>{index + 1}</span>
+                      {item.label}
                     </span>
                   ))}
+                </div>
+
+                <div className="export-step-intro">
+                  <h3>{currentStep.title}</h3>
+                  <p>{currentStep.description}</p>
                 </div>
 
                 <div className="export-modal-body">
@@ -272,6 +302,14 @@ export function PortalExportButton({
                   ) : null}
                 </div>
 
+                <div className="export-summary">
+                  <span>{scopeLabel}</span>
+                  <span>
+                    {selectedCount} column{selectedCount === 1 ? "" : "s"}
+                  </span>
+                  <span>{formatLabel}</span>
+                </div>
+
                 <div className="note-modal-actions export-modal-actions">
                   {step > 0 ? (
                     <button
@@ -287,7 +325,7 @@ export function PortalExportButton({
                       Cancel
                     </button>
                   )}
-                  {step < steps.length - 1 ? (
+                  {step < exportSteps.length - 1 ? (
                     <button
                       className="button"
                       disabled={step === 1 && selectedCount === 0}
@@ -306,7 +344,7 @@ export function PortalExportButton({
                       }}
                     >
                       <Download size={15} />
-                      Download
+                      Download {formatLabel}
                     </a>
                   )}
                 </div>

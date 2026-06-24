@@ -6,7 +6,7 @@ import type {
 } from "@/lib/db/schema";
 import { isWritablePortalField } from "@/lib/twenty/validation";
 
-function inputType(type: string) {
+export function recordInputType(type: string) {
   if (type === "NUMBER" || type === "NUMERIC" || type === "CURRENCY") {
     return "number";
   }
@@ -15,7 +15,7 @@ function inputType(type: string) {
   return "text";
 }
 
-function defaultValue(value: unknown, type: string) {
+export function recordInputDefaultValue(value: unknown, type: string) {
   if (value === null || value === undefined) return "";
   if (type === "RELATION" && typeof value === "object") {
     const relation = value as Record<string, unknown>;
@@ -129,7 +129,10 @@ export function RecordForm({
               <label htmlFor={field.name}>{label}</label>
               <select
                 className="input"
-                defaultValue={defaultValue(values[field.name], field.type)}
+                defaultValue={recordInputDefaultValue(
+                  values[field.name],
+                  field.type,
+                )}
                 id={field.name}
                 name={field.name}
                 required={config.required}
@@ -149,7 +152,10 @@ export function RecordForm({
             <label htmlFor={field.name}>{label}</label>
             <input
               className="input"
-              defaultValue={defaultValue(values[field.name], field.type)}
+              defaultValue={recordInputDefaultValue(
+                values[field.name],
+                field.type,
+              )}
               id={field.name}
               name={field.name}
               required={config.required}
@@ -160,7 +166,7 @@ export function RecordForm({
                   ? "any"
                   : undefined
               }
-              type={inputType(field.type)}
+              type={recordInputType(field.type)}
             />
           </div>
         );
