@@ -4,6 +4,23 @@ All notable changes to Twenty CRM Client Portal are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] - 2026-06-24
+
+### Added
+
+- Added inline editing directly in the client portal record sidebar for fields
+  administrators have marked as editable.
+- Added a clearer CSV/XLSX export workflow with record-set, column, and format
+  steps plus a muted summary of the selected export options.
+
+### Changed
+
+- Refined the export wizard, confirmation pop-ups, note pop-ups, and
+  notification toasts to respect the configured portal brand color with muted
+  accents.
+- Propagated the configured brand color to body-level portal pop-ups rendered
+  outside the main application shell, including future modal and toast surfaces.
+
 ## [1.3.5] - 2026-06-24
 
 ### Fixed
@@ -257,6 +274,7 @@ PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
 
 After the health check passes, open the configured `APP_URL` and complete the one-time `/setup` flow.
 
+[1.4.0]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.4.0
 [1.3.5]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.5
 [1.3.4]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.4
 [1.3.3]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.3

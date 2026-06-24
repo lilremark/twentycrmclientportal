@@ -15,6 +15,21 @@
   --primary-dark: #3c58cc;
   --danger: #d4534f;
   --sidebar-width: 240px;
+  --portal-brand-soft: color-mix(
+    in srgb,
+    var(--brand-primary, var(--primary)) 8%,
+    var(--surface)
+  );
+  --portal-brand-muted: color-mix(
+    in srgb,
+    var(--brand-primary, var(--primary)) 24%,
+    var(--border)
+  );
+  --portal-brand-veil: color-mix(
+    in srgb,
+    var(--brand-primary, var(--primary)) 7%,
+    transparent
+  );
   color-scheme: light;
 }
 
@@ -2378,6 +2393,68 @@ select.input[multiple] option {
   white-space: pre-wrap;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.record-panel-inline-form {
+  display: grid;
+  gap: 12px;
+}
+
+.record-panel-inline-details > div.is-editable {
+  background: color-mix(
+    in srgb,
+    var(--brand-primary, var(--primary)) 3%,
+    var(--surface)
+  );
+}
+
+.record-panel-inline-details dt label {
+  cursor: pointer;
+}
+
+.record-panel-inline-input {
+  min-height: 34px;
+  padding: 7px 10px;
+  font-size: 0.76rem;
+}
+
+.record-panel-editable-field {
+  display: grid;
+  gap: 8px;
+}
+
+.compact-option-grid {
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 6px;
+}
+
+.compact-option-grid label {
+  min-height: 32px;
+  padding: 6px 8px;
+  font-size: 0.72rem;
+}
+
+.record-panel-inline-actions {
+  position: sticky;
+  bottom: -16px;
+  display: flex;
+  justify-content: flex-end;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  box-shadow: 0 -8px 24px rgb(15 23 42 / 5%);
+  padding: 10px;
+  backdrop-filter: blur(8px);
+}
+
 .record-panel-form {
   display: grid;
   gap: 16px;
@@ -4681,7 +4758,9 @@ select.input[multiple] option {
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgb(15 23 42 / 0.5);
+  background:
+    linear-gradient(var(--portal-brand-veil), transparent),
+    rgb(15 23 42 / 0.46);
   backdrop-filter: blur(6px);
 }
 
@@ -4692,10 +4771,23 @@ select.input[multiple] option {
   width: min(100%, 460px);
   max-height: min(720px, calc(100vh - 40px));
   overflow-y: auto;
-  border: 1px solid var(--border);
+  border: 1px solid var(--portal-brand-muted);
   border-radius: 18px;
-  background: var(--surface);
-  box-shadow: 0 24px 80px rgb(15 23 42 / 0.22);
+  background:
+    linear-gradient(180deg, var(--portal-brand-soft), var(--surface) 132px),
+    var(--surface);
+  box-shadow:
+    inset 0 3px 0 color-mix(
+      in srgb,
+      var(--brand-primary, var(--primary)) 58%,
+      transparent
+    ),
+    0 24px 80px
+      color-mix(
+        in srgb,
+        var(--brand-primary, var(--primary)) 13%,
+        rgb(15 23 42 / 0.2)
+      );
   padding: 22px;
   outline: none;
   animation: confirmation-enter 150ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
@@ -4713,8 +4805,8 @@ select.input[multiple] option {
   height: 38px;
   place-items: center;
   border-radius: 10px;
-  background: color-mix(in srgb, var(--danger) 12%, var(--surface));
-  color: var(--danger);
+  background: var(--portal-brand-soft);
+  color: var(--brand-primary, var(--primary));
 }
 
 .confirmation-card h2 {
@@ -4759,11 +4851,16 @@ select.input[multiple] option {
   gap: 10px;
   border-radius: 16px;
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 8%, transparent), transparent),
+    linear-gradient(135deg, var(--portal-brand-veil), transparent),
     color-mix(in srgb, var(--surface) 96%, transparent);
   box-shadow:
-    0 18px 55px rgb(15 23 42 / 0.14),
-    inset 0 0 0 1px color-mix(in srgb, var(--border) 82%, transparent);
+    0 18px 55px
+      color-mix(
+        in srgb,
+        var(--brand-primary, var(--primary)) 12%,
+        rgb(15 23 42 / 0.12)
+      ),
+    inset 0 0 0 1px var(--portal-brand-muted);
   color: var(--foreground);
   font-size: 0.82rem;
 }
@@ -4775,15 +4872,19 @@ select.input[multiple] option {
   flex: 0 0 auto;
   place-items: center;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--brand-primary) 12%, transparent);
-  color: var(--brand-primary);
+  background: color-mix(
+    in srgb,
+    var(--brand-primary, var(--primary)) 12%,
+    transparent
+  );
+  color: var(--brand-primary, var(--primary));
   content: "✓";
   font-size: 0.78rem;
   font-weight: 900;
 }
 
 .toast-message.success {
-  border-color: color-mix(in srgb, var(--brand-primary) 24%, var(--border));
+  border-color: var(--portal-brand-muted);
   color: var(--foreground);
 }
 
@@ -6539,12 +6640,8 @@ select.input[multiple] option {
 .note-modal-backdrop {
   position: absolute;
   border: 0;
-  background:
-    linear-gradient(
-      color-mix(in srgb, var(--brand-primary, var(--primary)) 4%, transparent),
-      transparent
-    ),
-    rgb(15 23 42 / 52%);
+  background: linear-gradient(var(--portal-brand-veil), transparent),
+    rgb(15 23 42 / 50%);
   backdrop-filter: blur(5px);
   cursor: pointer;
   inset: 0;
@@ -6557,30 +6654,30 @@ select.input[multiple] option {
   max-height: min(78vh, 760px);
   gap: 18px;
   overflow: hidden;
-  border: 1px solid
-    color-mix(
-      in srgb,
-      var(--brand-primary, var(--primary)) 34%,
-      var(--border)
-    );
+  border: 1px solid var(--portal-brand-muted);
   border-radius: 16px;
   background:
     linear-gradient(
       180deg,
       color-mix(
           in srgb,
-          var(--brand-primary, var(--primary)) 3%,
+          var(--brand-primary, var(--primary)) 4%,
           var(--surface)
         )
         0,
       var(--surface) 116px
     );
   box-shadow:
-    inset 0 4px 0 var(--brand-primary, var(--primary)),
+    inset 0 4px 0
+      color-mix(
+        in srgb,
+        var(--brand-primary, var(--primary)) 62%,
+        transparent
+      ),
     0 24px 70px
       color-mix(
         in srgb,
-        var(--brand-primary, var(--primary)) 18%,
+        var(--brand-primary, var(--primary)) 13%,
         rgb(15 23 42 / 28%)
       );
   padding: 22px;
@@ -6684,6 +6781,7 @@ select.input[multiple] option {
 
 .export-modal-card {
   width: min(680px, 100%);
+  gap: 16px;
 }
 
 .export-steps {
@@ -6693,9 +6791,14 @@ select.input[multiple] option {
 }
 
 .export-step {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 92%, var(--portal-brand-soft));
   color: var(--muted);
   font-size: 0.72rem;
   font-weight: 750;
@@ -6703,22 +6806,58 @@ select.input[multiple] option {
   text-align: center;
 }
 
-.export-step.is-active {
-  border-color: color-mix(
-    in srgb,
-    var(--brand-primary, var(--primary)) 45%,
-    var(--border)
-  );
+.export-step > span {
+  display: inline-grid;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
   background: color-mix(
     in srgb,
     var(--brand-primary, var(--primary)) 8%,
-    var(--surface)
+    transparent
   );
+  color: var(--brand-primary, var(--primary));
+  font-size: 0.68rem;
+}
+
+.export-step.is-active {
+  border-color: var(--portal-brand-muted);
+  background: var(--portal-brand-soft);
   color: var(--foreground);
+  box-shadow: inset 0 -2px 0
+    color-mix(
+      in srgb,
+      var(--brand-primary, var(--primary)) 45%,
+      transparent
+    );
 }
 
 .export-step.is-complete {
   color: var(--brand-primary, var(--primary));
+}
+
+.export-step-intro {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--portal-brand-muted);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--portal-brand-soft) 72%, var(--surface));
+  padding: 12px 14px;
+}
+
+.export-step-intro h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.export-step-intro p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.45;
 }
 
 .export-modal-body {
@@ -6738,21 +6877,27 @@ select.input[multiple] option {
   gap: 12px;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 96%, var(--portal-brand-soft));
   cursor: pointer;
   padding: 14px;
 }
 
 .export-choice:has(input:checked) {
-  border-color: color-mix(
+  border-color: var(--portal-brand-muted);
+  background: var(--portal-brand-soft);
+  box-shadow: inset 3px 0 0
+    color-mix(
+      in srgb,
+      var(--brand-primary, var(--primary)) 48%,
+      transparent
+    );
+}
+
+.export-choice svg {
+  color: color-mix(
     in srgb,
-    var(--brand-primary, var(--primary)) 48%,
-    var(--border)
-  );
-  background: color-mix(
-    in srgb,
-    var(--brand-primary, var(--primary)) 7%,
-    var(--surface)
+    var(--brand-primary, var(--primary)) 72%,
+    var(--muted)
   );
 }
 
@@ -6796,7 +6941,7 @@ select.input[multiple] option {
   display: grid;
   max-height: 230px;
   overflow-y: auto;
-  border: 1px solid var(--border);
+  border: 1px solid var(--portal-brand-muted);
   border-radius: 12px;
   background: var(--surface);
 }
@@ -6808,6 +6953,10 @@ select.input[multiple] option {
   border-bottom: 1px solid var(--border);
   cursor: pointer;
   padding: 10px 12px;
+}
+
+.export-column:has(input:checked) {
+  background: color-mix(in srgb, var(--portal-brand-soft) 78%, transparent);
 }
 
 .export-column:last-child {
@@ -6830,6 +6979,25 @@ select.input[multiple] option {
 
 .export-modal-actions {
   justify-content: space-between;
+}
+
+.export-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.export-summary span {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  border: 1px solid var(--portal-brand-muted);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--portal-brand-soft) 78%, var(--surface));
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 760;
+  padding: 4px 9px;
 }
 
 .button.is-disabled {

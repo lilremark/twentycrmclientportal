@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Pencil } from "lucide-react";
 import { and, asc, eq } from "drizzle-orm";
 
 import {
@@ -18,9 +17,8 @@ import { PortalDataTable } from "@/components/portal-data-table";
 import { PortalExportButton } from "@/components/portal-export-button";
 import { PortalFilterForm } from "@/components/portal-filter-form";
 import { PortalNotes } from "@/components/portal-notes";
-import { PortalRecordValue } from "@/components/portal-record-value";
+import { RecordPanelDetailsForm } from "@/components/record-panel-details-form";
 import { RefreshButton } from "@/components/refresh-button";
-import { RecordForm } from "@/components/record-form";
 import { requirePortalViewContext } from "@/lib/access";
 import { db } from "@/lib/db";
 import { portalSavedViews } from "@/lib/db/schema";
@@ -164,7 +162,6 @@ export default async function PortalListPage({
     : undefined;
   const selectedRecordId =
     typeof query.record === "string" ? query.record : null;
-  const panelMode = query.mode === "edit" ? "edit" : "detail";
   const listParams = listSearchParams(effectiveQuery);
   const closeHref = `/portal/${view.slug}${
     listParams.size ? `?${listParams.toString()}` : ""
@@ -172,12 +169,6 @@ export default async function PortalListPage({
   const recordSelectionHref = `${closeHref}${
     listParams.size ? "&" : "?"
   }record=`;
-  const selectedParams = new URLSearchParams(listParams);
-  if (selectedRecordId) selectedParams.set("record", selectedRecordId);
-  const detailHref = `/portal/${view.slug}?${selectedParams.toString()}`;
-  const editParams = new URLSearchParams(selectedParams);
-  editParams.set("mode", "edit");
-  const editHref = `/portal/${view.slug}?${editParams.toString()}`;
   const noteTargetsField = object.fields.find(
     (field) => field.name === "noteTargets",
   );
@@ -377,18 +368,6 @@ export default async function PortalListPage({
                       {selectedRecord ? (
                         <div className="record-panel-actions">
                           <RefreshButton />
-                          {context.role === "contributor" &&
-                          view.editFields.length &&
-                          panelMode !== "edit" ? (
-                            <Link
-                              className="button"
-                              href={editHref}
-                              scroll={false}
-                            >
-                              <Pencil size={14} />
-                              Edit
-                            </Link>
-                          ) : null}
                         </div>
                       ) : null}
                     </header>
@@ -399,52 +378,24 @@ export default async function PortalListPage({
                           <strong>Record unavailable</strong>
                           <p>{selectedRecordError}</p>
                         </div>
-                      ) : selectedRecord && panelMode === "edit" ? (
-                        <RecordForm
+                      ) : selectedRecord ? (
+                        <RecordPanelDetailsForm
                           action={updateRecordPanelAction.bind(
                             null,
                             view.slug,
                             selectedRecordId,
                             listParams.toString(),
                           )}
-                          appearance="panel"
-                          cancelHref={detailHref}
-                          fields={view.editFields}
+                          canEdit={
+                            context.role === "contributor" &&
+                            view.editFields.length > 0
+                          }
+                          editableFields={view.editFields}
+                          fields={panelFields}
+                          formatSelectValues={view.formatSelectValues}
                           metadataFields={object.fields}
-                          submitLabel="Save changes"
                           values={selectedRecord}
                         />
-                      ) : selectedRecord ? (
-                        <dl className="record-panel-details">
-                          {panelFields
-                            .filter(
-                              (config) =>
-                                config.name !== "noteTargets" &&
-                                config.name !== "attachments",
-                            )
-                            .map((config) => (
-                              <div key={config.name}>
-                                <dt>
-                                  {config.label ??
-                                    metadataByName.get(config.name)?.label ??
-                                    config.name}
-                                </dt>
-                                <dd>
-                                  <PortalRecordValue
-                                    formatSelectValues={view.formatSelectValues}
-                                    pdfPreview
-                                    selectOptions={
-                                      metadataByName.get(config.name)?.options
-                                    }
-                                    type={
-                                      metadataByName.get(config.name)?.type
-                                    }
-                                    value={selectedRecord[config.name]}
-                                  />
-                                </dd>
-                              </div>
-                            ))}
-                        </dl>
                       ) : null}
                       {selectedRecord && noteTargetsField ? (
                         <PortalNotes
