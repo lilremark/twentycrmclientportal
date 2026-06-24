@@ -4,6 +4,24 @@ All notable changes to Twenty CRM Client Portal are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.3.4] - 2026-06-24
+
+### Added
+
+- Added a portal export wizard for CSV and XLSX downloads from each client
+  portal view.
+- Added export options for current filtered views, all shared portal records,
+  selected visible columns, and spreadsheet format.
+- Added a secured portal export API route that rebuilds portal authorization,
+  record scoping, saved filters, sorting, and fixed filters server-side before
+  generating the download.
+
+### Security
+
+- Restricted exports to the columns already exposed by the portal table.
+- Escaped CSV cells that could be interpreted as spreadsheet formulas.
+- Capped each export at 5,000 rows to avoid runaway downloads.
+
 ## [1.3.3] - 2026-06-22
 
 ### Added
@@ -230,6 +248,7 @@ PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
 
 After the health check passes, open the configured `APP_URL` and complete the one-time `/setup` flow.
 
+[1.3.4]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.4
 [1.3.3]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.3
 [1.3.2]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.2
 [1.3.1]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.1

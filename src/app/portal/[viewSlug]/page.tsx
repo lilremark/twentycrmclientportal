@@ -15,6 +15,7 @@ import {
 } from "@/app/actions/portal";
 import { PortalAttachments } from "@/components/portal-attachments";
 import { PortalDataTable } from "@/components/portal-data-table";
+import { PortalExportButton } from "@/components/portal-export-button";
 import { PortalFilterForm } from "@/components/portal-filter-form";
 import { PortalNotes } from "@/components/portal-notes";
 import { PortalRecordValue } from "@/components/portal-record-value";
@@ -290,6 +291,18 @@ export default async function PortalListPage({
     <>
       <div className="page-stack">
         <div className="page-actions">
+          <PortalExportButton
+            columns={view.columns.map((column) => ({
+              name: column.name,
+              label:
+                column.label ??
+                metadataByName.get(column.name)?.label ??
+                column.name,
+            }))}
+            currentQueryString={listParams.toString()}
+            objectLabel={object.labelPlural}
+            viewSlug={view.slug}
+          />
           {context.role === "contributor" && view.createFields.length ? (
             <Link className="button" href={`/portal/${view.slug}/new`}>
               Add record

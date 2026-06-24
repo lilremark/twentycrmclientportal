@@ -6682,6 +6682,162 @@ select.input[multiple] option {
   font-size: 0.72rem;
 }
 
+.export-modal-card {
+  width: min(680px, 100%);
+}
+
+.export-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.export-step {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 750;
+  padding: 9px 10px;
+  text-align: center;
+}
+
+.export-step.is-active {
+  border-color: color-mix(
+    in srgb,
+    var(--brand-primary, var(--primary)) 45%,
+    var(--border)
+  );
+  background: color-mix(
+    in srgb,
+    var(--brand-primary, var(--primary)) 8%,
+    var(--surface)
+  );
+  color: var(--foreground);
+}
+
+.export-step.is-complete {
+  color: var(--brand-primary, var(--primary));
+}
+
+.export-modal-body {
+  min-height: 290px;
+  overflow-y: auto;
+}
+
+.export-choice-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.export-choice {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+  padding: 14px;
+}
+
+.export-choice:has(input:checked) {
+  border-color: color-mix(
+    in srgb,
+    var(--brand-primary, var(--primary)) 48%,
+    var(--border)
+  );
+  background: color-mix(
+    in srgb,
+    var(--brand-primary, var(--primary)) 7%,
+    var(--surface)
+  );
+}
+
+.export-choice > input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--brand-primary, var(--primary));
+}
+
+.export-choice > span {
+  display: grid;
+  gap: 4px;
+}
+
+.export-choice strong {
+  font-size: 0.86rem;
+}
+
+.export-choice small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.export-column-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.export-column-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.export-column-list {
+  display: grid;
+  max-height: 230px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.export-column {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  padding: 10px 12px;
+}
+
+.export-column:last-child {
+  border-bottom: 0;
+}
+
+.export-column input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--brand-primary, var(--primary));
+}
+
+.export-column span {
+  overflow: hidden;
+  font-size: 0.8rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.export-modal-actions {
+  justify-content: space-between;
+}
+
+.button.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
 @media (max-width: 640px) {
   .record-notes-layout {
     grid-template-columns: 1fr;
