@@ -4,6 +4,13 @@ All notable changes to Twenty CRM Client Portal are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.5.1] - 2026-06-25
+
+### Added
+
+- Moved the Reports dashboard widgets configuration and visual layout preview into a visual pop-up modal dialog, keeping the main configuration view clean.
+- Added premium modal styles to globals.css with side-by-side scrolling panes, modal animations, and full responsiveness.
+
 ## [1.5.0] - 2026-06-25
 
 ### Added
@@ -297,6 +304,7 @@ PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
 
 After the health check passes, open the configured `APP_URL` and complete the one-time `/setup` flow.
 
+[1.5.1]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.5.1
 [1.5.0]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.5.0
 [1.4.0]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.4.0
 [1.3.5]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.5

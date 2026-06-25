@@ -7617,3 +7617,187 @@ select.input[multiple] option {
 .portal-shell .sidebar-nav {
   margin-top: 2px !important;
 }
+
+/* Reports Dashboard Modal styling */
+.dashboard-modal-layer {
+  position: fixed;
+  z-index: 150;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.dashboard-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: linear-gradient(var(--portal-brand-veil, rgb(15 23 42 / 0.1)), transparent), rgb(5 10 20 / 64%);
+  backdrop-filter: blur(8px);
+}
+
+.dashboard-modal-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 1380px);
+  height: min(780px, calc(100vh - 48px));
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 96%, var(--brand-primary, var(--primary)))), var(--surface);
+  box-shadow: 
+    inset 0 3px 0 color-mix(in srgb, var(--brand-primary, var(--primary)) 48%, transparent),
+    0 32px 90px rgb(15 23 42 / 0.28);
+  outline: none;
+  overflow: hidden;
+  animation: confirmation-enter 160ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.dashboard-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--border);
+  padding: 18px 24px;
+  background: color-mix(in srgb, var(--surface) 98%, transparent);
+}
+
+.dashboard-modal-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+}
+
+.dashboard-modal-header p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.dashboard-modal-close {
+  align-self: center;
+}
+
+.dashboard-modal-body {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+  flex: 1;
+  padding: 24px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.dashboard-modal-left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-right: 1px solid var(--border);
+  padding-right: 24px;
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+.dashboard-modal-left h3,
+.dashboard-modal-right h3 {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--foreground);
+}
+
+.dashboard-modal-right {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+.dashboard-modal-canvas-wrapper {
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  background: var(--surface-subtle);
+  padding: 16px;
+  min-height: 480px;
+  flex: 1;
+}
+
+.dashboard-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border-top: 1px solid var(--border);
+  padding: 14px 24px;
+  background: color-mix(in srgb, var(--surface) 98%, transparent);
+}
+
+/* Summary Card in main view */
+.dashboard-summary-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--brand-primary, var(--primary)) 4%, transparent), transparent), var(--surface);
+  padding: 16px 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard-summary-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.dashboard-summary-info strong {
+  font-size: 0.88rem;
+  font-weight: 780;
+  color: var(--foreground);
+}
+
+.dashboard-summary-badge-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.dashboard-summary-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-subtle);
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+@media (max-width: 960px) {
+  .dashboard-modal-body {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+  
+  .dashboard-modal-left {
+    border-right: none;
+    padding-right: 0;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+    overflow-y: visible;
+    max-height: none;
+  }
+  
+  .dashboard-modal-right {
+    overflow-y: visible;
+    max-height: none;
+  }
+}
