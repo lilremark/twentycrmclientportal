@@ -8,8 +8,10 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- Moved the Reports dashboard widgets configuration and visual layout preview into a visual pop-up modal dialog, keeping the main configuration view clean.
-- Added premium modal styles to globals.css with side-by-side scrolling panes, modal animations, and full responsiveness.
+- Introduced a dedicated **Reports Dashboard** tab inside the Portal configuration view, moving the reports widgets list and layout editor out of the general settings and modal overlays.
+- Added a widescreen vertical layout stack with a scrollable widgets editor at the top and a full-width visual layout canvas below it to maximize screen real estate.
+- Implemented a premium config tab navigation bar with smooth transitions, brand color indicators, and metadata validation safety triggers.
+- Centralized all layout, responsive grid wrapping, and tab styling within globals.css.
 
 ## [1.5.0] - 2026-06-25
 

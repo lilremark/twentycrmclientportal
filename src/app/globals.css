@@ -633,8 +633,7 @@ input.input[type="datetime-local"] {
 }
 
 .portal-view-form > * {
-  width: min(100%, 1360px);
-  margin-inline: auto;
+  width: 100%;
 }
 
 .portal-form-section-heading {
@@ -7619,6 +7618,7 @@ select.input[multiple] option {
 }
 
 /* Reports Dashboard Modal styling */
+/* Reports Dashboard Modal styling */
 .dashboard-modal-layer {
   position: fixed;
   z-index: 150;
@@ -7637,12 +7637,15 @@ select.input[multiple] option {
   backdrop-filter: blur(8px);
 }
 
-.dashboard-modal-card {
+.confirmation-layer .dashboard-modal-card {
   position: relative;
   display: flex;
   flex-direction: column;
-  width: min(100%, 1380px);
-  height: min(780px, calc(100vh - 48px));
+  gap: 0;
+  width: min(96vw, 1560px);
+  max-width: 1560px;
+  height: min(940px, calc(100vh - 48px));
+  max-height: min(940px, calc(100vh - 48px));
   border: 1px solid var(--border);
   border-radius: 20px;
   background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 96%, var(--brand-primary, var(--primary)))), var(--surface);
@@ -7652,6 +7655,7 @@ select.input[multiple] option {
   outline: none;
   overflow: hidden;
   animation: confirmation-enter 160ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  padding: 24px;
 }
 
 .dashboard-modal-header {
@@ -7660,8 +7664,8 @@ select.input[multiple] option {
   justify-content: space-between;
   gap: 16px;
   border-bottom: 1px solid var(--border);
-  padding: 18px 24px;
-  background: color-mix(in srgb, var(--surface) 98%, transparent);
+  padding: 0 0 16px 0;
+  background: transparent;
 }
 
 .dashboard-modal-header h2 {
@@ -7683,11 +7687,11 @@ select.input[multiple] option {
 }
 
 .dashboard-modal-body {
-  display: grid;
-  grid-template-columns: 380px 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 24px;
   flex: 1;
-  padding: 24px;
+  padding: 16px 0 0 0;
   overflow: hidden;
   min-height: 0;
 }
@@ -7696,10 +7700,13 @@ select.input[multiple] option {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  border-right: 1px solid var(--border);
-  padding-right: 24px;
+  border-right: none;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 20px;
+  padding-right: 8px;
   overflow-y: auto;
-  max-height: 100%;
+  max-height: 280px;
+  flex-shrink: 0;
 }
 
 .dashboard-modal-left h3,
@@ -7710,12 +7717,37 @@ select.input[multiple] option {
   color: var(--foreground);
 }
 
+.dashboard-modal-left .dashboard-widget-controls {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(120px, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 1200px) {
+  .dashboard-modal-left .dashboard-widget-controls {
+    grid-template-columns: repeat(3, minmax(150px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-modal-left .dashboard-widget-controls {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-modal-left .dashboard-widget-controls {
+    grid-template-columns: 1fr;
+  }
+}
+
 .dashboard-modal-right {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  overflow-y: auto;
-  max-height: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .dashboard-modal-canvas-wrapper {
@@ -7723,8 +7755,9 @@ select.input[multiple] option {
   border-radius: 14px;
   background: var(--surface-subtle);
   padding: 16px;
-  min-height: 480px;
   flex: 1;
+  overflow-y: auto;
+  min-height: 380px;
 }
 
 .dashboard-modal-footer {
@@ -7732,8 +7765,8 @@ select.input[multiple] option {
   align-items: center;
   justify-content: flex-end;
   border-top: 1px solid var(--border);
-  padding: 14px 24px;
-  background: color-mix(in srgb, var(--surface) 98%, transparent);
+  padding: 16px 0 0 0;
+  background: transparent;
 }
 
 /* Summary Card in main view */
@@ -7781,23 +7814,83 @@ select.input[multiple] option {
   color: var(--muted);
 }
 
-@media (max-width: 960px) {
-  .dashboard-modal-body {
-    grid-template-columns: 1fr;
+/* Dashboard Tab layout styling */
+.dashboard-inline-body {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.dashboard-inline-body .dashboard-modal-left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 20px;
+  padding-right: 8px;
+  overflow-y: auto;
+  max-height: 360px;
+  flex-shrink: 0;
+  border-right: none;
+}
+
+.dashboard-inline-body .dashboard-modal-left .dashboard-widget-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.dashboard-inline-body .dashboard-modal-left .dashboard-widget-controls > .field:first-child {
+  grid-column: span 2;
+}
+
+.dashboard-inline-body .dashboard-modal-right {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  .dashboard-inline-body {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  .dashboard-inline-body .dashboard-modal-left {
+    border-right: 1px solid var(--border);
+    border-bottom: none;
+    padding-right: 24px;
+    padding-bottom: 0;
+    max-height: 720px;
+  }
+
+  .dashboard-inline-body .dashboard-modal-right {
+    min-height: 500px;
+    max-height: 720px;
     overflow-y: auto;
   }
-  
-  .dashboard-modal-left {
-    border-right: none;
-    padding-right: 0;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 24px;
-    overflow-y: visible;
-    max-height: none;
-  }
-  
-  .dashboard-modal-right {
-    overflow-y: visible;
-    max-height: none;
+
+  .dashboard-inline-body > .form-actions {
+    grid-column: 1 / -1;
   }
 }
+
+@media (max-width: 639px) {
+  .dashboard-inline-body .dashboard-modal-left .dashboard-widget-controls {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-inline-body .dashboard-modal-left .dashboard-widget-controls > .field:first-child {
+    grid-column: span 1;
+  }
+}
+
+.hidden {
+  display: none !important;
+}
+

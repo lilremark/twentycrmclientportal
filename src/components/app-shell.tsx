@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useParams, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   Building2,
@@ -59,6 +59,8 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const params = useParams();
+  const searchParams = useSearchParams();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -146,6 +148,11 @@ export function AppShell({
             isActiveNavigation(item.href),
         )
       : undefined;
+
+  const viewId = params?.viewId;
+  const isEditView = pathname.startsWith("/admin/views/") && viewId && !pathname.endsWith("/preview");
+  const isNewView = pathname === "/admin/views/new";
+
   const sectionTabs = pathname.startsWith("/admin/settings")
     ? [
         { href: "/admin/settings", label: "Settings" },
@@ -157,13 +164,24 @@ export function AppShell({
           { href: "/admin/invitations", label: "Invitations" },
           { href: "/admin/invitations/clients", label: "Client accounts" },
         ]
-      : activePortalView?.reportsEnabled
+      : isEditView
         ? [
-            { href: activePortalView.href, label: "Records" },
-            { href: `${activePortalView.href}/reports`, label: "Reports" },
+            { href: `/admin/views/${viewId}?tab=general`, label: "General Settings" },
+            { href: `/admin/views/${viewId}?tab=reports`, label: "Reports Dashboard" },
           ]
-      : [];
+        : isNewView
+          ? [
+              { href: "/admin/views/new?tab=general", label: "General Settings" },
+              { href: "/admin/views/new?tab=reports", label: "Reports Dashboard" },
+            ]
+          : activePortalView?.reportsEnabled
+            ? [
+                { href: activePortalView.href, label: "Records" },
+                { href: `${activePortalView.href}/reports`, label: "Reports" },
+              ]
+            : [];
   const settingsHref = variant === "admin" ? "/admin/settings" : "/portal/settings";
+
 
   return (
     <div
@@ -354,12 +372,17 @@ export function AppShell({
           {sectionTabs.length ? (
             <nav aria-label={`${headerTitle} sections`} className="app-section-tabs">
               {sectionTabs.map((tab) => {
-                const active =
-                  pathname === tab.href ||
-                  (activePortalView &&
-                    tab.href === activePortalView.href &&
-                    pathname.startsWith(`${tab.href}/`) &&
-                    !pathname.startsWith(`${tab.href}/reports`));
+                const hasQuery = tab.href.includes("?");
+                const pathPart = hasQuery ? tab.href.split("?")[0] : tab.href;
+                const queryPart = hasQuery ? tab.href.split("?")[1] : "";
+                const tabQuery = new URLSearchParams(queryPart).get("tab");
+                const active = tabQuery
+                  ? pathname === pathPart && (searchParams.get("tab") || "general") === tabQuery
+                  : pathname === tab.href ||
+                    (activePortalView &&
+                      tab.href === activePortalView.href &&
+                      pathname.startsWith(`${tab.href}/`) &&
+                      !pathname.startsWith(`${tab.href}/reports`));
                 return (
                   <Link
                     aria-current={active ? "page" : undefined}
@@ -372,6 +395,7 @@ export function AppShell({
                 );
               })}
             </nav>
+
           ) : null}
         </header>
         <div className="app-content">{children}</div>
