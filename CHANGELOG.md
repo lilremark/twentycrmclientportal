@@ -4,6 +4,29 @@ All notable changes to Twenty CRM Client Portal are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] - 2026-06-25
+
+### Added
+
+- Added configurable client portal report dashboards with main-number, bar
+  chart, and donut chart widgets backed by scoped Twenty CRM records.
+- Added administrator dashboard widget configuration and a visual default
+  layout editor for each portal view.
+- Added a Reports tab to portal view previews so administrators can review the
+  client-facing reports experience before publishing.
+- Added a client-facing Reports tab with drag-and-resize dashboard layout
+  controls and local layout persistence.
+- Added a PDF export flow for dashboard reports with preview, PDF-specific
+  light/dark card styling, print-safe bleed guides, and PDF layout adjustment
+  before download.
+
+### Changed
+
+- Extended portal view validation and metadata resynchronization to include
+  dashboard widget fields and chart grouping fields.
+- Updated dashboard report printing so only the PDF preview participates in the
+  print layout, keeping ordinary dashboards on one page when they fit.
+
 ## [1.4.0] - 2026-06-24
 
 ### Added
@@ -274,6 +297,7 @@ PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
 
 After the health check passes, open the configured `APP_URL` and complete the one-time `/setup` flow.
 
+[1.5.0]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.5.0
 [1.4.0]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.4.0
 [1.3.5]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.5
 [1.3.4]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.3.4

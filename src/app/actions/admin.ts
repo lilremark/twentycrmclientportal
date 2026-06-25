@@ -22,6 +22,7 @@ import {
   portalAdministrators,
   portalViews,
   session,
+  type PortalDashboardWidget,
   type PortalFixedFilter,
   type TwentyObjectMetadata,
   user,
@@ -35,6 +36,7 @@ import {
   filterConfigsFromNames,
   validateFixedFilters,
 } from "@/lib/portal-view-config";
+import { validatePortalDashboardWidgets } from "@/lib/portal-dashboard";
 import {
   fetchTwentyMetadata,
   listTwentyRecords,
@@ -151,6 +153,46 @@ function portalViewFields(formData: FormData, object: TwentyObjectMetadata) {
   };
 }
 
+const dashboardWidgetSchema = z.object({
+  id: z.string().trim().min(1),
+  type: z.enum(["number", "bar", "donut"]),
+  label: z.string().trim().min(1).max(80),
+  aggregate: z.enum(["count", "sum", "average"]),
+  field: z.string().trim().optional(),
+  groupBy: z.string().trim().optional(),
+  layout: z
+    .object({
+      x: z.coerce.number().int().min(0).max(11),
+      y: z.coerce.number().int().min(0).max(99),
+      w: z.coerce.number().int().min(2).max(12),
+      h: z.coerce.number().int().min(2).max(8),
+    })
+    .optional(),
+});
+
+function parseDashboardWidgets(formData: FormData): PortalDashboardWidget[] {
+  return formData.getAll("dashboardWidgets").map((entry) => {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(String(entry));
+    } catch {
+      throw new Error("A dashboard widget is malformed.");
+    }
+    const widget = dashboardWidgetSchema.parse(parsed);
+    return {
+      ...widget,
+      field: widget.field || undefined,
+      groupBy: widget.groupBy || undefined,
+    };
+  });
+}
+
+function dashboardFieldNames(widgets: PortalDashboardWidget[]) {
+  return widgets.flatMap((widget) => [widget.field, widget.groupBy]).filter(
+    (name): name is string => Boolean(name),
+  );
+}
+
 export async function testConnectionAction() {
   const current = await requireAdmin();
   const requestId = randomUUID();
@@ -237,6 +279,7 @@ export async function syncMetadataAction() {
       ...view.filterFields,
       ...view.fixedFilters,
       ...(view.recordTitleField ? [{ name: view.recordTitleField }] : []),
+      ...dashboardFieldNames(view.dashboardWidgets).map((name) => ({ name })),
     ].map((field) => field.name);
     const errors = validatePortalViewConfiguration({
       objectNameSingular: view.objectNameSingular,
@@ -250,6 +293,12 @@ export async function syncMetadataAction() {
     );
     if (object) {
       errors.push(...validateFixedFilters(view.fixedFilters, object.fields));
+      errors.push(
+        ...validatePortalDashboardWidgets(
+          view.dashboardWidgets,
+          object.fields,
+        ),
+      );
     }
     await db
       .update(portalViews)
@@ -339,6 +388,7 @@ export async function createPortalViewAction(formData: FormData) {
     throw new Error("Choose at least one table column.");
   }
   const fixedFilters = parseFixedFilters(formData, object);
+  const dashboardWidgets = parseDashboardWidgets(formData);
   const allowedRecordIds = parseRecordIds(formData);
   if (scalar.scopeMode === "records" && !allowedRecordIds.length) {
     throw new Error("Add at least one Twenty record ID.");
@@ -355,9 +405,13 @@ export async function createPortalViewAction(formData: FormData) {
       ...fields.filterFields,
       ...fixedFilters,
       ...(scalar.recordTitleField ? [{ name: scalar.recordTitleField }] : []),
+      ...dashboardFieldNames(dashboardWidgets).map((name) => ({ name })),
     ].map((field) => field.name),
     objects: latest?.objects ?? [],
   });
+  validationErrors.push(
+    ...validatePortalDashboardWidgets(dashboardWidgets, object.fields),
+  );
   if (
     scalar.defaultSortField &&
     !object.fields.some((field) => field.name === scalar.defaultSortField)
@@ -378,6 +432,7 @@ export async function createPortalViewAction(formData: FormData) {
       objectNamePlural: object.namePlural,
       allowedRecordIds,
       fixedFilters,
+      dashboardWidgets,
       recordTitleField: scalar.recordTitleField || null,
       defaultSortField: scalar.defaultSortField || null,
       ...fields,
@@ -395,6 +450,7 @@ export async function createPortalViewAction(formData: FormData) {
       objectNamePlural: object.namePlural,
       allowedRecordIds,
       fixedFilters,
+      dashboardWidgets,
       ...fields,
     },
   });
@@ -453,6 +509,7 @@ export async function updatePortalViewAction(
     throw new Error("Choose at least one table column.");
   }
   const fixedFilters = parseFixedFilters(formData, object);
+  const dashboardWidgets = parseDashboardWidgets(formData);
   const allowedRecordIds = parseRecordIds(formData);
   if (scalar.scopeMode === "records" && !allowedRecordIds.length) {
     throw new Error("Add at least one Twenty record ID.");
@@ -469,9 +526,13 @@ export async function updatePortalViewAction(
       ...fields.filterFields,
       ...fixedFilters,
       ...(scalar.recordTitleField ? [{ name: scalar.recordTitleField }] : []),
+      ...dashboardFieldNames(dashboardWidgets).map((name) => ({ name })),
     ].map((field) => field.name),
     objects: latest?.objects ?? [],
   });
+  validationErrors.push(
+    ...validatePortalDashboardWidgets(dashboardWidgets, object.fields),
+  );
   if (
     scalar.defaultSortField &&
     !object.fields.some((field) => field.name === scalar.defaultSortField)
@@ -489,6 +550,7 @@ export async function updatePortalViewAction(
     objectNamePlural: object.namePlural,
     allowedRecordIds,
     fixedFilters,
+    dashboardWidgets,
     recordTitleField: scalar.recordTitleField || null,
     defaultSortField: scalar.defaultSortField || null,
     ...fields,

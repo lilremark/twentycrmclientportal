@@ -32,6 +32,7 @@ export default async function PortalLayout({
           href: `/portal/${view.slug}`,
           label: view.label,
           icon: "records",
+          reportsEnabled: view.dashboardWidgets.length > 0,
         })),
         { href: "/portal/settings", label: "Settings", icon: "settings" },
       ]}

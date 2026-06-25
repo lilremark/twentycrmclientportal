@@ -87,4 +87,15 @@ describe("initial database migration", () => {
       'REFERENCES "public"."portal_view"("id") ON DELETE cascade',
     );
   });
+
+  it("adds portal dashboard widget configuration", async () => {
+    const migration = await readFile(
+      resolve("drizzle/0014_amused_queen_noir.sql"),
+      "utf8",
+    );
+
+    expect(migration).toContain(
+      '"dashboard_widgets" jsonb DEFAULT \'[]\'::jsonb NOT NULL',
+    );
+  });
 });

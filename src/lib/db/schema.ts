@@ -266,6 +266,23 @@ export type PortalSavedFilter = {
   value: string;
 };
 
+export type PortalDashboardWidget = {
+  id: string;
+  type: "number" | "bar" | "donut";
+  label: string;
+  aggregate: "count" | "sum" | "average";
+  field?: string;
+  groupBy?: string;
+  layout?: PortalDashboardWidgetLayout;
+};
+
+export type PortalDashboardWidgetLayout = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
+
 export const portalViews = pgTable(
   "portal_view",
   {
@@ -295,6 +312,10 @@ export const portalViews = pgTable(
       .default("asc")
       .notNull(),
     formatSelectValues: boolean("format_select_values").default(true).notNull(),
+    dashboardWidgets: jsonb("dashboard_widgets")
+      .$type<PortalDashboardWidget[]>()
+      .default([])
+      .notNull(),
     navigationOrder: integer("navigation_order").default(0).notNull(),
     isEnabled: boolean("is_enabled").default(true).notNull(),
     validationErrors: jsonb("validation_errors")

@@ -4,12 +4,18 @@ import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { ArrowLeft, Eye, Monitor } from "lucide-react";
 
+import { DashboardReportSurface } from "@/components/dashboard-report-surface";
 import { PortalDataTable } from "@/components/portal-data-table";
 import { PortalFilterForm } from "@/components/portal-filter-form";
 import { requireAdmin } from "@/lib/access";
 import { db } from "@/lib/db";
 import { clientAccounts, portalViews } from "@/lib/db/schema";
 import { getLatestMetadata, getObjectMetadata } from "@/lib/portal";
+import {
+  buildDashboardResults,
+  dashboardRequiredFields,
+} from "@/lib/portal-dashboard";
+import { listDashboardRecords } from "@/lib/portal-dashboard-records";
 import { defaultFilterOperator } from "@/lib/portal-view-config";
 import { listTwentyRecords, TwentyApiError } from "@/lib/twenty/client";
 import {
@@ -49,6 +55,7 @@ export default async function PortalViewPreviewPage({
     clients.find((client) => client.id === query.clientId) ??
     clients[0] ??
     null;
+  const activeTab = query.tab === "reports" ? "reports" : "records";
   const metadataByName = new Map(
     object.fields.map((field) => [field.name, field]),
   );
@@ -69,6 +76,7 @@ export default async function PortalViewPreviewPage({
   const personId =
     view.scopeMode === "person" ? selectedClient?.twentyPersonId ?? null : null;
   let result: Awaited<ReturnType<typeof listTwentyRecords>> | undefined;
+  let dashboardResults: ReturnType<typeof buildDashboardResults> | undefined;
   let error: string | undefined;
 
   if (view.scopeMode === "person" && !personId) {
@@ -84,27 +92,42 @@ export default async function PortalViewPreviewPage({
         twentyPersonId: personId,
         metadataFields: object.fields,
       });
-      result = await listTwentyRecords({
-        objectNamePlural: view.objectNamePlural,
-        fields: view.columns,
-        metadataFields: object.fields,
-        filter: buildScopedFilter({
+      const filter = buildScopedFilter({
           scopeFilter,
           fixedFilters: view.fixedFilters,
           metadataFields: object.fields,
           configuredFilters: view.filterFields,
           requestedFilters,
-        }),
-        orderBy: view.defaultSortField
-          ? {
-              [view.defaultSortField]: gqlEnum(
-                view.defaultSortDirection === "desc"
-                  ? "DescNullsLast"
-                  : "AscNullsLast",
-              ),
-            }
-          : undefined,
-      });
+        });
+      if (activeTab === "reports") {
+        const dashboardRecords = await listDashboardRecords({
+          objectNamePlural: view.objectNamePlural,
+          fields: dashboardRequiredFields(view.dashboardWidgets, object.fields),
+          metadataFields: object.fields,
+          filter,
+        });
+        dashboardResults = buildDashboardResults({
+          widgets: view.dashboardWidgets,
+          records: dashboardRecords,
+          fields: object.fields,
+        });
+      } else {
+        result = await listTwentyRecords({
+          objectNamePlural: view.objectNamePlural,
+          fields: view.columns,
+          metadataFields: object.fields,
+          filter,
+          orderBy: view.defaultSortField
+            ? {
+                [view.defaultSortField]: gqlEnum(
+                  view.defaultSortDirection === "desc"
+                    ? "DescNullsLast"
+                    : "AscNullsLast",
+                ),
+              }
+            : undefined,
+        });
+      }
     } catch (caught) {
       error =
         caught instanceof TwentyApiError
@@ -117,6 +140,9 @@ export default async function PortalViewPreviewPage({
   const clearParams = new URLSearchParams();
   if (selectedClient && view.scopeMode === "person") {
     clearParams.set("clientId", selectedClient.id);
+  }
+  if (activeTab === "reports") {
+    clearParams.set("tab", "reports");
   }
   const clearHref = `${previewPath}${
     clearParams.size ? `?${clearParams.toString()}` : ""
@@ -161,6 +187,9 @@ export default async function PortalViewPreviewPage({
                   </option>
                 ))}
               </select>
+              {activeTab === "reports" ? (
+                <input name="tab" type="hidden" value="reports" />
+              ) : null}
             </div>
             <button className="button secondary" type="submit">
               Update preview
@@ -178,14 +207,45 @@ export default async function PortalViewPreviewPage({
           <span className="badge">Read only</span>
         </div>
         <div className="preview-canvas-body">
-          <div className="page-actions">
+          <nav aria-label="Preview sections" className="app-section-tabs">
+            <Link
+              aria-current={activeTab === "records" ? "page" : undefined}
+              className={`app-section-tab ${
+                activeTab === "records" ? "active" : ""
+              }`}
+              href={`${previewPath}${
+                selectedClient && view.scopeMode === "person"
+                  ? `?clientId=${selectedClient.id}`
+                  : ""
+              }`}
+            >
+              Records
+            </Link>
+            <Link
+              aria-current={activeTab === "reports" ? "page" : undefined}
+              className={`app-section-tab ${
+                activeTab === "reports" ? "active" : ""
+              }`}
+              href={`${previewPath}?${new URLSearchParams({
+                ...(selectedClient && view.scopeMode === "person"
+                  ? { clientId: selectedClient.id }
+                  : {}),
+                tab: "reports",
+              }).toString()}`}
+            >
+              Reports
+            </Link>
+          </nav>
+          {activeTab === "records" ? (
+            <div className="page-actions">
             {view.createFields.length && view.scopeMode !== "records" ? (
               <span aria-disabled="true" className="button opacity-60">
                 Add record
               </span>
             ) : null}
-          </div>
-          {view.filterFields.length ? (
+            </div>
+          ) : null}
+          {activeTab === "records" && view.filterFields.length ? (
             <PortalFilterForm
               clearHref={clearHref}
               fields={object.fields}
@@ -199,7 +259,7 @@ export default async function PortalViewPreviewPage({
             />
           ) : null}
           {error ? <p className="error">{error}</p> : null}
-          {result ? (
+          {activeTab === "records" && result ? (
             <section className="card table-shell">
               <PortalDataTable
                 columns={view.columns}
@@ -208,6 +268,23 @@ export default async function PortalViewPreviewPage({
                 records={result.edges.map(({ node }) => node as { id: string })}
                 recordBaseHref={null}
               />
+            </section>
+          ) : null}
+          {activeTab === "reports" && dashboardResults?.length ? (
+            <DashboardReportSurface
+              exportable
+              items={dashboardResults}
+              title={`${view.label} reports preview`}
+            />
+          ) : null}
+          {activeTab === "reports" &&
+          !error &&
+          !view.dashboardWidgets.length ? (
+            <section className="card empty-state">
+              <div>
+                <strong>No reports configured</strong>
+                <p>Add dashboard widgets in the portal view configuration.</p>
+              </div>
             </section>
           ) : null}
         </div>

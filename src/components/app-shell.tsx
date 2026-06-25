@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   Building2,
+  BarChart3,
   ClipboardList,
   FileClock,
   House,
@@ -31,6 +32,7 @@ const navigationIcons: Record<string, LucideIcon> = {
   invitations: UserPlus,
   overview: LayoutDashboard,
   records: ClipboardList,
+  reports: BarChart3,
   settings: Settings,
   users: Users,
   views: PanelsTopLeft,
@@ -46,7 +48,12 @@ export function AppShell({
 }: {
   title: string;
   user: { name: string; email: string; image: string | null };
-  navigation: Array<{ href: string; label: string; icon: string }>;
+  navigation: Array<{
+    href: string;
+    label: string;
+    icon: string;
+    reportsEnabled?: boolean;
+  }>;
   branding: { name: string; logoUrl: string | null; primaryColor: string };
   variant?: "admin" | "portal";
   children: React.ReactNode;
@@ -130,6 +137,15 @@ export function AppShell({
     isActiveNavigation(item.href),
   );
   const headerTitle = activeNavigation?.label ?? title;
+  const activePortalView =
+    variant === "portal"
+      ? navigation.find(
+          (item) =>
+            item.href.startsWith("/portal/") &&
+            item.href !== "/portal/settings" &&
+            isActiveNavigation(item.href),
+        )
+      : undefined;
   const sectionTabs = pathname.startsWith("/admin/settings")
     ? [
         { href: "/admin/settings", label: "Settings" },
@@ -141,6 +157,11 @@ export function AppShell({
           { href: "/admin/invitations", label: "Invitations" },
           { href: "/admin/invitations/clients", label: "Client accounts" },
         ]
+      : activePortalView?.reportsEnabled
+        ? [
+            { href: activePortalView.href, label: "Records" },
+            { href: `${activePortalView.href}/reports`, label: "Reports" },
+          ]
       : [];
   const settingsHref = variant === "admin" ? "/admin/settings" : "/portal/settings";
 
@@ -333,7 +354,12 @@ export function AppShell({
           {sectionTabs.length ? (
             <nav aria-label={`${headerTitle} sections`} className="app-section-tabs">
               {sectionTabs.map((tab) => {
-                const active = pathname === tab.href;
+                const active =
+                  pathname === tab.href ||
+                  (activePortalView &&
+                    tab.href === activePortalView.href &&
+                    pathname.startsWith(`${tab.href}/`) &&
+                    !pathname.startsWith(`${tab.href}/reports`));
                 return (
                   <Link
                     aria-current={active ? "page" : undefined}

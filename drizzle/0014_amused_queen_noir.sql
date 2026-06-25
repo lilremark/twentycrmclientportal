@@ -1,0 +1,1 @@
+ALTER TABLE "portal_view" ADD COLUMN "dashboard_widgets" jsonb DEFAULT '[]'::jsonb NOT NULL;
