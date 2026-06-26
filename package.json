@@ -1,6 +1,6 @@
 {
   "name": "twentycrmclientportal",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "private": true,
   "packageManager": "npm@10.9.8",
   "engines": {

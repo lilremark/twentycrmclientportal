@@ -40,7 +40,7 @@ RUN npm run build \
 FROM node:22-alpine AS runner
 WORKDIR /app
 
-ARG VERSION=1.5.1
+ARG VERSION=1.5.2
 LABEL org.opencontainers.image.title="Twenty CRM Client Portal" \
       org.opencontainers.image.description="Self-hosted external client portal for Twenty CRM" \
       org.opencontainers.image.source="https://github.com/lilremark/twentycrmclientportal" \
