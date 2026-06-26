@@ -10,6 +10,7 @@ import {
   Sigma,
   SlidersHorizontal,
   Trash2,
+  X,
 } from "lucide-react";
 import {
   useActionState,
@@ -653,6 +654,7 @@ function DashboardWidgetBuilder({
     })),
   );
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const updateWidget = (
     id: string,
     update: Partial<DashboardWidgetDraft>,
@@ -757,175 +759,25 @@ function DashboardWidgetBuilder({
         </div>
       ) : (
         <div className="dashboard-inline-body">
-          <div className="dashboard-modal-left">
-            <h3 style={{ margin: 0, fontSize: "0.88rem", fontWeight: "800" }}>Dashboard Widgets</h3>
-            <p className="field-help" style={{ margin: 0 }}>Manage widget properties and calculations.</p>
-            
-            {widgets.length ? (
-              <div className="dashboard-widget-list" style={{ display: "grid", gap: "14px" }}>
-                {widgets.map((widget, index) => {
-                  const Icon = widgetIcons[widget.type];
-                  return (
-                    <div className="dashboard-widget-row" key={widget.id}>
-                      <div className="dashboard-widget-row-heading">
-                        <div>
-                          <span className="dashboard-widget-icon">
-                            <Icon size={16} />
-                          </span>
-                          <strong>Widget {index + 1}</strong>
-                        </div>
-                        <button
-                          aria-label={`Remove widget ${index + 1}`}
-                          className="icon-button danger"
-                          onClick={() =>
-                            setWidgets((current) =>
-                              current.filter((item) => item.id !== widget.id),
-                            )
-                          }
-                          type="button"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                      <div className="dashboard-widget-controls">
-                        <div className="field">
-                          <label htmlFor={`dashboard-label-${widget.id}`}>Label</label>
-                          <input
-                            className="input"
-                            id={`dashboard-label-${widget.id}`}
-                            onChange={(event) =>
-                              updateWidget(widget.id, { label: event.target.value })
-                            }
-                            required
-                            value={widget.label}
-                          />
-                        </div>
-                        <div className="field">
-                          <label htmlFor={`dashboard-type-${widget.id}`}>Type</label>
-                          <select
-                            className="input"
-                            id={`dashboard-type-${widget.id}`}
-                            onChange={(event) =>
-                              updateWidget(widget.id, {
-                                type: event.target
-                                  .value as PortalDashboardWidget["type"],
-                                groupBy:
-                                  event.target.value === "number"
-                                    ? undefined
-                                    : widget.groupBy,
-                              })
-                            }
-                            value={widget.type}
-                          >
-                            <option value="number">Main number</option>
-                            <option value="bar">Bar chart</option>
-                            <option value="donut">Donut chart</option>
-                          </select>
-                        </div>
-                        <div className="field">
-                          <label htmlFor={`dashboard-aggregate-${widget.id}`}>
-                            Calculation
-                          </label>
-                          <select
-                            className="input"
-                            id={`dashboard-aggregate-${widget.id}`}
-                            onChange={(event) =>
-                              updateWidget(widget.id, {
-                                aggregate: event.target
-                                  .value as PortalDashboardWidget["aggregate"],
-                                field:
-                                  event.target.value === "count"
-                                    ? undefined
-                                    : widget.field,
-                              })
-                            }
-                            value={widget.aggregate}
-                          >
-                            <option value="count">Record count</option>
-                            <option value="sum">Sum</option>
-                            <option value="average">Average</option>
-                          </select>
-                        </div>
-                        {widget.aggregate !== "count" ? (
-                          <div className="field">
-                            <label htmlFor={`dashboard-field-${widget.id}`}>
-                              Number field
-                            </label>
-                            <select
-                              className="input"
-                              id={`dashboard-field-${widget.id}`}
-                              onChange={(event) =>
-                                updateWidget(widget.id, {
-                                  field: event.target.value || undefined,
-                                })
-                              }
-                              required
-                              value={widget.field ?? ""}
-                            >
-                              <option value="">Choose a number field</option>
-                              {metricFields.map((field) => (
-                                <option key={field.id} value={field.name}>
-                                  {field.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        ) : null}
-                        {widget.type !== "number" ? (
-                          <div className="field">
-                            <label htmlFor={`dashboard-group-${widget.id}`}>
-                              Group by
-                            </label>
-                            <select
-                              className="input"
-                              id={`dashboard-group-${widget.id}`}
-                              onChange={(event) =>
-                                updateWidget(widget.id, {
-                                  groupBy: event.target.value || undefined,
-                                })
-                              }
-                              required
-                              value={widget.groupBy ?? ""}
-                            >
-                              <option value="">Choose a group field</option>
-                              {groupFields.map((field) => (
-                                <option key={field.id} value={field.name}>
-                                  {field.label} · {field.type.replaceAll("_", " ")}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="fixed-filter-empty">
-                <strong>No dashboard widgets</strong>
-                <p>Add main numbers and charts to display on the client portal&apos;s reports dashboard.</p>
-              </div>
-            )}
-            
+          <div className="dashboard-inline-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", borderBottom: "1px solid var(--border)", paddingBottom: "16px" }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: "0.88rem", fontWeight: "800" }}>Visual Layout Canvas</h3>
+              <p className="field-help" style={{ margin: "2px 0 0" }}>Drag and resize widgets directly on the canvas below. Click &quot;Manage Widgets&quot; to configure widget metrics.</p>
+            </div>
             <button
               className="button secondary"
-              style={{ width: "100%", marginTop: "12px" }}
-              disabled={!fields.length}
-              onClick={addWidget}
+              onClick={() => setIsModalOpen(true)}
               type="button"
+              style={{ flexShrink: 0 }}
             >
-              <Plus size={16} />
-              Add widget
+              <SlidersHorizontal size={15} />
+              Manage Widgets
             </button>
           </div>
 
-          <div className="dashboard-modal-right">
-            <h3>Visual Layout Canvas</h3>
-            <p className="field-help">Click &quot;Edit layout&quot; on the canvas to drag and resize widgets.</p>
-            
+          <div className="dashboard-modal-right" style={{ width: "100%" }}>
             {previewItems.length ? (
-              <div className="dashboard-modal-canvas-wrapper" style={{ minHeight: "480px" }}>
+              <div className="dashboard-modal-canvas-wrapper" style={{ minHeight: "680px" }}>
                 <DashboardReportSurface
                   editable
                   items={previewItems}
@@ -943,9 +795,9 @@ function DashboardWidgetBuilder({
                 />
               </div>
             ) : (
-              <div className="fixed-filter-empty" style={{ minHeight: "260px", display: "grid", placeContent: "center" }}>
+              <div className="fixed-filter-empty" style={{ minHeight: "360px", display: "grid", placeContent: "center" }}>
                 <strong>Canvas is empty</strong>
-                <p>Add widgets above to see them in this layout preview.</p>
+                <p>Click &quot;Manage Widgets&quot; above to add widgets and see them in this layout preview.</p>
               </div>
             )}
           </div>
@@ -961,6 +813,223 @@ function DashboardWidgetBuilder({
             <button className="button" disabled={formPending} type="submit">
               {formPending ? "Saving..." : submitLabel}
             </button>
+          </div>
+        </div>
+      )}
+
+      {isModalOpen && (
+        <div className="confirmation-layer">
+          <button
+            aria-label="Close modal"
+            className="confirmation-backdrop"
+            onClick={() => setIsModalOpen(false)}
+            type="button"
+          />
+          <div className="dashboard-modal-card widget-settings-modal">
+            <header className="dashboard-modal-header">
+              <div>
+                <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: "750" }}>Manage Widgets</h2>
+                <p className="field-help" style={{ margin: "2px 0 0" }}>Add, configure, or remove widgets on your reports dashboard.</p>
+              </div>
+              <button
+                aria-label="Close"
+                className="icon-button"
+                onClick={() => setIsModalOpen(false)}
+                type="button"
+              >
+                <X size={18} />
+              </button>
+            </header>
+
+            <div
+              className="dashboard-widget-modal-body"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "16px",
+                flex: 1,
+                padding: "16px 0",
+                overflowY: "auto",
+                minHeight: 0,
+              }}
+            >
+              {widgets.length ? (
+                <div className="dashboard-widget-list" style={{ display: "grid", gap: "16px" }}>
+                  {widgets.map((widget, index) => {
+                    const Icon = widgetIcons[widget.type];
+                    return (
+                      <div
+                        className="dashboard-widget-row"
+                        key={widget.id}
+                        style={{
+                          border: "1px solid var(--border)",
+                          borderRadius: "12px",
+                          padding: "16px",
+                          background: "var(--surface-subtle)",
+                        }}
+                      >
+                        <div className="dashboard-widget-row-heading" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <span className="dashboard-widget-icon" style={{ display: "inline-flex", padding: "6px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "8px" }}>
+                              <Icon size={16} />
+                            </span>
+                            <strong style={{ fontSize: "0.84rem" }}>Widget {index + 1}</strong>
+                          </div>
+                          <button
+                            aria-label={`Remove widget ${index + 1}`}
+                            className="icon-button danger"
+                            onClick={() =>
+                              setWidgets((current) =>
+                                current.filter((item) => item.id !== widget.id),
+                              )
+                            }
+                            type="button"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                        <div className="dashboard-widget-controls">
+                          <div className="field">
+                            <label htmlFor={`dashboard-label-${widget.id}`}>Label</label>
+                            <input
+                              className="input"
+                              id={`dashboard-label-${widget.id}`}
+                              onChange={(event) =>
+                                updateWidget(widget.id, { label: event.target.value })
+                              }
+                              required
+                              value={widget.label}
+                            />
+                          </div>
+                          <div className="field">
+                            <label htmlFor={`dashboard-type-${widget.id}`}>Type</label>
+                            <select
+                              className="input"
+                              id={`dashboard-type-${widget.id}`}
+                              onChange={(event) =>
+                                updateWidget(widget.id, {
+                                  type: event.target
+                                    .value as PortalDashboardWidget["type"],
+                                  groupBy:
+                                    event.target.value === "number"
+                                      ? undefined
+                                      : widget.groupBy,
+                                })
+                              }
+                              value={widget.type}
+                            >
+                              <option value="number">Main number</option>
+                              <option value="bar">Bar chart</option>
+                              <option value="donut">Donut chart</option>
+                            </select>
+                          </div>
+                          <div className="field">
+                            <label htmlFor={`dashboard-aggregate-${widget.id}`}>
+                              Calculation
+                            </label>
+                            <select
+                              className="input"
+                              id={`dashboard-aggregate-${widget.id}`}
+                              onChange={(event) =>
+                                updateWidget(widget.id, {
+                                  aggregate: event.target
+                                    .value as PortalDashboardWidget["aggregate"],
+                                  field:
+                                    event.target.value === "count"
+                                      ? undefined
+                                      : widget.field,
+                                })
+                              }
+                              value={widget.aggregate}
+                            >
+                              <option value="count">Record count</option>
+                              <option value="sum">Sum</option>
+                              <option value="average">Average</option>
+                            </select>
+                          </div>
+                          {widget.aggregate !== "count" ? (
+                            <div className="field">
+                              <label htmlFor={`dashboard-field-${widget.id}`}>
+                                Number field
+                              </label>
+                              <select
+                                className="input"
+                                id={`dashboard-field-${widget.id}`}
+                                onChange={(event) =>
+                                  updateWidget(widget.id, {
+                                    field: event.target.value || undefined,
+                                  })
+                                }
+                                required
+                                value={widget.field ?? ""}
+                              >
+                                <option value="">Choose a number field</option>
+                                {metricFields.map((field) => (
+                                  <option key={field.id} value={field.name}>
+                                    {field.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          ) : null}
+                          {widget.type !== "number" ? (
+                            <div className="field">
+                              <label htmlFor={`dashboard-group-${widget.id}`}>
+                                Group by
+                              </label>
+                              <select
+                                className="input"
+                                id={`dashboard-group-${widget.id}`}
+                                onChange={(event) =>
+                                  updateWidget(widget.id, {
+                                    groupBy: event.target.value || undefined,
+                                  })
+                                }
+                                required
+                                value={widget.groupBy ?? ""}
+                              >
+                                <option value="">Choose a group field</option>
+                                {groupFields.map((field) => (
+                                  <option key={field.id} value={field.name}>
+                                    {field.label} · {field.type.replaceAll("_", " ")}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="fixed-filter-empty" style={{ margin: "24px 0" }}>
+                  <strong>No dashboard widgets</strong>
+                  <p>Add main numbers and charts to display on the client portal&apos;s reports dashboard.</p>
+                </div>
+              )}
+
+              <button
+                className="button secondary"
+                style={{ width: "100%", marginTop: "4px" }}
+                disabled={!fields.length}
+                onClick={addWidget}
+                type="button"
+              >
+                <Plus size={16} />
+                Add widget
+              </button>
+            </div>
+
+            <footer className="dashboard-modal-footer" style={{ borderTop: "1px solid var(--border)", paddingTop: "16px" }}>
+              <button
+                className="button"
+                onClick={() => setIsModalOpen(false)}
+                type="button"
+              >
+                Apply Changes
+              </button>
+            </footer>
           </div>
         </div>
       )}
@@ -1313,22 +1382,17 @@ export function PortalViewForm({
 
       {object ? (
         <section
-          className="portal-form-section"
+          className={activeTab === "general" ? "portal-form-section" : ""}
           key={`dashboard-${objectName}`}
         >
-          <div className="portal-form-section-heading">
-            {activeTab === "general" ? (
+          {activeTab === "general" && (
+            <div className="portal-form-section-heading">
               <div>
                 <h3>Reports dashboard</h3>
                 <p>Add the main numbers and charts clients should see.</p>
               </div>
-            ) : (
-              <div>
-                <h3>Reports dashboard configuration</h3>
-                <p>Configure widgets and position them visually in the preview canvas.</p>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
           <DashboardWidgetBuilder
             activeTab={activeTab}
             fields={fields}

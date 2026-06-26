@@ -7747,7 +7747,7 @@ select.input[multiple] option {
   gap: 12px;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .dashboard-modal-canvas-wrapper {
@@ -7756,7 +7756,7 @@ select.input[multiple] option {
   background: var(--surface-subtle);
   padding: 16px;
   flex: 1;
-  overflow-y: auto;
+  overflow: visible;
   min-height: 380px;
 }
 
@@ -7822,70 +7822,52 @@ select.input[multiple] option {
   margin-top: 16px;
 }
 
-.dashboard-inline-body .dashboard-modal-left {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 20px;
-  padding-right: 8px;
-  overflow-y: auto;
-  max-height: 360px;
-  flex-shrink: 0;
-  border-right: none;
-}
-
-.dashboard-inline-body .dashboard-modal-left .dashboard-widget-controls {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-
-.dashboard-inline-body .dashboard-modal-left .dashboard-widget-controls > .field:first-child {
-  grid-column: span 2;
-}
-
 .dashboard-inline-body .dashboard-modal-right {
   display: flex;
   flex-direction: column;
   gap: 12px;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 @media (min-width: 1024px) {
   .dashboard-inline-body {
-    display: grid;
-    grid-template-columns: 380px 1fr;
-    gap: 32px;
-    align-items: start;
-  }
-
-  .dashboard-inline-body .dashboard-modal-left {
-    border-right: 1px solid var(--border);
-    border-bottom: none;
-    padding-right: 24px;
-    padding-bottom: 0;
-    max-height: 720px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    align-items: stretch;
   }
 
   .dashboard-inline-body .dashboard-modal-right {
-    min-height: 500px;
-    max-height: 720px;
-    overflow-y: auto;
-  }
-
-  .dashboard-inline-body > .form-actions {
-    grid-column: 1 / -1;
+    min-height: 640px;
+    overflow: visible;
   }
 }
 
+/* Widget settings popup modal */
+.confirmation-layer .widget-settings-modal {
+  width: min(96vw, 680px);
+  max-width: 680px;
+  height: min(720px, calc(100vh - 80px));
+  max-height: min(720px, calc(100vh - 80px));
+}
+
+.widget-settings-modal .dashboard-widget-controls {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.widget-settings-modal .dashboard-widget-controls > .field:first-child {
+  grid-column: span 2;
+}
+
 @media (max-width: 639px) {
-  .dashboard-inline-body .dashboard-modal-left .dashboard-widget-controls {
+  .widget-settings-modal .dashboard-widget-controls {
     grid-template-columns: 1fr;
   }
-  .dashboard-inline-body .dashboard-modal-left .dashboard-widget-controls > .field:first-child {
+  .widget-settings-modal .dashboard-widget-controls > .field:first-child {
     grid-column: span 1;
   }
 }
