@@ -1,10 +1,20 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Geist_Mono, Inter } from "next/font/google";
 
 import "./globals.css";
 
 const inter = Inter({
-  variable: "--font-inter",
+  variable: "--font-sans",
+  subsets: ["latin"],
+});
+
+const interHeading = Inter({
+  variable: "--font-heading",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
 });
 
@@ -25,12 +35,16 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${inter.variable} ${interHeading.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{const c=document.cookie.match(/(?:^|; )theme=(light|dark)/)?.[1];const t=localStorage.getItem('theme')||c||((matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;localStorage.setItem('theme',t)}catch(e){}",
+              "try{const c=document.cookie.match(/(?:^|; )theme=(light|dark)/)?.[1];const t=localStorage.getItem('theme')||c||((matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');const r=document.documentElement;r.dataset.theme=t;r.classList.toggle('dark',t==='dark');r.style.colorScheme=t;localStorage.setItem('theme',t)}catch(e){}",
           }}
         />
       </head>

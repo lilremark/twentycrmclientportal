@@ -4,7 +4,10 @@ import {
   ArrowDown,
   ArrowUp,
   BarChart3,
+  Columns3,
   GripVertical,
+  LayoutPanelTop,
+  LockKeyhole,
   PieChart,
   Plus,
   Sigma,
@@ -175,7 +178,8 @@ function FieldPermissionsMatrix({
                       <input
                         aria-label={`${field.label}: ${column.label}`}
                         defaultChecked={
-                          !disabled && defaults[column.name].includes(field.name)
+                          !disabled &&
+                          defaults[column.name].includes(field.name)
                         }
                         disabled={disabled}
                         name={column.name}
@@ -517,8 +521,7 @@ function FixedFilterBuilder({
                         <div className="fixed-filter-operator">
                           <span>Match</span>
                           <strong>
-                            {operatorLabels[filter.operator] ??
-                              filter.operator}
+                            {operatorLabels[filter.operator] ?? filter.operator}
                           </strong>
                         </div>
                       )}
@@ -531,7 +534,9 @@ function FixedFilterBuilder({
                             {field.options.map((option) => (
                               <label key={option.value}>
                                 <input
-                                  checked={selectedValues.includes(option.value)}
+                                  checked={selectedValues.includes(
+                                    option.value,
+                                  )}
                                   onChange={(event) => {
                                     const values = event.target.checked
                                       ? [...selectedValues, option.value]
@@ -655,10 +660,7 @@ function DashboardWidgetBuilder({
   );
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const updateWidget = (
-    id: string,
-    update: Partial<DashboardWidgetDraft>,
-  ) => {
+  const updateWidget = (id: string, update: Partial<DashboardWidgetDraft>) => {
     setWidgets((current) =>
       current.map((widget) =>
         widget.id === id ? { ...widget, ...update } : widget,
@@ -716,11 +718,7 @@ function DashboardWidgetBuilder({
             aggregate: widget.aggregate,
             field: widget.aggregate === "count" ? "" : widget.field,
             groupBy: widget.type === "number" ? "" : widget.groupBy,
-            layout: normalizeDashboardLayout(
-              widget.layout,
-              widget.type,
-              index,
-            ),
+            layout: normalizeDashboardLayout(widget.layout, widget.type, index),
           })}
         />
       ))}
@@ -739,7 +737,10 @@ function DashboardWidgetBuilder({
                 {widgets.map((widget, index) => {
                   const Icon = widgetIcons[widget.type];
                   return (
-                    <span key={widget.id} className="badge dashboard-summary-badge">
+                    <span
+                      key={widget.id}
+                      className="badge dashboard-summary-badge"
+                    >
                       <Icon size={12} />
                       {widget.label || `Widget ${index + 1}`}
                     </span>
@@ -759,10 +760,25 @@ function DashboardWidgetBuilder({
         </div>
       ) : (
         <div className="dashboard-inline-body">
-          <div className="dashboard-inline-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", borderBottom: "1px solid var(--border)", paddingBottom: "16px" }}>
+          <div
+            className="dashboard-inline-header"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "16px",
+              borderBottom: "1px solid var(--border)",
+              paddingBottom: "16px",
+            }}
+          >
             <div>
-              <h3 style={{ margin: 0, fontSize: "0.88rem", fontWeight: "800" }}>Visual Layout Canvas</h3>
-              <p className="field-help" style={{ margin: "2px 0 0" }}>Drag and resize widgets directly on the canvas below. Click &quot;Manage Widgets&quot; to configure widget metrics.</p>
+              <h3 style={{ margin: 0, fontSize: "0.88rem", fontWeight: "800" }}>
+                Visual Layout Canvas
+              </h3>
+              <p className="field-help" style={{ margin: "2px 0 0" }}>
+                Drag and resize widgets directly on the canvas below. Click
+                &quot;Manage Widgets&quot; to configure widget metrics.
+              </p>
             </div>
             <button
               className="button secondary"
@@ -777,7 +793,10 @@ function DashboardWidgetBuilder({
 
           <div className="dashboard-modal-right" style={{ width: "100%" }}>
             {previewItems.length ? (
-              <div className="dashboard-modal-canvas-wrapper" style={{ minHeight: "680px" }}>
+              <div
+                className="dashboard-modal-canvas-wrapper"
+                style={{ minHeight: "680px" }}
+              >
                 <DashboardReportSurface
                   editable
                   items={previewItems}
@@ -787,7 +806,11 @@ function DashboardWidgetBuilder({
                         ...widget,
                         layout:
                           layouts[widget.id] ??
-                          normalizeDashboardLayout(widget.layout, widget.type, index),
+                          normalizeDashboardLayout(
+                            widget.layout,
+                            widget.type,
+                            index,
+                          ),
                       })),
                     )
                   }
@@ -795,14 +818,31 @@ function DashboardWidgetBuilder({
                 />
               </div>
             ) : (
-              <div className="fixed-filter-empty" style={{ minHeight: "360px", display: "grid", placeContent: "center" }}>
+              <div
+                className="fixed-filter-empty"
+                style={{
+                  minHeight: "360px",
+                  display: "grid",
+                  placeContent: "center",
+                }}
+              >
                 <strong>Canvas is empty</strong>
-                <p>Click &quot;Manage Widgets&quot; above to add widgets and see them in this layout preview.</p>
+                <p>
+                  Click &quot;Manage Widgets&quot; above to add widgets and see
+                  them in this layout preview.
+                </p>
               </div>
             )}
           </div>
 
-          <div className="form-actions" style={{ marginTop: "24px", gap: "12px", justifyContent: "flex-end" }}>
+          <div
+            className="form-actions"
+            style={{
+              marginTop: "24px",
+              gap: "12px",
+              justifyContent: "flex-end",
+            }}
+          >
             <button
               className="button secondary"
               onClick={() => setActiveTab("general")}
@@ -828,8 +868,14 @@ function DashboardWidgetBuilder({
           <div className="dashboard-modal-card widget-settings-modal">
             <header className="dashboard-modal-header">
               <div>
-                <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: "750" }}>Manage Widgets</h2>
-                <p className="field-help" style={{ margin: "2px 0 0" }}>Add, configure, or remove widgets on your reports dashboard.</p>
+                <h2
+                  style={{ margin: 0, fontSize: "1.1rem", fontWeight: "750" }}
+                >
+                  Manage Widgets
+                </h2>
+                <p className="field-help" style={{ margin: "2px 0 0" }}>
+                  Add, configure, or remove widgets on your reports dashboard.
+                </p>
               </div>
               <button
                 aria-label="Close"
@@ -854,7 +900,10 @@ function DashboardWidgetBuilder({
               }}
             >
               {widgets.length ? (
-                <div className="dashboard-widget-list" style={{ display: "grid", gap: "16px" }}>
+                <div
+                  className="dashboard-widget-list"
+                  style={{ display: "grid", gap: "16px" }}
+                >
                   {widgets.map((widget, index) => {
                     const Icon = widgetIcons[widget.type];
                     return (
@@ -868,12 +917,37 @@ function DashboardWidgetBuilder({
                           background: "var(--surface-subtle)",
                         }}
                       >
-                        <div className="dashboard-widget-row-heading" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            <span className="dashboard-widget-icon" style={{ display: "inline-flex", padding: "6px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "8px" }}>
+                        <div
+                          className="dashboard-widget-row-heading"
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: "12px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <span
+                              className="dashboard-widget-icon"
+                              style={{
+                                display: "inline-flex",
+                                padding: "6px",
+                                background: "var(--surface)",
+                                border: "1px solid var(--border)",
+                                borderRadius: "8px",
+                              }}
+                            >
                               <Icon size={16} />
                             </span>
-                            <strong style={{ fontSize: "0.84rem" }}>Widget {index + 1}</strong>
+                            <strong style={{ fontSize: "0.84rem" }}>
+                              Widget {index + 1}
+                            </strong>
                           </div>
                           <button
                             aria-label={`Remove widget ${index + 1}`}
@@ -890,19 +964,25 @@ function DashboardWidgetBuilder({
                         </div>
                         <div className="dashboard-widget-controls">
                           <div className="field">
-                            <label htmlFor={`dashboard-label-${widget.id}`}>Label</label>
+                            <label htmlFor={`dashboard-label-${widget.id}`}>
+                              Label
+                            </label>
                             <input
                               className="input"
                               id={`dashboard-label-${widget.id}`}
                               onChange={(event) =>
-                                updateWidget(widget.id, { label: event.target.value })
+                                updateWidget(widget.id, {
+                                  label: event.target.value,
+                                })
                               }
                               required
                               value={widget.label}
                             />
                           </div>
                           <div className="field">
-                            <label htmlFor={`dashboard-type-${widget.id}`}>Type</label>
+                            <label htmlFor={`dashboard-type-${widget.id}`}>
+                              Type
+                            </label>
                             <select
                               className="input"
                               id={`dashboard-type-${widget.id}`}
@@ -991,7 +1071,8 @@ function DashboardWidgetBuilder({
                                 <option value="">Choose a group field</option>
                                 {groupFields.map((field) => (
                                   <option key={field.id} value={field.name}>
-                                    {field.label} · {field.type.replaceAll("_", " ")}
+                                    {field.label} ·{" "}
+                                    {field.type.replaceAll("_", " ")}
                                   </option>
                                 ))}
                               </select>
@@ -1003,9 +1084,15 @@ function DashboardWidgetBuilder({
                   })}
                 </div>
               ) : (
-                <div className="fixed-filter-empty" style={{ margin: "24px 0" }}>
+                <div
+                  className="fixed-filter-empty"
+                  style={{ margin: "24px 0" }}
+                >
                   <strong>No dashboard widgets</strong>
-                  <p>Add main numbers and charts to display on the client portal&apos;s reports dashboard.</p>
+                  <p>
+                    Add main numbers and charts to display on the client
+                    portal&apos;s reports dashboard.
+                  </p>
                 </div>
               )}
 
@@ -1021,7 +1108,13 @@ function DashboardWidgetBuilder({
               </button>
             </div>
 
-            <footer className="dashboard-modal-footer" style={{ borderTop: "1px solid var(--border)", paddingTop: "16px" }}>
+            <footer
+              className="dashboard-modal-footer"
+              style={{
+                borderTop: "1px solid var(--border)",
+                paddingTop: "16px",
+              }}
+            >
               <button
                 className="button"
                 onClick={() => setIsModalOpen(false)}
@@ -1050,13 +1143,17 @@ export function PortalViewForm({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const activeTab = searchParams.get("tab") === "reports" ? "reports" : "general";
+  const activeTab =
+    searchParams.get("tab") === "reports" ? "reports" : "general";
   const setActiveTab = (tab: "general" | "reports") => {
     router.push(`?tab=${tab}`);
   };
   const [objectName, setObjectName] = useState(
     initial?.objectNameSingular ?? "",
   );
+  const [activeSection, setActiveSection] = useState<
+    "basics" | "access" | "fields" | "presentation"
+  >("basics");
   const [objectSearch, setObjectSearch] = useState("");
   const [scopeMode, setScopeMode] = useState(initial?.scopeMode ?? "all");
   const [recordSearch, setRecordSearch] = useState("");
@@ -1122,17 +1219,52 @@ export function PortalViewForm({
         />
       ) : null}
 
-
       <div style={{ display: activeTab === "general" ? "contents" : "none" }}>
         <div>
           <h2 className="text-lg font-bold">
             {initial ? `Edit ${initial.label}` : "Create a portal view"}
           </h2>
           <p className="mt-1 text-sm text-[#68758a]">
-            Choose an object, then select the fields clients can see, filter, and
-            edit. API names are filled from synchronized Twenty metadata.
+            Choose an object, then select the fields clients can see, filter,
+            and edit. API names are filled from synchronized Twenty metadata.
           </p>
         </div>
+
+        <nav
+          aria-label="Portal view setup stages"
+          className="builder-stage-nav"
+        >
+          {[
+            { id: "basics", label: "Basics", icon: LayoutPanelTop },
+            { id: "access", label: "Access", icon: LockKeyhole },
+            { id: "fields", label: "Fields", icon: Columns3 },
+            {
+              id: "presentation",
+              label: "Presentation",
+              icon: SlidersHorizontal,
+            },
+          ].map((stage) => {
+            const Icon = stage.icon;
+            return (
+              <button
+                aria-current={activeSection === stage.id ? "step" : undefined}
+                className={activeSection === stage.id ? "active" : ""}
+                key={stage.id}
+                onClick={() => {
+                  const next = stage.id as typeof activeSection;
+                  setActiveSection(next);
+                  document
+                    .getElementById(`builder-${next}`)
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                type="button"
+              >
+                <Icon size={15} />
+                <span>{stage.label}</span>
+              </button>
+            );
+          })}
+        </nav>
 
         {!objects.length ? (
           <p className="error text-sm">
@@ -1140,244 +1272,257 @@ export function PortalViewForm({
           </p>
         ) : null}
 
-      <section className="portal-form-section">
-        <div className="portal-form-section-heading">
-          <div>
-            <h3>Portal identity</h3>
-            <p>Name the view and choose its portal URL.</p>
-          </div>
-        </div>
-        <div className="portal-form-grid two-column">
-          <div className="field">
-            <label htmlFor="label">Navigation label</label>
-            <input
-              className="input"
-              defaultValue={initial?.label}
-              id="label"
-              name="label"
-              placeholder="Sales calls"
-              required
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="slug">URL slug</label>
-            <input
-              className="input"
-              defaultValue={initial?.slug}
-              id="slug"
-              name="slug"
-              pattern="[a-z0-9-]+"
-              placeholder="sales-calls"
-              required
-            />
-            <span className="field-help">
-              Lowercase letters, numbers, and hyphens. The slug
-              &quot;settings&quot; is reserved.
-            </span>
-          </div>
-        </div>
-      </section>
-
-      <section className="portal-form-section">
-        <div className="portal-form-section-heading">
-          <div>
-            <h3>Twenty data source</h3>
-            <p>Find and select the Twenty object shown in this portal.</p>
-          </div>
-        </div>
-        <div className="portal-form-grid two-column">
-          <div className="field">
-            <label htmlFor="objectSearch">Search objects</label>
-            <input
-              className="input"
-              id="objectSearch"
-              onChange={(event) => setObjectSearch(event.target.value)}
-              placeholder="Search by label or API name"
-              type="search"
-              value={objectSearch}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="objectNameSingular">Twenty object</label>
-            <select
-              className="input"
-              id="objectNameSingular"
-              name="objectNameSingular"
-              onChange={(event) => {
-                const nextObject = event.target.value;
-                setObjectName(nextObject);
-                setRecords([]);
-                setRecordSearch("");
-                setSelectedRecordIds(
-                  nextObject === initial?.objectNameSingular
-                    ? initial.allowedRecordIds
-                    : [],
-                );
-              }}
-              required
-              value={objectName}
-            >
-              <option value="">Choose an object</option>
-              {filteredObjects.map((item) => (
-                <option key={item.id} value={item.nameSingular}>
-                  {item.labelSingular} · {item.nameSingular}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </section>
-
-      <section className="portal-form-section">
-        <div className="portal-form-section-heading">
-          <div>
-            <h3>Record access</h3>
-            <p>Control exactly which records external users can access.</p>
-          </div>
-        </div>
-        <div className="portal-form-grid two-column">
-          <div className="field">
-            <label htmlFor="scopeMode">Sharing method</label>
-            <select
-              className="input"
-              id="scopeMode"
-              name="scopeMode"
-              onChange={(event) => setScopeMode(event.target.value)}
-              required
-              value={scopeMode}
-            >
-              <option value="all">All current records</option>
-              <option value="person">Records linked to a Person</option>
-              <option value="records">Only specific records</option>
-            </select>
-          </div>
-        {scopeMode === "person" ? (
-          <div className="field">
-            <label htmlFor="scopeFieldName">Person scope field</label>
-            <select
-              className="input"
-              defaultValue={initialApplies ? initial?.scopeFieldName : ""}
-              id="scopeFieldName"
-              key={`scope-${objectName}`}
-              name="scopeFieldName"
-              required
-            >
-              <option value="">Choose the Person relation or ID field</option>
-              {scopeFields.map((field) => (
-                <option key={field.id} value={field.name}>
-                  {field.label} · {field.type}
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : scopeMode === "records" ? (
-          <div className="portal-record-panel">
-            {selectedRecordIds.map((recordId) => (
-              <input
-                key={recordId}
-                name="allowedRecordIds"
-                type="hidden"
-                value={recordId}
-              />
-            ))}
-            <div className="portal-record-panel-heading">
-              <div>
-                <strong>Specific records</strong>
-                <p>Load the selected object, then choose the records to share.</p>
-              </div>
-              <div className="form-actions">
-                {selectedRecordIds.length ? (
-                  <span className="badge">
-                    {selectedRecordIds.length} selected
-                  </span>
-                ) : null}
-                <button
-                  className="button secondary"
-                  disabled={!object || recordsPending}
-                  onClick={() =>
-                    startRecordsTransition(async () => {
-                      setRecords(
-                        await listShareableRecordsAction(
-                          object?.nameSingular ?? "",
-                        ),
-                      );
-                    })
-                  }
-                  type="button"
-                >
-                  {recordsPending ? "Loading…" : "Load Twenty records"}
-                </button>
-              </div>
-            </div>
-            {records.length ? (
-              <div className="grid gap-3">
-                <input
-                  className="input"
-                  onChange={(event) => setRecordSearch(event.target.value)}
-                  placeholder="Filter loaded records"
-                  type="search"
-                  value={recordSearch}
-                />
-                <div className="record-picker">
-                  {visibleRecords.map((record) => (
-                    <label key={record.id}>
-                      <input
-                        checked={selectedRecordIds.includes(record.id)}
-                        onChange={(event) =>
-                          setSelectedRecordIds((current) =>
-                            event.target.checked
-                              ? [...new Set([...current, record.id])]
-                              : current.filter((id) => id !== record.id),
-                          )
-                        }
-                        type="checkbox"
-                      />
-                      <span>
-                        <strong>{record.label}</strong>
-                        <small>{record.id}</small>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-        </div>
-      </section>
-
-      {object ? (
-        <section className="portal-form-section" key={`fixed-${objectName}`}>
+        <section
+          className="portal-form-section builder-stage"
+          id="builder-basics"
+        >
           <div className="portal-form-section-heading">
             <div>
-              <h3>Saved record filters</h3>
-              <p>
-                Permanently limit this portal to matching records, such as one
-                or more products.
-              </p>
+              <h3>Portal identity</h3>
+              <p>Name the view and choose its portal URL.</p>
             </div>
           </div>
-          <FixedFilterBuilder
-            fields={object.fields}
-            initialFilters={initialApplies ? initial?.fixedFilters ?? [] : []}
-          />
+          <div className="portal-form-grid two-column">
+            <div className="field">
+              <label htmlFor="label">Navigation label</label>
+              <input
+                className="input"
+                defaultValue={initial?.label}
+                id="label"
+                name="label"
+                placeholder="Sales calls"
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="slug">URL slug</label>
+              <input
+                className="input"
+                defaultValue={initial?.slug}
+                id="slug"
+                name="slug"
+                pattern="[a-z0-9-]+"
+                placeholder="sales-calls"
+                required
+              />
+              <span className="field-help">
+                Lowercase letters, numbers, and hyphens. The slug
+                &quot;settings&quot; is reserved.
+              </span>
+            </div>
+          </div>
         </section>
-      ) : null}
 
-      {object ? (
         <section className="portal-form-section">
           <div className="portal-form-section-heading">
             <div>
-              <h3>Table columns</h3>
-              <p>Select the portal table columns and arrange their order.</p>
+              <h3>Twenty data source</h3>
+              <p>Find and select the Twenty object shown in this portal.</p>
             </div>
           </div>
-          <ColumnOrderEditor
-            fields={fields}
-            initialColumns={defaults(initial?.columns)}
-          />
+          <div className="portal-form-grid two-column">
+            <div className="field">
+              <label htmlFor="objectSearch">Search objects</label>
+              <input
+                className="input"
+                id="objectSearch"
+                onChange={(event) => setObjectSearch(event.target.value)}
+                placeholder="Search by label or API name"
+                type="search"
+                value={objectSearch}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="objectNameSingular">Twenty object</label>
+              <select
+                className="input"
+                id="objectNameSingular"
+                name="objectNameSingular"
+                onChange={(event) => {
+                  const nextObject = event.target.value;
+                  setObjectName(nextObject);
+                  setRecords([]);
+                  setRecordSearch("");
+                  setSelectedRecordIds(
+                    nextObject === initial?.objectNameSingular
+                      ? initial.allowedRecordIds
+                      : [],
+                  );
+                }}
+                required
+                value={objectName}
+              >
+                <option value="">Choose an object</option>
+                {filteredObjects.map((item) => (
+                  <option key={item.id} value={item.nameSingular}>
+                    {item.labelSingular} · {item.nameSingular}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </section>
-      ) : null}
+
+        <section
+          className="portal-form-section builder-stage"
+          id="builder-access"
+        >
+          <div className="portal-form-section-heading">
+            <div>
+              <h3>Record access</h3>
+              <p>Control exactly which records external users can access.</p>
+            </div>
+          </div>
+          <div className="portal-form-grid two-column">
+            <div className="field">
+              <label htmlFor="scopeMode">Sharing method</label>
+              <select
+                className="input"
+                id="scopeMode"
+                name="scopeMode"
+                onChange={(event) => setScopeMode(event.target.value)}
+                required
+                value={scopeMode}
+              >
+                <option value="all">All current records</option>
+                <option value="person">Records linked to a Person</option>
+                <option value="records">Only specific records</option>
+              </select>
+            </div>
+            {scopeMode === "person" ? (
+              <div className="field">
+                <label htmlFor="scopeFieldName">Person scope field</label>
+                <select
+                  className="input"
+                  defaultValue={initialApplies ? initial?.scopeFieldName : ""}
+                  id="scopeFieldName"
+                  key={`scope-${objectName}`}
+                  name="scopeFieldName"
+                  required
+                >
+                  <option value="">
+                    Choose the Person relation or ID field
+                  </option>
+                  {scopeFields.map((field) => (
+                    <option key={field.id} value={field.name}>
+                      {field.label} · {field.type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : scopeMode === "records" ? (
+              <div className="portal-record-panel">
+                {selectedRecordIds.map((recordId) => (
+                  <input
+                    key={recordId}
+                    name="allowedRecordIds"
+                    type="hidden"
+                    value={recordId}
+                  />
+                ))}
+                <div className="portal-record-panel-heading">
+                  <div>
+                    <strong>Specific records</strong>
+                    <p>
+                      Load the selected object, then choose the records to
+                      share.
+                    </p>
+                  </div>
+                  <div className="form-actions">
+                    {selectedRecordIds.length ? (
+                      <span className="badge">
+                        {selectedRecordIds.length} selected
+                      </span>
+                    ) : null}
+                    <button
+                      className="button secondary"
+                      disabled={!object || recordsPending}
+                      onClick={() =>
+                        startRecordsTransition(async () => {
+                          setRecords(
+                            await listShareableRecordsAction(
+                              object?.nameSingular ?? "",
+                            ),
+                          );
+                        })
+                      }
+                      type="button"
+                    >
+                      {recordsPending ? "Loading…" : "Load Twenty records"}
+                    </button>
+                  </div>
+                </div>
+                {records.length ? (
+                  <div className="grid gap-3">
+                    <input
+                      className="input"
+                      onChange={(event) => setRecordSearch(event.target.value)}
+                      placeholder="Filter loaded records"
+                      type="search"
+                      value={recordSearch}
+                    />
+                    <div className="record-picker">
+                      {visibleRecords.map((record) => (
+                        <label key={record.id}>
+                          <input
+                            checked={selectedRecordIds.includes(record.id)}
+                            onChange={(event) =>
+                              setSelectedRecordIds((current) =>
+                                event.target.checked
+                                  ? [...new Set([...current, record.id])]
+                                  : current.filter((id) => id !== record.id),
+                              )
+                            }
+                            type="checkbox"
+                          />
+                          <span>
+                            <strong>{record.label}</strong>
+                            <small>{record.id}</small>
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </section>
+
+        {object ? (
+          <section className="portal-form-section" key={`fixed-${objectName}`}>
+            <div className="portal-form-section-heading">
+              <div>
+                <h3>Saved record filters</h3>
+                <p>
+                  Permanently limit this portal to matching records, such as one
+                  or more products.
+                </p>
+              </div>
+            </div>
+            <FixedFilterBuilder
+              fields={object.fields}
+              initialFilters={
+                initialApplies ? (initial?.fixedFilters ?? []) : []
+              }
+            />
+          </section>
+        ) : null}
+
+        {object ? (
+          <section className="portal-form-section">
+            <div className="portal-form-section-heading">
+              <div>
+                <h3>Table columns</h3>
+                <p>Select the portal table columns and arrange their order.</p>
+              </div>
+            </div>
+            <ColumnOrderEditor
+              fields={fields}
+              initialColumns={defaults(initial?.columns)}
+            />
+          </section>
+        ) : null}
       </div>
 
       {object ? (
@@ -1397,7 +1542,7 @@ export function PortalViewForm({
             activeTab={activeTab}
             fields={fields}
             initialWidgets={
-              initialApplies ? initial?.dashboardWidgets ?? [] : []
+              initialApplies ? (initial?.dashboardWidgets ?? []) : []
             }
             setActiveTab={setActiveTab}
             formPending={formPending}
@@ -1407,135 +1552,157 @@ export function PortalViewForm({
       ) : null}
       {activeTab === "reports" && !object ? (
         <section className="portal-form-section">
-          <div className="fixed-filter-empty" style={{ minHeight: "320px", display: "grid", placeContent: "center", width: "100%" }}>
+          <div
+            className="fixed-filter-empty"
+            style={{
+              minHeight: "320px",
+              display: "grid",
+              placeContent: "center",
+              width: "100%",
+            }}
+          >
             <strong>No data source selected</strong>
-            <p>Please choose a Twenty object under the General Settings tab first to configure its Reports Dashboard.</p>
+            <p>
+              Please choose a Twenty object under the General Settings tab first
+              to configure its Reports Dashboard.
+            </p>
           </div>
         </section>
       ) : null}
 
       <div style={{ display: activeTab === "general" ? "contents" : "none" }}>
-
-      <section className="portal-form-section">
-        <div className="portal-form-section-heading">
-          <div>
-            <h3>Display defaults</h3>
-            <p>Set the initial ordering and sidebar position.</p>
-          </div>
-        </div>
-        <div className="portal-form-grid three-column">
-          <div className="field">
-            <label htmlFor="recordTitleField">Sidebar header field</label>
-            <select
-              className="input"
-              defaultValue={
-                initialApplies
-                  ? initial?.recordTitleField ??
-                    fields.find((field) => field.name === "name")?.name ??
-                    ""
-                  : fields.find((field) => field.name === "name")?.name ?? ""
-              }
-              id="recordTitleField"
-              key={`title-${objectName}`}
-              name="recordTitleField"
-            >
-              <option value="">Automatic first visible value</option>
-              {fields.map((field) => (
-                <option key={field.id} value={field.name}>
-                  {field.label}
-                </option>
-              ))}
-            </select>
-            <span className="field-help">
-              Used as the title when a record opens in the right sidebar.
-            </span>
-          </div>
-          <div className="field">
-            <label htmlFor="defaultSortField">Default sort field</label>
-            <select
-              className="input"
-              defaultValue={
-                initialApplies ? initial?.defaultSortField ?? "" : ""
-              }
-              id="defaultSortField"
-              key={`sort-${objectName}`}
-              name="defaultSortField"
-            >
-              <option value="">No default sorting</option>
-              {fields.map((field) => (
-                <option key={field.id} value={field.name}>
-                  {field.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="defaultSortDirection">Sort direction</label>
-            <select
-              className="input"
-              defaultValue={initial?.defaultSortDirection ?? "asc"}
-              id="defaultSortDirection"
-              name="defaultSortDirection"
-            >
-              <option value="asc">Ascending</option>
-              <option value="desc">Descending</option>
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="navigationOrder">Navigation order</label>
-            <input
-              className="input"
-              defaultValue={initial?.navigationOrder ?? 0}
-              id="navigationOrder"
-              name="navigationOrder"
-              type="number"
-            />
-          </div>
-          <label className="settings-toggle settings-span">
-            <input
-              defaultChecked={initial?.formatSelectValues ?? true}
-              name="formatSelectValues"
-              type="checkbox"
-            />
-            <span>
-              <strong>Use readable Select labels</strong>
-              <small>
-                Show synchronized labels and clean capitalization instead of
-                raw API values for Select and Multi-select fields.
-              </small>
-            </span>
-          </label>
-        </div>
-      </section>
-
-      {object ? (
-        <section className="portal-form-section" key={`fields-${objectName}`}>
+        <section
+          className="portal-form-section builder-stage"
+          id="builder-presentation"
+        >
           <div className="portal-form-section-heading">
             <div>
-              <h3>Visible fields and forms</h3>
-              <p>
-                Check exactly where each field is visible or editable. No
-                keyboard shortcuts are required.
-              </p>
+              <h3>Display defaults</h3>
+              <p>Set the initial ordering and sidebar position.</p>
             </div>
           </div>
-          <FieldPermissionsMatrix
-            defaults={{
-              detailFields: defaults(initial?.detailFields),
-              filterFields: defaults(initial?.filterFields),
-              createFields: defaults(initial?.createFields),
-              editFields: defaults(initial?.editFields),
-            }}
-            fields={fields}
-          />
+          <div className="portal-form-grid three-column">
+            <div className="field">
+              <label htmlFor="recordTitleField">Sidebar header field</label>
+              <select
+                className="input"
+                defaultValue={
+                  initialApplies
+                    ? (initial?.recordTitleField ??
+                      fields.find((field) => field.name === "name")?.name ??
+                      "")
+                    : (fields.find((field) => field.name === "name")?.name ??
+                      "")
+                }
+                id="recordTitleField"
+                key={`title-${objectName}`}
+                name="recordTitleField"
+              >
+                <option value="">Automatic first visible value</option>
+                {fields.map((field) => (
+                  <option key={field.id} value={field.name}>
+                    {field.label}
+                  </option>
+                ))}
+              </select>
+              <span className="field-help">
+                Used as the title when a record opens in the right sidebar.
+              </span>
+            </div>
+            <div className="field">
+              <label htmlFor="defaultSortField">Default sort field</label>
+              <select
+                className="input"
+                defaultValue={
+                  initialApplies ? (initial?.defaultSortField ?? "") : ""
+                }
+                id="defaultSortField"
+                key={`sort-${objectName}`}
+                name="defaultSortField"
+              >
+                <option value="">No default sorting</option>
+                {fields.map((field) => (
+                  <option key={field.id} value={field.name}>
+                    {field.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="defaultSortDirection">Sort direction</label>
+              <select
+                className="input"
+                defaultValue={initial?.defaultSortDirection ?? "asc"}
+                id="defaultSortDirection"
+                name="defaultSortDirection"
+              >
+                <option value="asc">Ascending</option>
+                <option value="desc">Descending</option>
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="navigationOrder">Navigation order</label>
+              <input
+                className="input"
+                defaultValue={initial?.navigationOrder ?? 0}
+                id="navigationOrder"
+                name="navigationOrder"
+                type="number"
+              />
+            </div>
+            <label className="settings-toggle settings-span">
+              <input
+                defaultChecked={initial?.formatSelectValues ?? true}
+                name="formatSelectValues"
+                type="checkbox"
+              />
+              <span>
+                <strong>Use readable Select labels</strong>
+                <small>
+                  Show synchronized labels and clean capitalization instead of
+                  raw API values for Select and Multi-select fields.
+                </small>
+              </span>
+            </label>
+          </div>
         </section>
-      ) : null}
 
-      <div className="form-actions">
-        <button className="button" disabled={!object || formPending} type="submit">
-          {formPending ? "Saving..." : submitLabel}
-        </button>
-      </div>
+        {object ? (
+          <section
+            className="portal-form-section builder-stage"
+            id="builder-fields"
+            key={`fields-${objectName}`}
+          >
+            <div className="portal-form-section-heading">
+              <div>
+                <h3>Visible fields and forms</h3>
+                <p>
+                  Check exactly where each field is visible or editable. No
+                  keyboard shortcuts are required.
+                </p>
+              </div>
+            </div>
+            <FieldPermissionsMatrix
+              defaults={{
+                detailFields: defaults(initial?.detailFields),
+                filterFields: defaults(initial?.filterFields),
+                createFields: defaults(initial?.createFields),
+                editFields: defaults(initial?.editFields),
+              }}
+              fields={fields}
+            />
+          </section>
+        ) : null}
+
+        <div className="form-actions">
+          <button
+            className="button"
+            disabled={!object || formPending}
+            type="submit"
+          >
+            {formPending ? "Saving..." : submitLabel}
+          </button>
+        </div>
       </div>
     </form>
   );

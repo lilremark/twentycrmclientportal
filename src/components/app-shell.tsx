@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useParams, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import {
   Building2,
   BarChart3,
@@ -24,6 +24,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import { SignOutButton } from "@/components/sign-out-button";
+import { Button } from "@/components/ui/button";
 
 const navigationIcons: Record<string, LucideIcon> = {
   audit: FileClock,
@@ -81,8 +82,10 @@ export function AppShell({
     const syncTheme = (event: StorageEvent) => {
       if (event.key !== "theme") return;
       const next = event.newValue === "dark" ? "dark" : "light";
-      document.documentElement.dataset.theme = next;
-      document.documentElement.style.colorScheme = next;
+      const root = document.documentElement;
+      root.dataset.theme = next;
+      root.classList.toggle("dark", next === "dark");
+      root.style.colorScheme = next;
       setTheme(next);
     };
     window.addEventListener("storage", syncTheme);
@@ -126,15 +129,19 @@ export function AppShell({
   };
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
-    document.documentElement.dataset.theme = next;
-    document.documentElement.style.colorScheme = next;
+    const root = document.documentElement;
+    root.dataset.theme = next;
+    root.classList.toggle("dark", next === "dark");
+    root.style.colorScheme = next;
     localStorage.setItem("theme", next);
     document.cookie = `theme=${next}; Path=/; Max-Age=31536000; SameSite=Lax`;
     setTheme(next);
   };
   const isActiveNavigation = (href: string) =>
     pathname === href ||
-    (href !== "/portal" && href !== "/admin" && pathname.startsWith(`${href}/`));
+    (href !== "/portal" &&
+      href !== "/admin" &&
+      pathname.startsWith(`${href}/`));
   const activeNavigation = navigation.find((item) =>
     isActiveNavigation(item.href),
   );
@@ -150,7 +157,10 @@ export function AppShell({
       : undefined;
 
   const viewId = params?.viewId;
-  const isEditView = pathname.startsWith("/admin/views/") && viewId && !pathname.endsWith("/preview");
+  const isEditView =
+    pathname.startsWith("/admin/views/") &&
+    viewId &&
+    !pathname.endsWith("/preview");
   const isNewView = pathname === "/admin/views/new";
 
   const sectionTabs = pathname.startsWith("/admin/settings")
@@ -166,13 +176,25 @@ export function AppShell({
         ]
       : isEditView
         ? [
-            { href: `/admin/views/${viewId}?tab=general`, label: "General Settings" },
-            { href: `/admin/views/${viewId}?tab=reports`, label: "Reports Dashboard" },
+            {
+              href: `/admin/views/${viewId}?tab=general`,
+              label: "General Settings",
+            },
+            {
+              href: `/admin/views/${viewId}?tab=reports`,
+              label: "Reports Dashboard",
+            },
           ]
         : isNewView
           ? [
-              { href: "/admin/views/new?tab=general", label: "General Settings" },
-              { href: "/admin/views/new?tab=reports", label: "Reports Dashboard" },
+              {
+                href: "/admin/views/new?tab=general",
+                label: "General Settings",
+              },
+              {
+                href: "/admin/views/new?tab=reports",
+                label: "Reports Dashboard",
+              },
             ]
           : activePortalView?.reportsEnabled
             ? [
@@ -180,15 +202,17 @@ export function AppShell({
                 { href: `${activePortalView.href}/reports`, label: "Reports" },
               ]
             : [];
-  const settingsHref = variant === "admin" ? "/admin/settings" : "/portal/settings";
-
+  const settingsHref =
+    variant === "admin" ? "/admin/settings" : "/portal/settings";
 
   return (
     <div
       className={`app-frame ${variant}-shell ${
         collapsed ? "sidebar-collapsed" : "sidebar-expanded"
       }`}
-      style={{ "--brand-primary": branding.primaryColor } as React.CSSProperties}
+      style={
+        { "--brand-primary": branding.primaryColor } as React.CSSProperties
+      }
     >
       {mobileOpen ? (
         <button
@@ -246,14 +270,16 @@ export function AppShell({
               <PanelLeftClose size={16} />
             )}
           </button>
-          <button
+          <Button
             aria-label="Close navigation"
             className="icon-button mobile-only"
             onClick={() => setMobileOpen(false)}
+            size="icon"
             type="button"
+            variant="ghost"
           >
             <X size={19} />
-          </button>
+          </Button>
         </div>
         <div className="sidebar-section-label">
           <span>Workspace</span>
@@ -263,18 +289,25 @@ export function AppShell({
             const Icon = navigationIcons[item.icon] ?? ClipboardList;
             const active = isActiveNavigation(item.href);
             return (
-              <Link
-                className={`sidebar-link ${active ? "active" : ""}`}
-                href={item.href}
-                key={item.href}
-                onClick={() => setMobileOpen(false)}
-                title={collapsed ? item.label : undefined}
-              >
-                <span className="sidebar-link-icon">
-                  <Icon size={18} strokeWidth={1.9} />
-                </span>
-                <span className="sidebar-link-label">{item.label}</span>
-              </Link>
+              <Fragment key={item.href}>
+                {variant === "portal" && navigation.indexOf(item) === 1 ? (
+                  <span className="sidebar-inline-label">Shared views</span>
+                ) : null}
+                {variant === "portal" && item.href === "/portal/settings" ? (
+                  <span className="sidebar-inline-label">Account</span>
+                ) : null}
+                <Link
+                  className={`sidebar-link ${active ? "active" : ""}`}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  title={collapsed ? item.label : undefined}
+                >
+                  <span className="sidebar-link-icon">
+                    <Icon size={18} strokeWidth={1.9} />
+                  </span>
+                  <span className="sidebar-link-label">{item.label}</span>
+                </Link>
+              </Fragment>
             );
           })}
         </nav>
@@ -306,21 +339,26 @@ export function AppShell({
                 <strong>{user.name}</strong>
                 <span>{user.email}</span>
               </div>
-              <button
+              <Button
                 aria-label="Close account menu"
                 className="icon-button"
                 onClick={closeAccountDrawer}
+                size="icon"
                 type="button"
+                variant="ghost"
               >
                 <X size={16} />
-              </button>
+              </Button>
             </div>
             <nav className="account-drawer-actions">
               <Link href={settingsHref} onClick={closeAccountDrawer}>
                 <Settings size={16} />
                 <span>Settings</span>
               </Link>
-              <SignOutButton className="account-drawer-signout" label="Sign out" />
+              <SignOutButton
+                className="account-drawer-signout"
+                label="Sign out"
+              />
             </nav>
           </aside>
         </>
@@ -329,27 +367,31 @@ export function AppShell({
         <header className="app-header">
           <div className="app-header-top">
             <div className="flex min-w-0 items-center gap-3">
-              <button
+              <Button
                 aria-label="Open navigation"
                 className="icon-button mobile-only"
                 onClick={() => setMobileOpen(true)}
+                size="icon"
                 type="button"
+                variant="ghost"
               >
                 <Menu size={20} />
-              </button>
+              </Button>
               <div className="min-w-0">
                 <h1>{headerTitle}</h1>
               </div>
             </div>
             <div className="app-header-actions">
-              <button
+              <Button
                 aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
                 className="icon-button"
                 onClick={toggleTheme}
+                size="icon"
                 type="button"
+                variant="ghost"
               >
                 {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-              </button>
+              </Button>
               <button
                 aria-expanded={profileOpen}
                 aria-label="Open account menu"
@@ -370,14 +412,18 @@ export function AppShell({
             </div>
           </div>
           {sectionTabs.length ? (
-            <nav aria-label={`${headerTitle} sections`} className="app-section-tabs">
+            <nav
+              aria-label={`${headerTitle} sections`}
+              className="app-section-tabs"
+            >
               {sectionTabs.map((tab) => {
                 const hasQuery = tab.href.includes("?");
                 const pathPart = hasQuery ? tab.href.split("?")[0] : tab.href;
                 const queryPart = hasQuery ? tab.href.split("?")[1] : "";
                 const tabQuery = new URLSearchParams(queryPart).get("tab");
                 const active = tabQuery
-                  ? pathname === pathPart && (searchParams.get("tab") || "general") === tabQuery
+                  ? pathname === pathPart &&
+                    (searchParams.get("tab") || "general") === tabQuery
                   : pathname === tab.href ||
                     (activePortalView &&
                       tab.href === activePortalView.href &&
@@ -395,7 +441,6 @@ export function AppShell({
                 );
               })}
             </nav>
-
           ) : null}
         </header>
         <div className="app-content">{children}</div>

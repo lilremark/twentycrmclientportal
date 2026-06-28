@@ -3,6 +3,8 @@
 import { useCallback, useId, useState } from "react";
 
 import { ConfirmationModal } from "@/components/confirmation-modal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export function ConfirmDeleteForm({
   action,
@@ -28,17 +30,17 @@ export function ConfirmDeleteForm({
 
   return (
     <>
-      <button
-        className="button danger"
+      <Button
         disabled={disabled}
         onClick={() => {
           setValue("");
           setOpen(true);
         }}
         type="button"
+        variant="destructive"
       >
         {triggerLabel}
-      </button>
+      </Button>
       {open ? (
         <ConfirmationModal
           description={description}
@@ -46,35 +48,30 @@ export function ConfirmDeleteForm({
           title={title}
         >
           <form action={action} className="confirmation-form">
-          <label className="field" htmlFor={inputId}>
-            <span>
-              Type <strong>{confirmText}</strong> to confirm.
-            </span>
-            <input
-              autoComplete="off"
-              className="input"
-              id={inputId}
-              onChange={(event) => setValue(event.target.value)}
-              value={value}
-            />
-          </label>
-          <div className="form-actions">
-            <button
-              className="button secondary"
-              onClick={close}
-              type="button"
-            >
-              Cancel
-            </button>
-            <button
-              className="button danger"
-              disabled={!confirmed}
-              formAction={action}
-              type="submit"
-            >
-              Delete
-            </button>
-          </div>
+            <label className="field" htmlFor={inputId}>
+              <span>
+                Type <strong>{confirmText}</strong> to confirm.
+              </span>
+              <Input
+                autoComplete="off"
+                id={inputId}
+                onChange={(event) => setValue(event.target.value)}
+                value={value}
+              />
+            </label>
+            <div className="form-actions">
+              <Button onClick={close} type="button" variant="outline">
+                Cancel
+              </Button>
+              <Button
+                disabled={!confirmed}
+                formAction={action}
+                type="submit"
+                variant="destructive"
+              >
+                Delete
+              </Button>
+            </div>
           </form>
         </ConfirmationModal>
       ) : null}

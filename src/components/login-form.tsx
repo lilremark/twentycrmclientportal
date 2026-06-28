@@ -3,6 +3,8 @@
 import { useState } from "react";
 
 import { authClient } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export function LoginForm({
   googleEnabled,
@@ -16,11 +18,11 @@ export function LoginForm({
 
   return (
     <div className="login-methods">
-      {(googleEnabled || customProvider.enabled) ? (
+      {googleEnabled || customProvider.enabled ? (
         <div className="sso-login-options">
           {googleEnabled ? (
-            <button
-              className="button secondary sso-login-button"
+            <Button
+              className="sso-login-button"
               disabled={pending}
               onClick={async () => {
                 setError("");
@@ -36,14 +38,17 @@ export function LoginForm({
                 }
               }}
               type="button"
+              variant="outline"
             >
-              <span className="google-mark" aria-hidden="true">G</span>
+              <span className="google-mark" aria-hidden="true">
+                G
+              </span>
               Continue with Google
-            </button>
+            </Button>
           ) : null}
           {customProvider.enabled ? (
-            <button
-              className="button secondary sso-login-button"
+            <Button
+              className="sso-login-button"
               disabled={pending}
               onClick={async () => {
                 setError("");
@@ -55,15 +60,20 @@ export function LoginForm({
                 });
                 if (result?.error) {
                   setPending(false);
-                  setError(`${customProvider.name} sign-in could not be started.`);
+                  setError(
+                    `${customProvider.name} sign-in could not be started.`,
+                  );
                 }
               }}
               type="button"
+              variant="outline"
             >
               {customProvider.name}
-            </button>
+            </Button>
           ) : null}
-          <div className="login-divider"><span>or use email</span></div>
+          <div className="login-divider">
+            <span>or use email</span>
+          </div>
         </div>
       ) : null}
       <form
@@ -93,22 +103,22 @@ export function LoginForm({
         {error ? <p className="error text-sm">{error}</p> : null}
         <div className="field">
           <label htmlFor="email">Email</label>
-          <input className="input" id="email" name="email" type="email" required />
+          <Input id="email" name="email" type="email" required />
         </div>
         <div className="field">
           <label htmlFor="password">Password</label>
-          <input
-            className="input"
-            id="password"
-            name="password"
-            type="password"
-            required
-          />
+          <Input id="password" name="password" type="password" required />
         </div>
-        <button className="button login-submit" disabled={pending} type="submit">
+        <Button
+          className="login-submit"
+          disabled={pending}
+          loading={pending}
+          size="lg"
+          type="submit"
+        >
           <span className="login-submit-spinner" aria-hidden="true" />
           {pending ? "Signing in..." : "Sign in"}
-        </button>
+        </Button>
         <a
           className="text-center text-sm font-semibold text-[#3157d5]"
           href="/forgot-password"
