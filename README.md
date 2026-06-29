@@ -110,6 +110,16 @@ npm run dev
 ```
 Open [http://localhost:3000](http://localhost:3000) in your browser. Go to `/setup` and enter the `SETUP_TOKEN` from your `.env` file to create your system admin account.
 
+#### Optional demo workspace
+
+Set `DEMO_MODE=true` to load repeatable sample client accounts, portal views,
+invitations, audit activity, projects, and invoices without connecting to a
+Twenty instance. In Docker, the seed runs automatically after the administrator
+bootstrap. For host development, run `npm run demo:seed` after migrations.
+
+The sample client account is `client@example.test` with password
+`TestClient!2026`. Demo mode is intended only for local evaluation.
+
 ---
 
 ### Docker Compose Deployment

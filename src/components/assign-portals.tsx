@@ -157,7 +157,7 @@ export function AssignPortals({
               aria-describedby="portal-assignment-description"
               aria-labelledby="portal-assignment-title"
               aria-modal="true"
-              className="confirmation-card"
+              className="confirmation-card portal-assignment-modal"
               ref={cardRef}
               role="dialog"
               style={{
@@ -201,7 +201,7 @@ export function AssignPortals({
                     }}
                   >
                     {availableViews.length === 0 ? (
-                      <p style={{ textAlign: "center", color: "var(--muted)", paddingBlock: "20px", fontSize: "0.82rem" }}>
+                      <p style={{ textAlign: "center", color: "var(--muted-foreground)", paddingBlock: "20px", fontSize: "0.82rem" }}>
                         No enabled portal views are available.
                       </p>
                     ) : (

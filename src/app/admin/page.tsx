@@ -108,10 +108,11 @@ export default async function AdminOverviewPage() {
       </div>
 
       <section className="stat-grid">
-        <StatCard label="Active portals" value={activeViews.length} />
-        <StatCard label="Active clients" value={clients.length} />
-        <StatCard label="Activity, 24 hours" value={activityToday.length} />
+        <StatCard icon={<Rows3 size={17} />} label="Active portals" value={activeViews.length} />
+        <StatCard icon={<Building2 size={17} />} label="Active clients" value={clients.length} />
+        <StatCard icon={<Activity size={17} />} label="Activity, 24 hours" value={activityToday.length} />
         <StatCard
+          icon={<Database size={17} />}
           label="Synchronized objects"
           value={latest?.objects.length ?? 0}
         />
@@ -290,11 +291,22 @@ function portalActivitySinceYesterday() {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: number }) {
+function StatCard({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+}) {
   return (
     <article className="card stat-card">
-      <span>{label}</span>
-      <strong>{value}</strong>
+      <span className="stat-card-icon">{icon}</span>
+      <div>
+        <span>{label}</span>
+        <strong>{value}</strong>
+      </div>
     </article>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useMemo, useState, useTransition } from "react";
 import {
   Code2,
   Mail,
@@ -192,6 +192,7 @@ export function ApplicationSettingsForm({
     brandLogoUrl: string | null;
     loginBackgroundUrl: string | null;
     primaryColor: string;
+    iconColor: string;
     portalTitle: string;
     portalDescription: string;
     supportEmail: string | null;
@@ -202,6 +203,7 @@ export function ApplicationSettingsForm({
     initialState,
   );
   const [primaryColor, setPrimaryColor] = useState(settings.primaryColor);
+  const [iconColor, setIconColor] = useState(settings.iconColor);
   const [logoFile, setLogoFile] = useState<File>();
   const [storedLogo, setStoredLogo] = useState(
     isLocalUpload(settings.brandLogoUrl) ? settings.brandLogoUrl ?? "" : "",
@@ -374,6 +376,30 @@ export function ApplicationSettingsForm({
               value={primaryColor}
             />
           </div>
+        </div>
+        <div className="field">
+          <label htmlFor="icon-color">Icon color</label>
+          <div className="color-field">
+            <input
+              aria-label="Choose icon color"
+              id="icon-color"
+              name="iconColor"
+              onChange={(event) => setIconColor(event.target.value)}
+              type="color"
+              value={iconColor}
+            />
+            <input
+              aria-label="Icon color hex value"
+              className="input"
+              onChange={(event) => setIconColor(event.target.value)}
+              pattern="^#[0-9a-fA-F]{6}$"
+              required
+              value={iconColor}
+            />
+          </div>
+          <span className="field-help">
+            Applied to navigation, dashboard, and configuration icons.
+          </span>
         </div>
         <div className="field">
           <label htmlFor="support-email">Support email</label>
@@ -918,6 +944,19 @@ export function InvitationEmailTemplateForm({
   const [resetPending, startReset] = useTransition();
   const [resetState, setResetState] =
     useState<SettingsActionState>(initialState);
+  const [subjectValue, setSubjectValue] = useState(template.subject);
+  const [htmlValue, setHtmlValue] = useState(template.html);
+  const previewHtml = useMemo(
+    () =>
+      htmlValue
+        .replaceAll("{{invite_url}}", "https://portal.example.test/invite/demo")
+        .replaceAll("{{recipient_name}}", "Jordan Lee")
+        .replaceAll("{{recipient_email}}", "jordan@example.test")
+        .replaceAll("{{brand_name}}", "Quiet Operations Portal")
+        .replaceAll("{{portal_title}}", "Your client workspace")
+        .replaceAll("{{support_email}}", "support@example.test"),
+    [htmlValue],
+  );
 
   return (
     <form action={action} className="card settings-card">
@@ -939,28 +978,55 @@ export function InvitationEmailTemplateForm({
         <label htmlFor="invitation-email-subject">Subject</label>
         <input
           className="input"
-          defaultValue={template.subject}
           id="invitation-email-subject"
           maxLength={160}
           name="invitationEmailSubject"
+          onChange={(event) => setSubjectValue(event.target.value)}
           required
+          value={subjectValue}
         />
       </div>
-      <div className="field">
-        <label htmlFor="invitation-email-html">HTML template</label>
-        <textarea
-          className="input email-template-editor"
-          defaultValue={template.html}
-          id="invitation-email-html"
-          name="invitationEmailHtml"
-          required
-          spellCheck={false}
-        />
-        <span className="field-help">
-          Required: {"{{invite_url}}"}. Available: {"{{recipient_name}}"},{" "}
-          {"{{recipient_email}}"}, {"{{brand_name}}"}, {"{{portal_title}}"},
-          and {"{{support_email}}"}.
-        </span>
+      <div className="email-template-workbench">
+        <div className="field email-template-code">
+          <label htmlFor="invitation-email-html">HTML template</label>
+          <textarea
+            className="input email-template-editor"
+            id="invitation-email-html"
+            name="invitationEmailHtml"
+            onChange={(event) => setHtmlValue(event.target.value)}
+            required
+            spellCheck={false}
+            value={htmlValue}
+          />
+          <span className="field-help">
+            Required: {"{{invite_url}}"}. Available: {"{{recipient_name}}"},{" "}
+            {"{{recipient_email}}"}, {"{{brand_name}}"}, {"{{portal_title}}"},
+            and {"{{support_email}}"}.
+          </span>
+        </div>
+        <div className="field email-template-preview-field">
+          <div className="email-template-preview-heading">
+            <label htmlFor="invitation-email-preview">Live preview</label>
+            <span>Sample recipient data</span>
+          </div>
+          <div className="email-template-preview-shell">
+            <div className="email-template-preview-toolbar">
+              <span />
+              <span />
+              <span />
+              <strong>{subjectValue || "Invitation email subject"}</strong>
+            </div>
+            <iframe
+              id="invitation-email-preview"
+              sandbox=""
+              srcDoc={previewHtml}
+              title="Invitation email preview"
+            />
+          </div>
+          <span className="field-help">
+            Scripts and form submissions are disabled inside the preview.
+          </span>
+        </div>
       </div>
       <div className="form-actions">
         <button className="button" disabled={pending} type="submit">

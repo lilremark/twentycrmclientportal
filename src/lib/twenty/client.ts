@@ -1,5 +1,7 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
+
 import type {
   PortalFieldConfig,
   TwentyFieldMetadata,
@@ -23,6 +25,15 @@ import {
   RECORD_CACHE_TTL_MS,
   twentyReadCacheKey,
 } from "@/lib/twenty/cache";
+import {
+  deleteDemoRecord,
+  demoTwentyMetadata,
+  getDemoRecord,
+  listDemoRecords,
+  writeDemoRecord,
+} from "@/lib/demo/twenty";
+
+const demoMode = process.env.DEMO_MODE === "true";
 
 type GraphQLError = { message: string; extensions?: { code?: string } };
 
@@ -99,6 +110,7 @@ async function requestTwenty<T>(endpoint: TwentyEndpoint, query: string) {
 }
 
 export async function testTwentyConnection() {
+  if (demoMode) return true;
   const data = await requestTwenty<{ __typename: string }>(
     "/graphql",
     "query PortalConnectionTest { __typename }",
@@ -107,6 +119,7 @@ export async function testTwentyConnection() {
 }
 
 export async function fetchTwentyMetadata(): Promise<TwentyObjectMetadata[]> {
+  if (demoMode) return demoTwentyMetadata;
   const data = await requestTwenty<{
     objects: {
       edges: Array<{
@@ -202,6 +215,7 @@ export async function listTwentyRecords(input: {
   orderBy?: Record<string, unknown>;
   cursor?: string;
 }) {
+  if (demoMode) return listDemoRecords(input);
   const selection = buildSelection(
     input.fields.map((field) => field.name),
     fieldSelections(input.metadataFields, input.fields),
@@ -241,6 +255,7 @@ export async function getTwentyRecord(input: {
   metadataFields: TwentyFieldMetadata[];
   filter: Record<string, unknown>;
 }) {
+  if (demoMode) return getDemoRecord(input);
   const selection = buildSelection(
     input.fields.map((field) => field.name),
     fieldSelections(input.metadataFields, input.fields),
@@ -270,6 +285,7 @@ export async function writeTwentyRecord(input: {
   fields: PortalFieldConfig[];
   metadataFields: TwentyFieldMetadata[];
 }) {
+  if (demoMode) return writeDemoRecord(input);
   const selection = buildSelection(
     input.fields.map((field) => field.name),
     fieldSelections(input.metadataFields, input.fields),
@@ -298,6 +314,7 @@ export async function uploadTwentyFilesFieldFile(input: {
   file: File;
   fieldMetadataId: string;
 }) {
+  if (demoMode) return `demo-file-${randomUUID()}`;
   const settings = await getTwentyIntegrationSettings();
   const endpointUrl = getTwentyEndpoint(
     settings.baseUrl,
@@ -365,6 +382,10 @@ export async function deleteTwentyRecord(input: {
   objectNamePlural: string;
   recordId: string;
 }) {
+  if (demoMode) {
+    deleteDemoRecord(input);
+    return;
+  }
   const settings = await getTwentyIntegrationSettings();
   const endpointUrl = getTwentyRestRecordEndpoint(
     settings.baseUrl,

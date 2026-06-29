@@ -141,6 +141,7 @@ export const applicationSettings = pgTable("application_setting", {
   brandLogoUrl: text("brand_logo_url"),
   loginBackgroundUrl: text("login_background_url"),
   primaryColor: text("primary_color").notNull(),
+  iconColor: text("icon_color").default("#2563eb").notNull(),
   portalTitle: text("portal_title").notNull(),
   portalDescription: text("portal_description").notNull(),
   supportEmail: text("support_email"),

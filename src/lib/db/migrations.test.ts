@@ -98,4 +98,15 @@ describe("initial database migration", () => {
       '"dashboard_widgets" jsonb DEFAULT \'[]\'::jsonb NOT NULL',
     );
   });
+
+  it("adds independently configurable application icon color", async () => {
+    const migration = await readFile(
+      resolve("drizzle/0015_freezing_stark_industries.sql"),
+      "utf8",
+    );
+
+    expect(migration).toContain(
+      '"icon_color" text DEFAULT \'#2563eb\' NOT NULL',
+    );
+  });
 });

@@ -1249,13 +1249,11 @@ export function PortalViewForm({
               <button
                 aria-current={activeSection === stage.id ? "step" : undefined}
                 className={activeSection === stage.id ? "active" : ""}
+                aria-controls={`builder-${stage.id}`}
                 key={stage.id}
                 onClick={() => {
                   const next = stage.id as typeof activeSection;
                   setActiveSection(next);
-                  document
-                    .getElementById(`builder-${next}`)
-                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
                 }}
                 type="button"
               >
@@ -1274,6 +1272,7 @@ export function PortalViewForm({
 
         <section
           className="portal-form-section builder-stage"
+          hidden={activeSection !== "basics"}
           id="builder-basics"
         >
           <div className="portal-form-section-heading">
@@ -1313,7 +1312,10 @@ export function PortalViewForm({
           </div>
         </section>
 
-        <section className="portal-form-section">
+        <section
+          className="portal-form-section builder-stage"
+          hidden={activeSection !== "basics"}
+        >
           <div className="portal-form-section-heading">
             <div>
               <h3>Twenty data source</h3>
@@ -1365,6 +1367,7 @@ export function PortalViewForm({
 
         <section
           className="portal-form-section builder-stage"
+          hidden={activeSection !== "access"}
           id="builder-access"
         >
           <div className="portal-form-section-heading">
@@ -1490,7 +1493,11 @@ export function PortalViewForm({
         </section>
 
         {object ? (
-          <section className="portal-form-section" key={`fixed-${objectName}`}>
+          <section
+            className="portal-form-section builder-stage"
+            hidden={activeSection !== "access"}
+            key={`fixed-${objectName}`}
+          >
             <div className="portal-form-section-heading">
               <div>
                 <h3>Saved record filters</h3>
@@ -1510,7 +1517,10 @@ export function PortalViewForm({
         ) : null}
 
         {object ? (
-          <section className="portal-form-section">
+          <section
+            className="portal-form-section builder-stage"
+            hidden={activeSection !== "fields"}
+          >
             <div className="portal-form-section-heading">
               <div>
                 <h3>Table columns</h3>
@@ -1528,6 +1538,7 @@ export function PortalViewForm({
       {object ? (
         <section
           className={activeTab === "general" ? "portal-form-section" : ""}
+          hidden={activeTab === "general" && activeSection !== "presentation"}
           key={`dashboard-${objectName}`}
         >
           {activeTab === "general" && (
@@ -1573,6 +1584,7 @@ export function PortalViewForm({
       <div style={{ display: activeTab === "general" ? "contents" : "none" }}>
         <section
           className="portal-form-section builder-stage"
+          hidden={activeSection !== "presentation"}
           id="builder-presentation"
         >
           <div className="portal-form-section-heading">
@@ -1670,6 +1682,7 @@ export function PortalViewForm({
         {object ? (
           <section
             className="portal-form-section builder-stage"
+            hidden={activeSection !== "fields"}
             id="builder-fields"
             key={`fields-${objectName}`}
           >

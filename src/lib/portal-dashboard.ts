@@ -66,14 +66,62 @@ export function normalizeDashboardLayout(
 ): PortalDashboardWidgetLayout {
   const fallback = defaultDashboardLayout(type, index);
   if (!layout) return fallback;
+  const minimumHeight = type === "number" ? 2 : 4;
   const w = Math.min(Math.max(Math.round(layout.w || fallback.w), 2), GRID_COLUMNS);
-  const h = Math.min(Math.max(Math.round(layout.h || fallback.h), 2), 8);
+  const h = Math.min(
+    Math.max(Math.round(layout.h || fallback.h), minimumHeight),
+    8,
+  );
   return {
     x: Math.min(Math.max(Math.round(layout.x || 0), 0), GRID_COLUMNS - w),
     y: Math.max(Math.round(layout.y || 0), 0),
     w,
     h,
   };
+}
+
+function layoutsOverlap(
+  left: PortalDashboardWidgetLayout,
+  right: PortalDashboardWidgetLayout,
+) {
+  return !(
+    left.x + left.w <= right.x ||
+    right.x + right.w <= left.x ||
+    left.y + left.h <= right.y ||
+    right.y + right.h <= left.y
+  );
+}
+
+export function resolveDashboardLayouts(
+  widgets: Array<Pick<PortalDashboardWidget, "type" | "layout">>,
+) {
+  const placed: PortalDashboardWidgetLayout[] = [];
+
+  return widgets.map((widget, index) => {
+    const requested = normalizeDashboardLayout(widget.layout, widget.type, index);
+    if (!placed.some((layout) => layoutsOverlap(layout, requested))) {
+      placed.push(requested);
+      return requested;
+    }
+
+    for (let y = 0; y < 100; y += 1) {
+      for (let x = 0; x <= GRID_COLUMNS - requested.w; x += 1) {
+        const candidate = { ...requested, x, y };
+        if (!placed.some((layout) => layoutsOverlap(layout, candidate))) {
+          placed.push(candidate);
+          return candidate;
+        }
+      }
+    }
+
+    const fallback = {
+      ...requested,
+      x: 0,
+      y: Math.max(0, ...placed.map((layout) => layout.y + layout.h)),
+    };
+    placed.push(fallback);
+    return fallback;
+  });
 }
 
 function fieldByName(fields: TwentyFieldMetadata[]) {

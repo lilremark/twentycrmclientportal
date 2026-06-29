@@ -1,0 +1,1 @@
+ALTER TABLE "application_setting" ADD COLUMN "icon_color" text DEFAULT '#2563eb' NOT NULL;

@@ -16,7 +16,7 @@ export function PortalRecordValue({
   type?: string;
   pdfPreview?: boolean;
   deleteAttachmentAction?: (attachmentId: string) => void | Promise<void>;
-  selectOptions?: Array<{ value: string; label: string }>;
+  selectOptions?: Array<{ value: string; label: string; color?: string }>;
   formatSelectValues?: boolean;
 }) {
   const files = extractPortalFiles(value);

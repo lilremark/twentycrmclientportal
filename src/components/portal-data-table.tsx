@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
   useTransition,
+  type CSSProperties,
   type ReactNode,
 } from "react";
 import { ArrowRight, LoaderCircle } from "lucide-react";
@@ -35,7 +36,7 @@ function PortalTableValue({
 }: {
   value: unknown;
   type?: string;
-  selectOptions?: Array<{ value: string; label: string }>;
+  selectOptions?: Array<{ value: string; label: string; color?: string }>;
   formatSelectValues: boolean;
 }) {
   const files = extractPortalFiles(value);
@@ -63,11 +64,49 @@ function PortalTableValue({
     if (!values.length) return <span className="table-empty-value">—</span>;
     return (
       <span className="table-tag-list" title={formatted}>
-        {values.map((item) => (
-          <span className="table-tag" key={item}>
-            {item}
-          </span>
-        ))}
+        {values.map((item) => {
+          const option = selectOptions?.find(
+            (candidate) =>
+              candidate.label.toLowerCase() === item.toLowerCase() ||
+              candidate.value.toLowerCase() === item.toLowerCase(),
+          );
+          const semanticColor = /complete|paid|success/i.test(item)
+            ? "#16805b"
+            : /at risk|overdue|failed|blocked/i.test(item)
+              ? "#c03d3d"
+              : /planning|sent|progress/i.test(item)
+                ? "#2563eb"
+                : undefined;
+          const namedColors: Record<string, string> = {
+            blue: "#2563eb",
+            green: "#16805b",
+            gray: "#737373",
+            orange: "#b56708",
+            purple: "#7c3aed",
+            red: "#c03d3d",
+            yellow: "#a16207",
+          };
+          const configuredColor = option?.color
+            ? namedColors[option.color.toLowerCase()] ??
+              (/^#[0-9a-f]{6}$/i.test(option.color)
+                ? option.color
+                : undefined)
+            : undefined;
+          const color = configuredColor ?? semanticColor;
+          return (
+            <span
+              className={`table-tag ${color ? "has-color" : ""}`}
+              key={item}
+              style={
+                color
+                  ? ({ "--tag-color": color } as CSSProperties)
+                  : undefined
+              }
+            >
+              {item}
+            </span>
+          );
+        })}
       </span>
     );
   }

@@ -7,6 +7,7 @@ import type {
 import {
   buildDashboardResults,
   dashboardRequiredFields,
+  resolveDashboardLayouts,
   validatePortalDashboardWidgets,
 } from "@/lib/portal-dashboard";
 
@@ -124,5 +125,19 @@ describe("portal dashboards", () => {
         { label: "Won", value: 1 },
       ],
     });
+  });
+
+  it("repacks overlapping widget layouts without hiding dashboard data", () => {
+    const layouts = resolveDashboardLayouts([
+      { type: "number", layout: { x: 0, y: 0, w: 3, h: 2 } },
+      { type: "number", layout: { x: 3, y: 0, w: 3, h: 2 } },
+      { type: "donut", layout: { x: 0, y: 1, w: 6, h: 2 } },
+    ]);
+
+    expect(layouts).toEqual([
+      { x: 0, y: 0, w: 3, h: 2 },
+      { x: 3, y: 0, w: 3, h: 2 },
+      { x: 6, y: 0, w: 6, h: 4 },
+    ]);
   });
 });

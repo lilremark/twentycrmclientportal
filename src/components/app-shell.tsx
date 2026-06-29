@@ -55,7 +55,12 @@ export function AppShell({
     icon: string;
     reportsEnabled?: boolean;
   }>;
-  branding: { name: string; logoUrl: string | null; primaryColor: string };
+  branding: {
+    name: string;
+    logoUrl: string | null;
+    primaryColor: string;
+    iconColor: string;
+  };
   variant?: "admin" | "portal";
   children: React.ReactNode;
 }) {
@@ -63,6 +68,7 @@ export function AppShell({
   const params = useParams();
   const searchParams = useSearchParams();
   const [collapsed, setCollapsed] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(232);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileClosing, setProfileClosing] = useState(false);
@@ -72,9 +78,15 @@ export function AppShell({
   useEffect(() => {
     const root = document.documentElement;
     const previousBrand = root.style.getPropertyValue("--brand-primary");
+    const previousIcon = root.style.getPropertyValue("--icon-color");
     root.style.setProperty("--brand-primary", branding.primaryColor);
+    root.style.setProperty("--icon-color", branding.iconColor);
     const frame = requestAnimationFrame(() => {
       setCollapsed(localStorage.getItem("sidebar-collapsed") === "true");
+      const storedWidth = Number(localStorage.getItem("sidebar-width"));
+      if (Number.isFinite(storedWidth) && storedWidth >= 200 && storedWidth <= 360) {
+        setSidebarWidth(storedWidth);
+      }
       setTheme(
         document.documentElement.dataset.theme === "dark" ? "dark" : "light",
       );
@@ -100,8 +112,13 @@ export function AppShell({
       } else {
         root.style.removeProperty("--brand-primary");
       }
+      if (previousIcon) {
+        root.style.setProperty("--icon-color", previousIcon);
+      } else {
+        root.style.removeProperty("--icon-color");
+      }
     };
-  }, [branding.primaryColor]);
+  }, [branding.iconColor, branding.primaryColor]);
 
   const openAccountDrawer = () => {
     if (closeTimerRef.current) {
@@ -127,6 +144,25 @@ export function AppShell({
       return !current;
     });
   };
+  const updateSidebarWidth = (width: number) => {
+    const next = Math.min(Math.max(Math.round(width), 200), 360);
+    setSidebarWidth(next);
+    localStorage.setItem("sidebar-width", String(next));
+  };
+  const startSidebarResize = (event: React.PointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const startX = event.clientX;
+    const startWidth = sidebarWidth;
+    const move = (pointerEvent: PointerEvent) => {
+      updateSidebarWidth(startWidth + pointerEvent.clientX - startX);
+    };
+    const stop = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", stop);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", stop);
+  };
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
     const root = document.documentElement;
@@ -146,6 +182,7 @@ export function AppShell({
     isActiveNavigation(item.href),
   );
   const headerTitle = activeNavigation?.label ?? title;
+  const HeaderIcon = navigationIcons[activeNavigation?.icon ?? "overview"] ?? LayoutDashboard;
   const activePortalView =
     variant === "portal"
       ? navigation.find(
@@ -211,7 +248,11 @@ export function AppShell({
         collapsed ? "sidebar-collapsed" : "sidebar-expanded"
       }`}
       style={
-        { "--brand-primary": branding.primaryColor } as React.CSSProperties
+        {
+          "--brand-primary": branding.primaryColor,
+          "--icon-color": branding.iconColor,
+          "--sidebar-width": collapsed ? "64px" : `${sidebarWidth}px`,
+        } as React.CSSProperties
       }
     >
       {mobileOpen ? (
@@ -239,37 +280,21 @@ export function AppShell({
             )}
             <span className="brand-copy">
               <strong>{branding.name}</strong>
-              <span>Client portal</span>
+              <span>{variant === "admin" ? "Admin portal" : "Client portal"}</span>
             </span>
           </Link>
-          <button
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            aria-expanded={!collapsed}
-            className={`sidebar-collapse-button desktop-only ${
-              collapsed ? "is-collapsed" : ""
-            }`}
-            onClick={toggleCollapsed}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            type="button"
-          >
-            {collapsed ? (
-              <>
-                <span className="collapsed-brand-face">
-                  {branding.logoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img alt="" src={branding.logoUrl} />
-                  ) : (
-                    branding.name.slice(0, 2).toUpperCase()
-                  )}
-                </span>
-                <span className="collapsed-open-face">
-                  <PanelLeftOpen size={16} />
-                </span>
-              </>
-            ) : (
+          {!collapsed ? (
+            <button
+              aria-label="Collapse sidebar"
+              aria-expanded="true"
+              className="sidebar-collapse-button desktop-only"
+              onClick={toggleCollapsed}
+              title="Collapse sidebar"
+              type="button"
+            >
               <PanelLeftClose size={16} />
-            )}
-          </button>
+            </button>
+          ) : null}
           <Button
             aria-label="Close navigation"
             className="icon-button mobile-only"
@@ -311,6 +336,23 @@ export function AppShell({
             );
           })}
         </nav>
+        {!collapsed ? (
+          <div
+            aria-label="Resize sidebar"
+            aria-orientation="vertical"
+            aria-valuemax={360}
+            aria-valuemin={200}
+            aria-valuenow={sidebarWidth}
+            className="sidebar-resize-handle desktop-only"
+            onKeyDown={(event) => {
+              if (event.key === "ArrowLeft") updateSidebarWidth(sidebarWidth - 8);
+              if (event.key === "ArrowRight") updateSidebarWidth(sidebarWidth + 8);
+            }}
+            onPointerDown={startSidebarResize}
+            role="separator"
+            tabIndex={0}
+          />
+        ) : null}
       </aside>
       {profileOpen ? (
         <>
@@ -377,6 +419,22 @@ export function AppShell({
               >
                 <Menu size={20} />
               </Button>
+              {collapsed ? (
+                <Button
+                  aria-label="Expand sidebar"
+                  className="header-sidebar-open desktop-only"
+                  onClick={toggleCollapsed}
+                  size="icon"
+                  title="Expand sidebar"
+                  type="button"
+                  variant="ghost"
+                >
+                  <PanelLeftOpen size={17} />
+                </Button>
+              ) : null}
+              <span className="header-section-icon" aria-hidden="true">
+                <HeaderIcon size={17} />
+              </span>
               <div className="min-w-0">
                 <h1>{headerTitle}</h1>
               </div>

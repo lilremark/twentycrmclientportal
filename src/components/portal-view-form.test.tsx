@@ -3,7 +3,7 @@
 import "@testing-library/jest-dom/vitest";
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { PortalViewForm } from "@/components/portal-view-form";
 
@@ -15,13 +15,6 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
-
-beforeEach(() => {
-  Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
-    configurable: true,
-    value: vi.fn(),
-  });
-});
 
 afterEach(cleanup);
 
@@ -44,6 +37,9 @@ describe("PortalViewForm stages", () => {
       "step",
     );
     expect(label).toHaveValue("Customer projects");
-    expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalled();
+    expect(label.closest("section")).toHaveAttribute("hidden");
+    expect(screen.getByLabelText("Sharing method").closest("section")).not.toHaveAttribute(
+      "hidden",
+    );
   });
 });

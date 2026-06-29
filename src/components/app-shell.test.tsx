@@ -30,6 +30,7 @@ const props = {
     logoUrl: null,
     name: "Apex CRM",
     primaryColor: "#2563eb",
+    iconColor: "#2563eb",
   },
   navigation: [{ href: "/admin", icon: "overview", label: "Overview" }],
   title: "Portal administration",
@@ -85,6 +86,9 @@ describe("AppShell", () => {
     );
     expect(window.localStorage.getItem("sidebar-collapsed")).toBe("true");
     expect(container.firstChild).toHaveClass("sidebar-collapsed");
+    expect(
+      screen.getByRole("button", { name: "Expand sidebar" }),
+    ).toBeVisible();
 
     fireEvent.click(
       screen.getByRole("button", { name: "Switch to dark mode" }),
@@ -92,6 +96,19 @@ describe("AppShell", () => {
     expect(document.documentElement).toHaveClass("dark");
     expect(document.documentElement.dataset.theme).toBe("dark");
     expect(window.localStorage.getItem("theme")).toBe("dark");
+  });
+
+  it("persists keyboard sidebar resizing", () => {
+    render(
+      <AppShell {...props}>
+        <p>Workspace</p>
+      </AppShell>,
+    );
+
+    fireEvent.keyDown(screen.getByRole("separator", { name: "Resize sidebar" }), {
+      key: "ArrowRight",
+    });
+    expect(window.localStorage.getItem("sidebar-width")).toBe("240");
   });
 
   it("opens the account controls and mobile navigation", () => {

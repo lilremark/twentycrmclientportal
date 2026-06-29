@@ -9,6 +9,7 @@ const settings = {
   brandName: "Acme <Portal>",
   brandLogoUrl: "/api/uploads/logo.png",
   primaryColor: "#3157d5",
+  iconColor: "#3157d5",
   portalTitle: "Client workspace",
   portalDescription: "Shared records",
   supportEmail: "support@example.com",

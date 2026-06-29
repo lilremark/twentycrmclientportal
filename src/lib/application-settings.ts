@@ -13,6 +13,7 @@ export type ApplicationSettings = {
   brandLogoUrl: string | null;
   loginBackgroundUrl: string | null;
   primaryColor: string;
+  iconColor: string;
   portalTitle: string;
   portalDescription: string;
   supportEmail: string | null;
@@ -27,6 +28,7 @@ export function getDefaultApplicationSettings(): ApplicationSettings {
     brandLogoUrl: branding.logoUrl,
     loginBackgroundUrl: null,
     primaryColor: branding.primaryColor,
+    iconColor: branding.primaryColor,
     portalTitle: "Client portal",
     portalDescription: "Secure access to the records shared with your team.",
     supportEmail: null,
@@ -49,6 +51,7 @@ export async function getApplicationSettings(): Promise<ApplicationSettings> {
     brandLogoUrl: current.brandLogoUrl,
     loginBackgroundUrl: current.loginBackgroundUrl,
     primaryColor: current.primaryColor,
+    iconColor: current.iconColor,
     portalTitle: current.portalTitle,
     portalDescription: current.portalDescription,
     supportEmail: current.supportEmail,
@@ -62,6 +65,7 @@ export function getSettingsBranding(settings: ApplicationSettings) {
     name: settings.brandName,
     logoUrl: settings.brandLogoUrl,
     primaryColor: settings.primaryColor,
+    iconColor: settings.iconColor,
     loginBackgroundUrl: settings.loginBackgroundUrl,
   };
 }

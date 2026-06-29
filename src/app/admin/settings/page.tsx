@@ -1,18 +1,12 @@
-import {
-  Building2,
-  KeyRound,
-  Mail,
-  ServerCog,
-  ShieldCheck,
-  UserRound,
-} from "lucide-react";
+import { KeyRound, Mail, ServerCog, ShieldCheck } from "lucide-react";
 
+import { SettingsSectionLayout } from "@/components/settings-section-layout";
 import {
   ApplicationSettingsForm,
   InvitationEmailTemplateForm,
   ProfileSettingsForm,
-  SsoSettingsForm,
   SmtpSettingsForm,
+  SsoSettingsForm,
   TwentySettingsForm,
 } from "@/components/settings-forms";
 import { requireAdmin } from "@/lib/access";
@@ -34,51 +28,16 @@ export default async function AdminSettingsPage() {
   );
 
   return (
-    <div className="settings-layout">
-      <aside className="settings-local-nav">
-        <p>Configuration</p>
-        <a href="#brand">
-          <Building2 size={15} /> Brand and portal
-        </a>
-        <a href="#twenty">
-          <ServerCog size={15} /> Twenty CRM
-        </a>
-        <a href="#email">
-          <Mail size={15} /> Email
-        </a>
-        <a href="#access">
-          <ShieldCheck size={15} /> Access and SSO
-        </a>
-        <a href="#profile">
-          <UserRound size={15} /> Profile
-        </a>
-      </aside>
-      <div className="settings-page">
-        <div className="settings-anchor" id="brand">
-          <ApplicationSettingsForm settings={settings} />
-        </div>
-        <div className="settings-anchor" id="twenty">
-          <TwentySettingsForm settings={integrations} />
-        </div>
-        <div className="settings-anchor" id="email">
-          <SmtpSettingsForm settings={integrations} />
-          <InvitationEmailTemplateForm template={invitationEmailTemplate} />
-        </div>
-        <div className="settings-anchor" id="access">
-          <SsoSettingsForm
-            callbackBaseUrl={env.APP_URL.replace(/\/$/, "")}
-            settings={integrations}
-          />
-        </div>
-        <div className="settings-anchor" id="profile">
-          <ProfileSettingsForm
-            email={current.user.email}
-            initialImage={current.user.image ?? null}
-            initialName={current.user.name}
-          />
-        </div>
-
-        <section className="card settings-card" id="deployment">
+    <SettingsSectionLayout
+      access={
+        <SsoSettingsForm
+          callbackBaseUrl={env.APP_URL.replace(/\/$/, "")}
+          settings={integrations}
+        />
+      }
+      brand={<ApplicationSettingsForm settings={settings} />}
+      deployment={
+        <section className="card settings-card">
           <div className="settings-card-heading">
             <span className="settings-section-icon">
               <ServerCog size={19} />
@@ -118,8 +77,22 @@ export default async function AdminSettingsPage() {
             the portal.
           </p>
         </section>
-      </div>
-    </div>
+      }
+      email={
+        <>
+          <SmtpSettingsForm settings={integrations} />
+          <InvitationEmailTemplateForm template={invitationEmailTemplate} />
+        </>
+      }
+      profile={
+        <ProfileSettingsForm
+          email={current.user.email}
+          initialImage={current.user.image ?? null}
+          initialName={current.user.name}
+        />
+      }
+      twenty={<TwentySettingsForm settings={integrations} />}
+    />
   );
 }
 

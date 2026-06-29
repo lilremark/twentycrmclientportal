@@ -21,7 +21,10 @@ import type {
   DashboardChartPoint,
   DashboardResult,
 } from "@/lib/portal-dashboard";
-import { normalizeDashboardLayout } from "@/lib/portal-dashboard";
+import {
+  normalizeDashboardLayout,
+  resolveDashboardLayouts,
+} from "@/lib/portal-dashboard";
 
 const GRID_COLUMNS = 12;
 const ROW_HEIGHT = 74;
@@ -390,13 +393,12 @@ export function DashboardReportSurface({
   const [editing, setEditing] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const defaultLayouts = useMemo(
-    () =>
-      Object.fromEntries(
-        items.map((item, index) => [
-          item.id,
-          normalizeDashboardLayout(item.layout, item.type, index),
-        ]),
-      ) as LayoutMap,
+    () => {
+      const resolved = resolveDashboardLayouts(items);
+      return Object.fromEntries(
+        items.map((item, index) => [item.id, resolved[index]]),
+      ) as LayoutMap;
+    },
     [items],
   );
   const [draftLayouts, setDraftLayouts] = useState<LayoutMap>({});
@@ -423,13 +425,15 @@ export function DashboardReportSurface({
     [defaultLayouts, draftLayouts, savedLayouts],
   );
 
+  const collisionSafeLayouts = resolveDashboardLayouts(
+    items.map((item) => ({
+      type: item.type,
+      layout: layouts[item.id] ?? item.layout,
+    })),
+  );
   const resolvedItems = items.map((item, index) => ({
     ...item,
-    layout: normalizeDashboardLayout(
-      layouts[item.id] ?? item.layout,
-      item.type,
-      index,
-    ),
+    layout: collisionSafeLayouts[index],
   }));
 
   const commitLayouts = (updater: (current: LayoutMap) => LayoutMap) => {

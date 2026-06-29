@@ -57,6 +57,7 @@ const applicationSettingsSchema = z.object({
   brandLogoUrl: imageReferenceSchema,
   loginBackgroundUrl: imageReferenceSchema,
   primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  iconColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   portalTitle: z.string().trim().min(1).max(100),
   portalDescription: z.string().trim().min(1).max(240),
   supportEmail: z
@@ -204,6 +205,7 @@ export async function updateApplicationSettingsAction(
     brandLogoUrl: formData.get("brandLogoUrl"),
     loginBackgroundUrl: formData.get("loginBackgroundUrl"),
     primaryColor: formData.get("primaryColor"),
+    iconColor: formData.get("iconColor"),
     portalTitle: formData.get("portalTitle"),
     portalDescription: formData.get("portalDescription"),
     supportEmail: formData.get("supportEmail"),
