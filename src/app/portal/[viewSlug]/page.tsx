@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 
 import {
+  createRecordAction,
   createNoteAction,
   deletePortalFilterViewAction,
   deleteRecordAttachmentAction,
@@ -17,7 +18,9 @@ import { PortalDataTable } from "@/components/portal-data-table";
 import { PortalExportButton } from "@/components/portal-export-button";
 import { PortalFilterForm } from "@/components/portal-filter-form";
 import { PortalNotes } from "@/components/portal-notes";
+import { RecordForm } from "@/components/record-form";
 import { RecordPanelDetailsForm } from "@/components/record-panel-details-form";
+import { RecordSidePanel } from "@/components/record-side-panel";
 import { RefreshButton } from "@/components/refresh-button";
 import { requirePortalViewContext } from "@/lib/access";
 import { db } from "@/lib/db";
@@ -162,6 +165,7 @@ export default async function PortalListPage({
     : undefined;
   const selectedRecordId =
     typeof query.record === "string" ? query.record : null;
+  const creatingRecord = query.mode === "create";
   const listParams = listSearchParams(effectiveQuery);
   const closeHref = `/portal/${view.slug}${
     listParams.size ? `?${listParams.toString()}` : ""
@@ -295,7 +299,11 @@ export default async function PortalListPage({
             viewSlug={view.slug}
           />
           {context.role === "contributor" && view.createFields.length ? (
-            <Link className="button" href={`/portal/${view.slug}/new`}>
+            <Link
+              className="button"
+              href={`${closeHref}${listParams.size ? "&" : "?"}mode=create`}
+              scroll={false}
+            >
               Add record
             </Link>
           ) : null}
@@ -444,7 +452,29 @@ export default async function PortalListPage({
           </section>
         ) : null}
       </div>
-
+      {creatingRecord &&
+      context.role === "contributor" &&
+      view.createFields.length ? (
+        <RecordSidePanel closeHref={closeHref} title={`Add ${object.labelSingular}`}>
+          <header className="record-panel-header record-create-panel-header">
+            <div className="record-panel-heading">
+              <p className="eyebrow">New {object.labelSingular}</p>
+              <h2>Add to {view.label}</h2>
+              <p>Complete the shared fields below.</p>
+            </div>
+          </header>
+          <div className="record-panel-body">
+            <RecordForm
+              action={createRecordAction.bind(null, view.slug)}
+              appearance="panel"
+              cancelHref={closeHref}
+              fields={view.createFields}
+              metadataFields={object.fields}
+              submitLabel={`Create ${object.labelSingular}`}
+            />
+          </div>
+        </RecordSidePanel>
+      ) : null}
     </>
   );
 }

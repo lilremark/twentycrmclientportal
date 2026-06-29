@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 
@@ -72,17 +72,21 @@ export function RecordSidePanel({
     };
   }, [closePanel]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const savedWidth = Number(localStorage.getItem(PANEL_WIDTH_STORAGE_KEY));
+    const initialBounds = panelWidthBounds();
+    const initialWidth = clampPanelWidth(
+      Number.isFinite(savedWidth) && savedWidth > 0
+        ? savedWidth
+        : DEFAULT_PANEL_WIDTH,
+    );
+    panelRef.current?.style.setProperty(
+      "--record-panel-width",
+      `${initialWidth}px`,
+    );
     const initializationFrame = requestAnimationFrame(() => {
-      setPanelBounds(panelWidthBounds());
-      setPanelWidth(
-        clampPanelWidth(
-          Number.isFinite(savedWidth) && savedWidth > 0
-            ? savedWidth
-            : DEFAULT_PANEL_WIDTH,
-        ),
-      );
+      setPanelBounds(initialBounds);
+      setPanelWidth(initialWidth);
     });
 
     const handleResize = () => {

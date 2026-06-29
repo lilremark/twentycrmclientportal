@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  ArrowLeft,
-  ArrowRight,
+  Check,
   Database,
   Download,
   FileSpreadsheet,
@@ -13,34 +12,9 @@ import {
   X,
 } from "lucide-react";
 
-type ExportColumn = {
-  name: string;
-  label: string;
-};
-
+type ExportColumn = { name: string; label: string };
 type ExportScope = "filtered" | "all";
 type ExportFormat = "csv" | "xlsx";
-
-const exportSteps = [
-  {
-    label: "Records",
-    title: "Choose the record set",
-    description:
-      "Start with the same records on screen, or export every shared record in this portal.",
-  },
-  {
-    label: "Columns",
-    title: "Pick the fields",
-    description:
-      "Only visible portal columns are available, so the export stays inside this view's permissions.",
-  },
-  {
-    label: "Format",
-    title: "Select the file type",
-    description:
-      "Choose CSV for imports and automation, or XLSX for spreadsheet review.",
-  },
-];
 
 export function PortalExportButton({
   columns,
@@ -53,26 +27,21 @@ export function PortalExportButton({
   objectLabel: string;
   viewSlug: string;
 }) {
-  const modalRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState(0);
   const [scope, setScope] = useState<ExportScope>("filtered");
   const [format, setFormat] = useState<ExportFormat>("csv");
   const [selectedColumns, setSelectedColumns] = useState(
     () => new Set(columns.map((column) => column.name)),
   );
-  const close = useCallback(() => {
-    setOpen(false);
-    setStep(0);
-  }, []);
-  const selectedCount = selectedColumns.size;
+  const close = useCallback(() => setOpen(false), []);
 
   useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
     const previousFocus = document.activeElement as HTMLElement | null;
     document.body.style.overflow = "hidden";
-    modalRef.current?.focus();
+    panelRef.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") close();
     };
@@ -87,32 +56,23 @@ export function PortalExportButton({
   const toggleColumn = (name: string) => {
     setSelectedColumns((current) => {
       const next = new Set(current);
-      if (next.has(name)) {
-        next.delete(name);
-      } else {
-        next.add(name);
-      }
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
       return next;
     });
   };
 
   const exportHref = () => {
     const params = new URLSearchParams();
+    const current = new URLSearchParams(currentQueryString);
     if (scope === "filtered") {
-      const current = new URLSearchParams(currentQueryString);
       for (const [key, value] of current) {
         if (
-          key === "saved" ||
-          key === "sort" ||
-          key === "direction" ||
-          key.startsWith("f_") ||
-          key.startsWith("op_")
-        ) {
-          params.append(key, value);
-        }
+          key === "saved" || key === "sort" || key === "direction" ||
+          key.startsWith("f_") || key.startsWith("op_")
+        ) params.append(key, value);
       }
     } else {
-      const current = new URLSearchParams(currentQueryString);
       const sort = current.get("sort");
       const direction = current.get("direction");
       if (sort) params.set("sort", sort);
@@ -121,238 +81,87 @@ export function PortalExportButton({
     params.set("scope", scope);
     params.set("format", format);
     for (const column of columns) {
-      if (selectedColumns.has(column.name)) {
-        params.append("column", column.name);
-      }
+      if (selectedColumns.has(column.name)) params.append("column", column.name);
     }
     return `/api/portal/${encodeURIComponent(viewSlug)}/export?${params.toString()}`;
   };
 
-  const currentStep = exportSteps[step];
+  const selectedCount = selectedColumns.size;
   const formatLabel = format === "xlsx" ? "XLSX" : "CSV";
-  const scopeLabel = scope === "filtered" ? "current view" : "all shared records";
 
   return (
     <>
-      <button
-        className="button secondary"
-        disabled={!columns.length}
-        onClick={() => setOpen(true)}
-        type="button"
-      >
-        <Download size={15} />
-        Export
+      <button className="button secondary" disabled={!columns.length} onClick={() => setOpen(true)} type="button">
+        <Download size={15} /> Export
       </button>
-      {open
-        ? createPortal(
-            <div className="note-modal-layer export-modal-layer">
-              <button
-                aria-label="Close export"
-                className="note-modal-backdrop"
-                onClick={close}
-                type="button"
-              />
-              <div
-                aria-labelledby="export-modal-title"
-                aria-modal="true"
-                className="note-modal-card export-modal-card"
-                ref={modalRef}
-                role="dialog"
-                tabIndex={-1}
-              >
-                <div className="note-modal-heading">
-                  <div>
-                    <p className="eyebrow">Portal export</p>
-                    <h2 id="export-modal-title">Export {objectLabel}</h2>
-                  </div>
-                  <button
-                    aria-label="Close export"
-                    className="icon-button"
-                    onClick={close}
-                    type="button"
-                  >
-                    <X size={17} />
-                  </button>
-                </div>
+      {open ? createPortal(
+        <div className="export-workspace-layer">
+          <button aria-label="Close export" className="export-workspace-backdrop" onClick={close} type="button" />
+          <div aria-labelledby="export-panel-title" aria-modal="true" className="export-workspace" ref={panelRef} role="dialog" tabIndex={-1}>
+            <header className="export-workspace-header">
+              <div>
+                <p className="eyebrow">Export workspace</p>
+                <h2 id="export-panel-title">Export {objectLabel}</h2>
+                <span>Configure the file in one pass. Only fields shared in this portal are available.</span>
+              </div>
+              <button aria-label="Close export" className="icon-button" onClick={close} type="button"><X size={17} /></button>
+            </header>
 
-                <div className="export-steps" aria-label="Export steps">
-                  {exportSteps.map((item, index) => (
-                    <span
-                      aria-current={index === step ? "step" : undefined}
-                      className={[
-                        "export-step",
-                        index === step ? "is-active" : "",
-                        index < step ? "is-complete" : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                      key={item.label}
-                    >
-                      <span>{index + 1}</span>
-                      {item.label}
-                    </span>
+            <div className="export-workspace-body">
+              <section className="export-config-section">
+                <div className="export-config-heading"><span>01</span><div><h3>Records</h3><p>Choose which shared records to include.</p></div></div>
+                <div className="export-choice-grid export-choice-grid-compact">
+                  <label className="export-choice">
+                    <input checked={scope === "filtered"} name="export-scope" onChange={() => setScope("filtered")} type="radio" />
+                    <Filter size={17} />
+                    <span><strong>Current view</strong><small>Keep active filters, saved view, and sorting.</small></span>
+                  </label>
+                  <label className="export-choice">
+                    <input checked={scope === "all"} name="export-scope" onChange={() => setScope("all")} type="radio" />
+                    <Database size={17} />
+                    <span><strong>All shared records</strong><small>Ignore filters while preserving the current sort.</small></span>
+                  </label>
+                </div>
+              </section>
+
+              <section className="export-config-section">
+                <div className="export-config-heading"><span>02</span><div><h3>Columns</h3><p>{selectedCount} of {columns.length} fields selected.</p></div><button onClick={() => setSelectedColumns(selectedCount === columns.length ? new Set() : new Set(columns.map((column) => column.name)))} type="button">{selectedCount === columns.length ? "Clear" : "Select all"}</button></div>
+                <div className="export-column-list">
+                  {columns.map((column) => (
+                    <label className="export-column" key={column.name}>
+                      <input checked={selectedColumns.has(column.name)} onChange={() => toggleColumn(column.name)} type="checkbox" />
+                      <span>{column.label}</span>
+                      {selectedColumns.has(column.name) ? <Check size={14} /> : null}
+                    </label>
                   ))}
                 </div>
+              </section>
 
-                <div className="export-step-intro">
-                  <h3>{currentStep.title}</h3>
-                  <p>{currentStep.description}</p>
+              <section className="export-config-section">
+                <div className="export-config-heading"><span>03</span><div><h3>File type</h3><p>Choose the format for the next step in your workflow.</p></div></div>
+                <div className="export-format-grid">
+                  <label className="export-format-choice">
+                    <input checked={format === "csv"} name="export-format" onChange={() => setFormat("csv")} type="radio" />
+                    <TableProperties size={19} /><span><strong>CSV</strong><small>Imports and automation</small></span>
+                  </label>
+                  <label className="export-format-choice">
+                    <input checked={format === "xlsx"} name="export-format" onChange={() => setFormat("xlsx")} type="radio" />
+                    <FileSpreadsheet size={19} /><span><strong>XLSX</strong><small>Spreadsheet review</small></span>
+                  </label>
                 </div>
+              </section>
+            </div>
 
-                <div className="export-modal-body">
-                  {step === 0 ? (
-                    <div className="export-choice-grid">
-                      <label className="export-choice">
-                        <input
-                          checked={scope === "filtered"}
-                          name="export-scope"
-                          onChange={() => setScope("filtered")}
-                          type="radio"
-                        />
-                        <Filter size={18} />
-                        <span>
-                          <strong>Current view</strong>
-                          <small>
-                            Export the portal records using the active filters,
-                            saved view, and sort.
-                          </small>
-                        </span>
-                      </label>
-                      <label className="export-choice">
-                        <input
-                          checked={scope === "all"}
-                          name="export-scope"
-                          onChange={() => setScope("all")}
-                          type="radio"
-                        />
-                        <Database size={18} />
-                        <span>
-                          <strong>All shared records</strong>
-                          <small>
-                            Ignore the active filters and export every record
-                            available in this portal.
-                          </small>
-                        </span>
-                      </label>
-                    </div>
-                  ) : null}
-
-                  {step === 1 ? (
-                    <div className="export-column-panel">
-                      <div className="export-column-actions">
-                        <span>
-                          {selectedCount} of {columns.length} columns selected
-                        </span>
-                        <button
-                          className="button secondary compact-button"
-                          onClick={() =>
-                            setSelectedColumns(
-                              new Set(columns.map((column) => column.name)),
-                            )
-                          }
-                          type="button"
-                        >
-                          Select all
-                        </button>
-                      </div>
-                      <div className="export-column-list">
-                        {columns.map((column) => (
-                          <label className="export-column" key={column.name}>
-                            <input
-                              checked={selectedColumns.has(column.name)}
-                              onChange={() => toggleColumn(column.name)}
-                              type="checkbox"
-                            />
-                            <span>{column.label}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {step === 2 ? (
-                    <div className="export-choice-grid">
-                      <label className="export-choice">
-                        <input
-                          checked={format === "csv"}
-                          name="export-format"
-                          onChange={() => setFormat("csv")}
-                          type="radio"
-                        />
-                        <TableProperties size={18} />
-                        <span>
-                          <strong>CSV</strong>
-                          <small>Best for imports, automation, and plain text.</small>
-                        </span>
-                      </label>
-                      <label className="export-choice">
-                        <input
-                          checked={format === "xlsx"}
-                          name="export-format"
-                          onChange={() => setFormat("xlsx")}
-                          type="radio"
-                        />
-                        <FileSpreadsheet size={18} />
-                        <span>
-                          <strong>Excel workbook</strong>
-                          <small>Best for opening directly in spreadsheet apps.</small>
-                        </span>
-                      </label>
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="export-summary">
-                  <span>{scopeLabel}</span>
-                  <span>
-                    {selectedCount} column{selectedCount === 1 ? "" : "s"}
-                  </span>
-                  <span>{formatLabel}</span>
-                </div>
-
-                <div className="note-modal-actions export-modal-actions">
-                  {step > 0 ? (
-                    <button
-                      className="button secondary"
-                      onClick={() => setStep((current) => current - 1)}
-                      type="button"
-                    >
-                      <ArrowLeft size={14} />
-                      Back
-                    </button>
-                  ) : (
-                    <button className="button secondary" onClick={close} type="button">
-                      Cancel
-                    </button>
-                  )}
-                  {step < exportSteps.length - 1 ? (
-                    <button
-                      className="button"
-                      disabled={step === 1 && selectedCount === 0}
-                      onClick={() => setStep((current) => current + 1)}
-                      type="button"
-                    >
-                      Next
-                      <ArrowRight size={14} />
-                    </button>
-                  ) : (
-                    <a
-                      className={`button ${selectedCount ? "" : "is-disabled"}`}
-                      href={selectedCount ? exportHref() : undefined}
-                      onClick={() => {
-                        if (selectedCount) close();
-                      }}
-                    >
-                      <Download size={15} />
-                      Download {formatLabel}
-                    </a>
-                  )}
-                </div>
-              </div>
-            </div>,
-            document.body,
-          )
-        : null}
+            <footer className="export-workspace-footer">
+              <div><strong>{formatLabel}</strong><span>{scope === "filtered" ? "Current view" : "All shared records"} · {selectedCount} column{selectedCount === 1 ? "" : "s"}</span></div>
+              <a aria-disabled={!selectedCount} className={`button ${selectedCount ? "" : "is-disabled"}`} href={selectedCount ? exportHref() : undefined} onClick={() => selectedCount && close()}>
+                <Download size={15} /> Download {formatLabel}
+              </a>
+            </footer>
+          </div>
+        </div>,
+        document.body,
+      ) : null}
     </>
   );
 }

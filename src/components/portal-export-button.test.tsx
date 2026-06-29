@@ -24,10 +24,9 @@ describe("PortalExportButton", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Export" }));
-    fireEvent.click(screen.getByRole("button", { name: /next/i }));
+    expect(screen.getByRole("dialog", { name: "Export Accounts" })).toBeVisible();
     fireEvent.click(screen.getByLabelText("Status"));
-    fireEvent.click(screen.getByRole("button", { name: /next/i }));
-    fireEvent.click(screen.getByLabelText(/Excel workbook/i));
+    fireEvent.click(screen.getByLabelText(/XLSX/i));
 
     const link = screen.getByRole("link", { name: /download/i });
     expect(link).toHaveAttribute(

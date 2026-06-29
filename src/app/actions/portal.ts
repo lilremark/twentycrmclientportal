@@ -455,7 +455,7 @@ export async function createRecordAction(slug: string, formData: FormData) {
     });
     throw error;
   }
-  redirect(`/portal/${slug}/${after.id}`);
+  redirect(`/portal/${slug}?record=${encodeURIComponent(String(after.id))}`);
 }
 
 export async function refreshPortalDataAction() {
