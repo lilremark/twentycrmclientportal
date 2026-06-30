@@ -55,7 +55,7 @@ describe("RecordPanelDetailsForm", () => {
 
     expect(screen.queryByRole("textbox", { name: "Name" })).not.toBeInTheDocument();
     expect(screen.getByText("Acme")).toBeVisible();
-    expect(screen.getByLabelText("Status")).toHaveValue("OPEN");
+    expect(screen.getByLabelText("Status")).toHaveTextContent("Open");
     expect(
       screen.getByRole("button", { name: "Save changes" }),
     ).toBeVisible();

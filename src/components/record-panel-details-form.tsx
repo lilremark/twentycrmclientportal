@@ -4,6 +4,7 @@ import type {
 } from "@/lib/db/schema";
 import { isWritablePortalField } from "@/lib/twenty/validation";
 import { PortalRecordValue } from "@/components/portal-record-value";
+import { AppSelect } from "@/components/ui/app-select";
 import {
   recordInputDefaultValue,
   recordInputType,
@@ -54,7 +55,7 @@ function EditableRecordPanelValue({
 
   if (field.type === "BOOLEAN") {
     return (
-      <select
+      <AppSelect
         aria-label={label}
         className="input record-panel-inline-input"
         defaultValue={String(value ?? false)}
@@ -64,13 +65,13 @@ function EditableRecordPanelValue({
       >
         <option value="false">No</option>
         <option value="true">Yes</option>
-      </select>
+      </AppSelect>
     );
   }
 
   if (field.type === "SELECT") {
     return (
-      <select
+      <AppSelect
         aria-label={label}
         className="input record-panel-inline-input"
         defaultValue={recordInputDefaultValue(value, field.type)}
@@ -84,7 +85,7 @@ function EditableRecordPanelValue({
             {option.label}
           </option>
         ))}
-      </select>
+      </AppSelect>
     );
   }
 

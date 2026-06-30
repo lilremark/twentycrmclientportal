@@ -3,14 +3,17 @@
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 import {
   Download,
   Grip,
+  ImagePlus,
   Maximize2,
   RotateCcw,
   Save,
   SlidersHorizontal,
   Sun,
+  Type,
   X,
 } from "lucide-react";
 
@@ -137,11 +140,15 @@ function DashboardCard({
   editing,
   onMoveStart,
   onResizeStart,
+  contentEditing = false,
+  onLabelChange,
 }: {
   item: DashboardResult;
   editing: boolean;
   onMoveStart?: (event: ReactPointerEvent, id: string) => void;
   onResizeStart?: (event: ReactPointerEvent, id: string) => void;
+  contentEditing?: boolean;
+  onLabelChange?: (id: string, label: string) => void;
 }) {
   const style = {
     gridColumn: `${item.layout.x + 1} / span ${item.layout.w}`,
@@ -167,16 +174,28 @@ function DashboardCard({
         </button>
       ) : null}
 
-      {item.type === "number" ? (
+      {item.type === "embed" ? (
+        <div className="dashboard-embed-widget">
+          <span contentEditable={contentEditing} onBlur={(event) => onLabelChange?.(item.id, event.currentTarget.textContent ?? "")} suppressContentEditableWarning>{item.label}</span>
+          <iframe
+            allow="fullscreen"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            sandbox="allow-forms allow-popups allow-scripts"
+            src={item.embedUrl}
+            title={item.label}
+          />
+        </div>
+      ) : item.type === "number" ? (
         <>
-          <span>{item.label}</span>
+          <span contentEditable={contentEditing} onBlur={(event) => onLabelChange?.(item.id, event.currentTarget.textContent ?? "")} suppressContentEditableWarning>{item.label}</span>
           <strong>{item.value}</strong>
         </>
       ) : (
         <>
           <header>
             <div>
-              <span>{item.label}</span>
+              <span contentEditable={contentEditing} onBlur={(event) => onLabelChange?.(item.id, event.currentTarget.textContent ?? "")} suppressContentEditableWarning>{item.label}</span>
               <strong>{item.total.toLocaleString()}</strong>
             </div>
           </header>
@@ -225,8 +244,18 @@ function PrintPreview({
   const [pdfLayouts, setPdfLayouts] = useState<LayoutMap>(initialLayouts);
   const [editing, setEditing] = useState(true);
   const [cardTone, setCardTone] = useState<"light" | "dark">("light");
+  const [reportEyebrow, setReportEyebrow] = useState("Dashboard report");
+  const [reportTitle, setReportTitle] = useState(title);
+  const [reportSubtitle, setReportSubtitle] = useState(new Date().toLocaleDateString());
+  const [footerText, setFooterText] = useState("Confidential client report");
+  const [textBlocks, setTextBlocks] = useState<Array<{ id: string; text: string }>>([]);
+  const [images, setImages] = useState<Array<{ id: string; src: string; alt: string }>>([]);
+  const [customizing, setCustomizing] = useState(false);
+  const [labelOverrides, setLabelOverrides] = useState<Record<string, string>>({});
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
   const previewItems = items.map((item, index) => ({
     ...item,
+    label: labelOverrides[item.id] ?? item.label,
     layout: normalizeDashboardLayout(
       pdfLayouts[item.id] ?? item.layout,
       item.type,
@@ -319,16 +348,33 @@ function PrintPreview({
               <RotateCcw size={16} />
               Reset PDF
             </button>
-            <button className="button secondary" onClick={onClose} type="button">
-              <X size={16} />
-              Close
+            <button className="button secondary" onClick={() => setCustomizing((current) => !current)} type="button">
+              <Type size={16} />
+              {customizing ? "Done editing text" : "Edit text"}
             </button>
+            {customizing ? (
+              <>
+                <button className="button secondary" onClick={() => setTextBlocks((current) => [...current, { id: crypto.randomUUID(), text: "New text block" }])} type="button"><Type size={15} /> Add text</button>
+                <button className="button secondary" onClick={() => imageInputRef.current?.click()} type="button"><ImagePlus size={15} /> Add image</button>
+              </>
+            ) : null}
             <button className="button" onClick={() => window.print()} type="button">
               <Download size={16} />
               Download PDF
             </button>
+            <button aria-label="Close PDF preview" className="icon-button" onClick={onClose} type="button">
+              <X size={17} />
+            </button>
           </div>
         </header>
+        <input accept="image/png,image/jpeg,image/webp,image/gif" className="sr-only" onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (!file || file.size > 5 * 1024 * 1024 || !file.type.startsWith("image/")) return;
+          const reader = new FileReader();
+          reader.onload = () => typeof reader.result === "string" && setImages((current) => [...current, { id: crypto.randomUUID(), src: reader.result as string, alt: file.name }]);
+          reader.readAsDataURL(file);
+          event.target.value = "";
+        }} ref={imageInputRef} type="file" />
         <div className="dashboard-print-area">
           <section
             className={`dashboard-pdf-page dashboard-pdf-tone-${cardTone}`}
@@ -337,10 +383,14 @@ function PrintPreview({
               <span>Bleed / print-safe area</span>
             </div>
             <header className="dashboard-pdf-page-header">
-              <p>Dashboard report</p>
-              <h2>{title}</h2>
-              <span>{new Date().toLocaleDateString()}</span>
+              <p contentEditable={customizing} onBlur={(event) => setReportEyebrow(event.currentTarget.textContent ?? "") } suppressContentEditableWarning>{reportEyebrow}</p>
+              <h2 contentEditable={customizing} onBlur={(event) => setReportTitle(event.currentTarget.textContent ?? "") } suppressContentEditableWarning>{reportTitle}</h2>
+              <span contentEditable={customizing} onBlur={(event) => setReportSubtitle(event.currentTarget.textContent ?? "") } suppressContentEditableWarning>{reportSubtitle}</span>
             </header>
+            {textBlocks.length || images.length ? <div className="dashboard-pdf-custom-content">
+              {textBlocks.map((block) => <div className="dashboard-pdf-text-block" key={block.id}><p contentEditable={customizing} onBlur={(event) => setTextBlocks((current) => current.map((item) => item.id === block.id ? { ...item, text: event.currentTarget.textContent ?? "" } : item))} suppressContentEditableWarning>{block.text}</p>{customizing ? <button aria-label="Remove text box" onClick={() => setTextBlocks((current) => current.filter((item) => item.id !== block.id))} type="button"><X size={13} /></button> : null}</div>)}
+              {images.map((image) => <figure key={image.id}><Image alt={image.alt} height={400} src={image.src} unoptimized width={800} />{customizing ? <button aria-label="Remove image" onClick={() => setImages((current) => current.filter((item) => item.id !== image.id))} type="button"><X size={13} /></button> : null}</figure>)}
+            </div> : null}
             <div
               className={`dashboard-grid dashboard-pdf-grid ${
                 editing ? "is-editing" : ""
@@ -354,9 +404,11 @@ function PrintPreview({
             >
               {previewItems.map((item) => (
                 <DashboardCard
+                  contentEditing={customizing}
                   editing={editing}
                   item={item}
                   key={item.id}
+                  onLabelChange={(id, label) => setLabelOverrides((current) => ({ ...current, [id]: label }))}
                   onMoveStart={(event, id) =>
                     startPdfInteraction(event, id, "move")
                   }
@@ -366,6 +418,7 @@ function PrintPreview({
                 />
               ))}
             </div>
+            <footer className="dashboard-pdf-page-footer" contentEditable={customizing} onBlur={(event) => setFooterText(event.currentTarget.textContent ?? "")} suppressContentEditableWarning>{footerText}</footer>
           </section>
         </div>
       </div>

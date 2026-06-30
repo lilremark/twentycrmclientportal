@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { DeleteUploadButton } from "@/components/delete-upload-button";
+import { AppSelect } from "@/components/ui/app-select";
 import {
   removeBrandLogoAction,
   removeLoginBackgroundAction,
@@ -853,7 +854,7 @@ export function SmtpSettingsForm({
           </div>
           <div className="field">
             <label htmlFor="smtp-secure">Encryption mode</label>
-            <select
+            <AppSelect
               className="input"
               defaultValue={settings.smtpSecure ? "true" : "false"}
               id="smtp-secure"
@@ -863,7 +864,7 @@ export function SmtpSettingsForm({
                 STARTTLS / standard SMTP (port 587 or 25)
               </option>
               <option value="true">Implicit TLS (port 465)</option>
-            </select>
+            </AppSelect>
           </div>
           <div className="field">
             <label htmlFor="smtp-user">Username</label>

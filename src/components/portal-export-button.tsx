@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useCallback, useState } from "react";
 import {
   Check,
   Database,
@@ -9,8 +8,8 @@ import {
   FileSpreadsheet,
   Filter,
   TableProperties,
-  X,
 } from "lucide-react";
+import { RecordSidePanel } from "@/components/record-side-panel";
 
 type ExportColumn = { name: string; label: string };
 type ExportScope = "filtered" | "all";
@@ -27,7 +26,6 @@ export function PortalExportButton({
   objectLabel: string;
   viewSlug: string;
 }) {
-  const panelRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [scope, setScope] = useState<ExportScope>("filtered");
   const [format, setFormat] = useState<ExportFormat>("csv");
@@ -35,23 +33,6 @@ export function PortalExportButton({
     () => new Set(columns.map((column) => column.name)),
   );
   const close = useCallback(() => setOpen(false), []);
-
-  useEffect(() => {
-    if (!open) return;
-    const previousOverflow = document.body.style.overflow;
-    const previousFocus = document.activeElement as HTMLElement | null;
-    document.body.style.overflow = "hidden";
-    panelRef.current?.focus();
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") close();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousOverflow;
-      previousFocus?.focus();
-    };
-  }, [close, open]);
 
   const toggleColumn = (name: string) => {
     setSelectedColumns((current) => {
@@ -94,17 +75,15 @@ export function PortalExportButton({
       <button className="button secondary" disabled={!columns.length} onClick={() => setOpen(true)} type="button">
         <Download size={15} /> Export
       </button>
-      {open ? createPortal(
-        <div className="export-workspace-layer">
-          <button aria-label="Close export" className="export-workspace-backdrop" onClick={close} type="button" />
-          <div aria-labelledby="export-panel-title" aria-modal="true" className="export-workspace" ref={panelRef} role="dialog" tabIndex={-1}>
+      {open ? (
+        <RecordSidePanel onClose={close} title={`Export ${objectLabel}`}>
+          <div className="export-workspace">
             <header className="export-workspace-header">
               <div>
                 <p className="eyebrow">Export workspace</p>
                 <h2 id="export-panel-title">Export {objectLabel}</h2>
                 <span>Configure the file in one pass. Only fields shared in this portal are available.</span>
               </div>
-              <button aria-label="Close export" className="icon-button" onClick={close} type="button"><X size={17} /></button>
             </header>
 
             <div className="export-workspace-body">
@@ -159,8 +138,7 @@ export function PortalExportButton({
               </a>
             </footer>
           </div>
-        </div>,
-        document.body,
+        </RecordSidePanel>
       ) : null}
     </>
   );

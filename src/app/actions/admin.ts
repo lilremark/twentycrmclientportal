@@ -6,6 +6,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { normalizeSecureEmbedUrl } from "@/lib/embed-url";
 
 import { requireAdmin } from "@/lib/access";
 import { writeAuditEvent } from "@/lib/audit";
@@ -155,11 +156,12 @@ function portalViewFields(formData: FormData, object: TwentyObjectMetadata) {
 
 const dashboardWidgetSchema = z.object({
   id: z.string().trim().min(1),
-  type: z.enum(["number", "bar", "donut"]),
+  type: z.enum(["number", "bar", "donut", "embed"]),
   label: z.string().trim().min(1).max(80),
   aggregate: z.enum(["count", "sum", "average"]),
   field: z.string().trim().optional(),
   groupBy: z.string().trim().optional(),
+  embedUrl: z.string().trim().optional(),
   layout: z
     .object({
       x: z.coerce.number().int().min(0).max(11),
@@ -179,10 +181,12 @@ function parseDashboardWidgets(formData: FormData): PortalDashboardWidget[] {
       throw new Error("A dashboard widget is malformed.");
     }
     const widget = dashboardWidgetSchema.parse(parsed);
+    const embedUrl = widget.type === "embed" ? normalizeSecureEmbedUrl(widget.embedUrl ?? "") : undefined;
     return {
       ...widget,
       field: widget.field || undefined,
       groupBy: widget.groupBy || undefined,
+      embedUrl,
     };
   });
 }
@@ -367,6 +371,8 @@ export async function createPortalViewAction(formData: FormData) {
         .optional()
         .transform((value) => value === "on" || value === "true"),
       navigationOrder: z.coerce.number().int().default(0),
+      navigationIcon: z.enum(["records", "table", "folder", "briefcase", "users", "calendar", "chart", "file", "target"]).default("records"),
+      navigationIconColor: z.string().regex(/^#[0-9a-f]{6}$/i).default("#3157d5"),
     })
     .parse(Object.fromEntries(formData));
 
@@ -489,6 +495,8 @@ export async function updatePortalViewAction(
         .optional()
         .transform((value) => value === "on" || value === "true"),
       navigationOrder: z.coerce.number().int().default(0),
+      navigationIcon: z.enum(["records", "table", "folder", "briefcase", "users", "calendar", "chart", "file", "target"]).default("records"),
+      navigationIconColor: z.string().regex(/^#[0-9a-f]{6}$/i).default("#3157d5"),
     })
     .parse(Object.fromEntries(formData));
   const [latest] = await db

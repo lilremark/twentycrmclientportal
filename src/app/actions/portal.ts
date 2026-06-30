@@ -796,9 +796,11 @@ async function updateRecord(
   slug: string,
   recordId: string,
   formData: FormData,
+  configuredFields?: Array<{ name: string; label?: string; required?: boolean }>,
+  skipRateLimit = false,
 ) {
   const { context, view, metadata } = await getWriteContext(slug);
-  enforceWriteRateLimit(context.session.user.id);
+  if (!skipRateLimit) enforceWriteRateLimit(context.session.user.id);
   const requestId = randomUUID();
   const before = await getTwentyRecord({
     objectNameSingular: view.objectNameSingular,
@@ -828,7 +830,7 @@ async function updateRecord(
   try {
     const data = validateRecordInput({
       formData,
-      configuredFields: view.editFields,
+      configuredFields: configuredFields ?? view.editFields,
       metadataFields: metadata.fields,
       scopeFieldName: view.scopeFieldName,
     });
@@ -865,4 +867,27 @@ async function updateRecord(
     });
     throw error;
   }
+}
+
+export async function bulkUpdateRecordsAction(
+  slug: string,
+  returnQuery: string,
+  recordIds: string[],
+  formData: FormData,
+) {
+  const context = await requirePortalViewContext(slug);
+  if (context.role !== "contributor") throw new Error("Your role does not permit changes.");
+  const ids = [...new Set(recordIds.map(String))].filter(Boolean).slice(0, 50);
+  if (!ids.length) throw new Error("Select at least one record.");
+  const fieldName = String(formData.get("bulkField") ?? "");
+  const field = context.view.editFields.find((item) => item.name === fieldName);
+  if (!field) throw new Error("Choose an editable field.");
+  enforceWriteRateLimit(context.session.user.id);
+  const valueForm = new FormData();
+  for (const value of formData.getAll("bulkValue")) valueForm.append(fieldName, value);
+  for (const id of ids) await updateRecord(slug, id, valueForm, [{ ...field, required: false }], true);
+  revalidatePath(`/portal/${slug}`);
+  const query = new URLSearchParams(returnQuery);
+  query.delete("record");
+  redirect(`/portal/${slug}${query.size ? `?${query.toString()}` : ""}`);
 }

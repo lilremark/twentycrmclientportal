@@ -1,17 +1,17 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useTransition,
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { ArrowRight, LoaderCircle } from "lucide-react";
+import { CheckSquare, Heart, LoaderCircle, Pencil, X } from "lucide-react";
 import {
   createColumnHelper,
   flexRender,
@@ -19,12 +19,15 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
-import type { TwentyFieldMetadata } from "@/lib/db/schema";
+import type { PortalFieldConfig, TwentyFieldMetadata } from "@/lib/db/schema";
 import { formatPortalValue } from "@/lib/format-value";
 import { RecordSidePanel } from "@/components/record-side-panel";
 import { PortalRecordValue } from "@/components/portal-record-value";
 import { extractPortalFiles } from "@/lib/file-values";
 import type { PortalRecordPage } from "@/app/actions/portal";
+import { AppSelect } from "@/components/ui/app-select";
+import { isWritablePortalField } from "@/lib/twenty/validation";
+import { recordInputType } from "@/components/record-form";
 
 type RecordRow = Record<string, unknown> & { id: string };
 
@@ -146,6 +149,8 @@ export function PortalDataTable({
   formatSelectValues = true,
   recordPanel = null,
   recordPanelTitle = "Record details",
+  editableFields = [],
+  bulkEditAction,
 }: {
   records: RecordRow[];
   columns: Array<{ name: string; label?: string }>;
@@ -162,6 +167,8 @@ export function PortalDataTable({
   formatSelectValues?: boolean;
   recordPanel?: ReactNode;
   recordPanelTitle?: string;
+  editableFields?: PortalFieldConfig[];
+  bulkEditAction?: (recordIds: string[], formData: FormData) => void | Promise<void>;
 }) {
   const router = useRouter();
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -172,7 +179,19 @@ export function PortalDataTable({
   const [loadError, setLoadError] = useState("");
   const [loadingMore, setLoadingMore] = useState(false);
   const [pendingRecordId, setPendingRecordId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [bulkEditorOpen, setBulkEditorOpen] = useState(false);
+  const [bulkField, setBulkField] = useState(editableFields[0]?.name ?? "");
   const [isPending, startTransition] = useTransition();
+  const visibleRecords = useMemo(
+    () => favoritesOnly
+      ? loadedRecords.filter((record) => favoriteIds.has(record.id))
+      : loadedRecords,
+    [favoriteIds, favoritesOnly, loadedRecords],
+  );
   const helper = createColumnHelper<RecordRow>();
   const metadataByName = new Map(
     metadataFields.map((field) => [field.name, field]),
@@ -211,6 +230,26 @@ export function PortalDataTable({
     setLoadError("");
     loadingRef.current = false;
   }, [endCursor, hasNextPage, listKey, records]);
+
+  useEffect(() => {
+    const key = `portal-favorites:${listKey}`;
+    try {
+      setFavoriteIds(new Set(JSON.parse(localStorage.getItem(key) ?? "[]") as string[]));
+    } catch {
+      localStorage.removeItem(key);
+    }
+  }, [listKey]);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    const close = () => setContextMenu(null);
+    window.addEventListener("pointerdown", close);
+    window.addEventListener("scroll", close, true);
+    return () => {
+      window.removeEventListener("pointerdown", close);
+      window.removeEventListener("scroll", close, true);
+    };
+  }, [contextMenu]);
 
   useEffect(() => {
     if (pendingRecordId && selectedRecordId === pendingRecordId) {
@@ -269,8 +308,33 @@ export function PortalDataTable({
   // TanStack Table owns memoization internally; React Compiler should not wrap it.
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
-    data: loadedRecords,
+    data: visibleRecords,
     columns: [
+      helper.display({
+        id: "selection",
+        header: () => (
+          <input
+            aria-label="Select all records"
+            checked={Boolean(visibleRecords.length) && visibleRecords.every((record) => selectedIds.has(record.id))}
+            onChange={(event) => setSelectedIds(event.target.checked ? new Set(visibleRecords.map((record) => record.id)) : new Set())}
+            type="checkbox"
+          />
+        ),
+        cell: ({ row }) => (
+          <span className="table-selection-cell">
+            <input
+              aria-label={`Select record ${row.original.id}`}
+              checked={selectedIds.has(row.original.id)}
+              onChange={(event) => setSelectedIds((current) => {
+                const next = new Set(current);
+                if (event.target.checked) next.add(row.original.id); else next.delete(row.original.id);
+                return next;
+              })}
+              type="checkbox"
+            />
+          </span>
+        ),
+      }),
       ...columns.map((column) =>
         helper.accessor((row) => row[column.name], {
           id: column.name,
@@ -285,29 +349,6 @@ export function PortalDataTable({
           ),
         }),
       ),
-      ...(recordBaseHref || recordSelectionHref
-        ? [
-            helper.display({
-              id: "actions",
-              header: "",
-              cell: ({ row }) => (
-                <Link
-                  className="table-row-action"
-                  href={recordHref(row.original.id)}
-                  onClick={(event) => {
-                    if (recordSelectionHref) {
-                      event.preventDefault();
-                      openRecord(row.original.id);
-                    }
-                  }}
-                  scroll={false}
-                >
-                  Open <ArrowRight size={12} />
-                </Link>
-              ),
-            }),
-          ]
-        : []),
     ],
     getCoreRowModel: getCoreRowModel(),
   });
@@ -325,6 +366,27 @@ export function PortalDataTable({
 
   return (
     <div className="table-scroll">
+      <div className="table-view-toolbar">
+        <button
+          aria-pressed={favoritesOnly}
+          className={favoritesOnly ? "is-active" : ""}
+          disabled={!favoriteIds.size && !favoritesOnly}
+          onClick={() => setFavoritesOnly((current) => !current)}
+          type="button"
+        >
+          <Heart fill={favoritesOnly ? "currentColor" : "none"} size={14} />
+          Favorites
+          <span>{favoriteIds.size}</span>
+        </button>
+        {favoritesOnly ? <small>Showing favorited records only</small> : null}
+      </div>
+      {selectedIds.size ? (
+        <div className="table-selection-toolbar">
+          <span><CheckSquare size={15} /> {selectedIds.size} selected</span>
+          {bulkEditAction && editableFields.length ? <button className="button compact-button" onClick={() => setBulkEditorOpen(true)} type="button"><Pencil size={14} /> Bulk edit</button> : null}
+          <button aria-label="Clear selection" className="icon-button" onClick={() => setSelectedIds(new Set())} type="button"><X size={15} /></button>
+        </div>
+      ) : null}
       <table className="data-table">
         <thead>
           {table.getHeaderGroups().map((group) => (
@@ -354,6 +416,7 @@ export function PortalDataTable({
               className={[
                 recordSelectionHref ? "data-table-clickable-row" : "",
                 selectedRecordId === row.original.id ? "is-selected" : "",
+                favoriteIds.has(row.original.id) ? "is-favorite" : "",
                 isPending && pendingRecordId === row.original.id
                   ? "is-loading"
                   : "",
@@ -361,6 +424,7 @@ export function PortalDataTable({
                 .filter(Boolean)
                 .join(" ")}
               key={row.id}
+              data-record-trigger
               onClick={(event) => {
                 if (
                   recordSelectionHref &&
@@ -382,6 +446,10 @@ export function PortalDataTable({
                 }
               }}
               onMouseEnter={() => prefetchRecord(row.original.id)}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                setContextMenu({ id: row.original.id, x: Math.min(event.clientX, window.innerWidth - 222), y: Math.min(event.clientY, window.innerHeight - 142) });
+              }}
               tabIndex={recordSelectionHref ? 0 : undefined}
             >
               {row.getVisibleCells().map((cell) => {
@@ -395,9 +463,24 @@ export function PortalDataTable({
           ))}
         </tbody>
       </table>
-      {!loadedRecords.length ? (
+      {contextMenu ? (
+        <div className="record-context-menu" onPointerDown={(event) => event.stopPropagation()} role="menu" style={{ left: contextMenu.x, top: contextMenu.y }}>
+          <button onClick={() => { setSelectedIds((current) => new Set(current).add(contextMenu.id)); setContextMenu(null); }} role="menuitem" type="button"><CheckSquare size={15} /> Select record</button>
+          {recordSelectionHref ? <button onClick={() => { openRecord(contextMenu.id); setContextMenu(null); }} role="menuitem" type="button"><Pencil size={15} /> {editableFields.length ? "Edit record" : "View record"}</button> : null}
+          <button onClick={() => {
+            setFavoriteIds((current) => {
+              const next = new Set(current);
+              if (next.has(contextMenu.id)) next.delete(contextMenu.id); else next.add(contextMenu.id);
+              localStorage.setItem(`portal-favorites:${listKey}`, JSON.stringify([...next]));
+              return next;
+            });
+            setContextMenu(null);
+          }} role="menuitem" type="button"><Heart fill={favoriteIds.has(contextMenu.id) ? "currentColor" : "none"} size={15} /> {favoriteIds.has(contextMenu.id) ? "Remove favorite" : "Favorite record"}</button>
+        </div>
+      ) : null}
+      {!visibleRecords.length ? (
         <p className="p-8 text-center text-sm text-[#68758a]">
-          No records match the current filters.
+          {favoritesOnly ? "No favorited records match the current filters." : "No records match the current filters."}
         </p>
       ) : null}
       {loadError ? (
@@ -430,7 +513,7 @@ export function PortalDataTable({
           >
             Load more records
           </button>
-        ) : loadedRecords.length ? (
+        ) : visibleRecords.length ? (
           <span>All records loaded</span>
         ) : null}
       </div>
@@ -476,6 +559,37 @@ export function PortalDataTable({
           ) : (
             recordPanel
           )}
+        </RecordSidePanel>
+      ) : null}
+      {bulkEditorOpen && bulkEditAction ? (
+        <RecordSidePanel onClose={() => setBulkEditorOpen(false)} title="Bulk edit records">
+          <header className="record-panel-header bulk-edit-header"><div className="record-panel-heading"><p className="eyebrow">Bulk edit</p><h2>Update selected records</h2><p>One change will be applied to {selectedIds.size} {selectedIds.size === 1 ? "record" : "records"}.</p></div></header>
+          <div className="record-panel-body bulk-edit-panel-body">
+            <div className="bulk-edit-summary"><span><CheckSquare size={18} /></span><div><strong>{selectedIds.size} {selectedIds.size === 1 ? "record" : "records"} selected</strong><p>Only fields enabled for client editing are available.</p></div></div>
+            <form action={bulkEditAction.bind(null, [...selectedIds])} className="bulk-edit-form">
+              <div className="bulk-edit-field-group">
+                <span className="bulk-edit-step">01</span>
+                <div className="field"><label htmlFor="bulk-field">Field to update</label>
+                  <AppSelect className="input" id="bulk-field" name="bulkField" onChange={(event) => setBulkField(event.target.value)} value={bulkField}>
+                    {editableFields.filter((config) => { const field = metadataByName.get(config.name); return field && isWritablePortalField(field); }).map((config) => <option key={config.name} value={config.name}>{config.label ?? metadataByName.get(config.name)?.label ?? config.name}</option>)}
+                  </AppSelect>
+                </div>
+              </div>
+              <div className="bulk-edit-field-group">
+                <span className="bulk-edit-step">02</span>
+                <div className="field"><label htmlFor="bulk-value">New value</label>
+                  {(() => {
+                    const field = metadataByName.get(bulkField);
+                    if (field?.type === "SELECT" || field?.type === "MULTI_SELECT") return <AppSelect className="input" id="bulk-value" name="bulkValue"><option value="">Choose a value</option>{field.options?.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</AppSelect>;
+                    if (field?.type === "BOOLEAN") return <AppSelect className="input" id="bulk-value" name="bulkValue"><option value="true">Yes</option><option value="false">No</option></AppSelect>;
+                    return <input className="input" id="bulk-value" name="bulkValue" placeholder="Enter the value to apply" step={field && ["NUMBER", "NUMERIC", "CURRENCY"].includes(field.type) ? "any" : undefined} type={recordInputType(field?.type ?? "TEXT")} />;
+                  })()}
+                </div>
+              </div>
+              <div className="bulk-edit-notice"><strong>Review before applying</strong><p>This replaces the selected field on every selected record. Other values remain unchanged.</p></div>
+              <footer className="bulk-edit-actions"><button className="button" type="submit">Apply to {selectedIds.size} {selectedIds.size === 1 ? "record" : "records"}</button></footer>
+            </form>
+          </div>
         </RecordSidePanel>
       ) : null}
     </div>

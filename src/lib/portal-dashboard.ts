@@ -6,7 +6,7 @@ import type {
 } from "@/lib/db/schema";
 import { formatPortalValue } from "@/lib/format-value";
 
-export const dashboardWidgetTypes = ["number", "bar", "donut"] as const;
+export const dashboardWidgetTypes = ["number", "bar", "donut", "embed"] as const;
 export const dashboardAggregates = ["count", "sum", "average"] as const;
 
 const numericFieldTypes = new Set(["NUMBER", "NUMERIC", "CURRENCY"]);
@@ -27,6 +27,7 @@ export type DashboardChartPoint = {
 };
 
 export type DashboardResult =
+  | { id: string; type: "embed"; label: string; embedUrl: string; layout: PortalDashboardWidgetLayout }
   | {
       id: string;
       type: "number";
@@ -166,6 +167,10 @@ export function validatePortalDashboardWidgets(
     if (!dashboardWidgetTypes.includes(widget.type)) {
       errors.push(`Dashboard widget "${widget.label}" has an invalid type.`);
     }
+    if (widget.type === "embed") {
+      if (!widget.embedUrl) errors.push(`Embed widget "${widget.label}" needs a URL.`);
+      continue;
+    }
     if (!dashboardAggregates.includes(widget.aggregate)) {
       errors.push(
         `Dashboard widget "${widget.label}" has an invalid calculation.`,
@@ -272,6 +277,7 @@ export function buildDashboardResults(input: {
 
   return input.widgets.map((widget, index) => {
     const layout = normalizeDashboardLayout(widget.layout, widget.type, index);
+    if (widget.type === "embed") return { id: widget.id, type: "embed" as const, label: widget.label, embedUrl: widget.embedUrl ?? "", layout };
     if (widget.type === "number") {
       const value = aggregateRecords(input.records, widget);
       return {

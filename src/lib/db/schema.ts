@@ -269,11 +269,12 @@ export type PortalSavedFilter = {
 
 export type PortalDashboardWidget = {
   id: string;
-  type: "number" | "bar" | "donut";
+  type: "number" | "bar" | "donut" | "embed";
   label: string;
   aggregate: "count" | "sum" | "average";
   field?: string;
   groupBy?: string;
+  embedUrl?: string;
   layout?: PortalDashboardWidgetLayout;
 };
 
@@ -317,6 +318,8 @@ export const portalViews = pgTable(
       .$type<PortalDashboardWidget[]>()
       .default([])
       .notNull(),
+    navigationIcon: text("navigation_icon").default("records").notNull(),
+    navigationIconColor: text("navigation_icon_color").default("#3157d5").notNull(),
     navigationOrder: integer("navigation_order").default(0).notNull(),
     isEnabled: boolean("is_enabled").default(true).notNull(),
     validationErrors: jsonb("validation_errors")

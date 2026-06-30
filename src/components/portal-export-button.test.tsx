@@ -3,7 +3,9 @@
 import "@testing-library/jest-dom/vitest";
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 import { PortalExportButton } from "@/components/portal-export-button";
 
@@ -24,7 +26,7 @@ describe("PortalExportButton", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Export" }));
-    expect(screen.getByRole("dialog", { name: "Export Accounts" })).toBeVisible();
+    expect(screen.getByRole("complementary", { name: "Export Accounts" })).toBeVisible();
     fireEvent.click(screen.getByLabelText("Status"));
     fireEvent.click(screen.getByLabelText(/XLSX/i));
 

@@ -32,6 +32,7 @@ export function proxy(request: NextRequest) {
           "frame-ancestors 'none'",
           "form-action 'self'",
           "img-src 'self' data: https:",
+          "frame-src 'self' https:",
           "font-src 'self'",
           "style-src 'self' 'unsafe-inline'",
           `script-src 'self' 'unsafe-inline'${

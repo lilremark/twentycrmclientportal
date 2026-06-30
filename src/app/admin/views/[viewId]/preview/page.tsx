@@ -7,6 +7,7 @@ import { ArrowLeft, Eye, Monitor } from "lucide-react";
 import { DashboardReportSurface } from "@/components/dashboard-report-surface";
 import { PortalDataTable } from "@/components/portal-data-table";
 import { PortalFilterForm } from "@/components/portal-filter-form";
+import { AppSelect } from "@/components/ui/app-select";
 import { requireAdmin } from "@/lib/access";
 import { db } from "@/lib/db";
 import { clientAccounts, portalViews } from "@/lib/db/schema";
@@ -175,7 +176,7 @@ export default async function PortalViewPreviewPage({
           <form className="flex flex-wrap items-end gap-2">
             <div className="field min-w-60">
               <label htmlFor="clientId">Client account</label>
-              <select
+              <AppSelect
                 className="input"
                 defaultValue={selectedClient?.id ?? ""}
                 id="clientId"
@@ -186,7 +187,7 @@ export default async function PortalViewPreviewPage({
                     {client.name}
                   </option>
                 ))}
-              </select>
+              </AppSelect>
               {activeTab === "reports" ? (
                 <input name="tab" type="hidden" value="reports" />
               ) : null}

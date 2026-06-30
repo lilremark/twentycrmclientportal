@@ -21,6 +21,12 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
+vi.mock("@/components/ui/app-select", () => ({
+  AppSelect: ({ children, ...props }: React.ComponentProps<"select">) => (
+    <select {...props}>{children}</select>
+  ),
+}));
+
 const fields: TwentyFieldMetadata[] = [
   {
     id: "status",

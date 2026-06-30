@@ -1,0 +1,2 @@
+ALTER TABLE "portal_view" ADD COLUMN "navigation_icon" text DEFAULT 'records' NOT NULL;--> statement-breakpoint
+ALTER TABLE "portal_view" ADD COLUMN "navigation_icon_color" text DEFAULT '#3157d5' NOT NULL;

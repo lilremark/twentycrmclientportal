@@ -6,6 +6,7 @@ import {
   createInvitationAction,
   testConnectionAction,
 } from "@/app/actions/admin";
+import { AppSelect } from "@/components/ui/app-select";
 
 export function ConnectionTestButton() {
   const [pending, startTransition] = useTransition();
@@ -78,7 +79,7 @@ export function InvitationForm({
         </div>
         <div className="field">
           <label htmlFor="role">Role</label>
-          <select
+          <AppSelect
             className="input"
             id="role"
             name="role"
@@ -88,12 +89,12 @@ export function InvitationForm({
             <option value="viewer">Viewer</option>
             <option value="contributor">Contributor</option>
             <option value="admin">Portal administrator</option>
-          </select>
+          </AppSelect>
         </div>
         {role !== "admin" ? (
           <div className="field">
             <label htmlFor="clientAccountId">Client Person (optional)</label>
-            <select
+            <AppSelect
               className="input"
               id="clientAccountId"
               name="clientAccountId"
@@ -104,7 +105,7 @@ export function InvitationForm({
                   {client.name}
                 </option>
               ))}
-            </select>
+            </AppSelect>
             <span className="field-help">
               Required only when the selected portal is scoped to a Twenty
               Person UUID.
@@ -113,14 +114,14 @@ export function InvitationForm({
         ) : null}
         <div className="field">
           <label htmlFor="portalViewId">Portal access</label>
-          <select className="input" id="portalViewId" name="portalViewId">
+          <AppSelect className="input" id="portalViewId" name="portalViewId">
             <option value="">Choose a portal</option>
             {views.map((view) => (
               <option key={view.id} value={view.id}>
                 {view.label}
               </option>
             ))}
-          </select>
+          </AppSelect>
           <span className="field-help">
             All enabled portals are available for invitation.
           </span>

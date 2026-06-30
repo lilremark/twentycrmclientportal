@@ -2,11 +2,16 @@
 
 import Link from "next/link";
 import { usePathname, useParams, useSearchParams } from "next/navigation";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   Building2,
+  BriefcaseBusiness,
   BarChart3,
+  ChevronDown,
   ClipboardList,
+  CalendarDays,
+  FileText,
+  Folder,
   FileClock,
   House,
   LayoutDashboard,
@@ -15,6 +20,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   PanelsTopLeft,
+  Table2,
+  Target,
   Settings,
   Sun,
   UserPlus,
@@ -37,6 +44,13 @@ const navigationIcons: Record<string, LucideIcon> = {
   settings: Settings,
   users: Users,
   views: PanelsTopLeft,
+  table: Table2,
+  folder: Folder,
+  briefcase: BriefcaseBusiness,
+  calendar: CalendarDays,
+  chart: BarChart3,
+  file: FileText,
+  target: Target,
 };
 
 export function AppShell({
@@ -54,6 +68,7 @@ export function AppShell({
     label: string;
     icon: string;
     reportsEnabled?: boolean;
+    iconColor?: string;
   }>;
   branding: {
     name: string;
@@ -72,7 +87,14 @@ export function AppShell({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileClosing, setProfileClosing] = useState(false);
+  const [openSidebarSections, setOpenSidebarSections] = useState({
+    account: true,
+    shared: true,
+    workspace: true,
+  });
   const closeTimerRef = useRef<number | null>(null);
+  const accountButtonRef = useRef<HTMLButtonElement>(null);
+  const [accountPosition, setAccountPosition] = useState({ top: 54, right: 12 });
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
@@ -90,6 +112,17 @@ export function AppShell({
       setTheme(
         document.documentElement.dataset.theme === "dark" ? "dark" : "light",
       );
+      const storedSections = localStorage.getItem("sidebar-sections");
+      if (storedSections) {
+        try {
+          setOpenSidebarSections((current) => ({
+            ...current,
+            ...(JSON.parse(storedSections) as Partial<typeof current>),
+          }));
+        } catch {
+          localStorage.removeItem("sidebar-sections");
+        }
+      }
     });
     const syncTheme = (event: StorageEvent) => {
       if (event.key !== "theme") return;
@@ -126,8 +159,29 @@ export function AppShell({
       closeTimerRef.current = null;
     }
     setProfileClosing(false);
+    const bounds = accountButtonRef.current?.getBoundingClientRect();
+    if (bounds) {
+      setAccountPosition({
+        top: Math.round(bounds.bottom + 8),
+        right: Math.max(12, Math.round(window.innerWidth - bounds.right)),
+      });
+    }
     setProfileOpen(true);
   };
+
+  useEffect(() => {
+    if (!profileOpen) return;
+    const updatePosition = () => {
+      const bounds = accountButtonRef.current?.getBoundingClientRect();
+      if (!bounds) return;
+      setAccountPosition({
+        top: Math.round(bounds.bottom + 8),
+        right: Math.max(12, Math.round(window.innerWidth - bounds.right)),
+      });
+    };
+    window.addEventListener("resize", updatePosition);
+    return () => window.removeEventListener("resize", updatePosition);
+  }, [profileOpen]);
 
   const closeAccountDrawer = () => {
     setProfileClosing(true);
@@ -241,6 +295,42 @@ export function AppShell({
             : [];
   const settingsHref =
     variant === "admin" ? "/admin/settings" : "/portal/settings";
+  const sidebarSections =
+    variant === "portal"
+      ? [
+          {
+            key: "workspace" as const,
+            label: "Workspace",
+            items: navigation.filter((item) => item.href === "/portal"),
+          },
+          {
+            key: "shared" as const,
+            label: "Shared Views",
+            items: navigation.filter(
+              (item) =>
+                item.href !== "/portal" && item.href !== "/portal/settings",
+            ),
+          },
+          {
+            key: "account" as const,
+            label: "Account",
+            items: navigation.filter((item) => item.href === "/portal/settings"),
+          },
+        ].filter((section) => section.items.length)
+      : [
+          {
+            key: "workspace" as const,
+            label: "Workspace",
+            items: navigation,
+          },
+        ];
+  const toggleSidebarSection = (key: keyof typeof openSidebarSections) => {
+    setOpenSidebarSections((current) => {
+      const next = { ...current, [key]: !current[key] };
+      localStorage.setItem("sidebar-sections", JSON.stringify(next));
+      return next;
+    });
+  };
 
   return (
     <div
@@ -251,7 +341,7 @@ export function AppShell({
         {
           "--brand-primary": branding.primaryColor,
           "--icon-color": branding.iconColor,
-          "--sidebar-width": collapsed ? "64px" : `${sidebarWidth}px`,
+          "--sidebar-width": collapsed ? "56px" : `${sidebarWidth}px`,
         } as React.CSSProperties
       }
     >
@@ -283,18 +373,34 @@ export function AppShell({
               <span>{variant === "admin" ? "Admin portal" : "Client portal"}</span>
             </span>
           </Link>
-          {!collapsed ? (
-            <button
-              aria-label="Collapse sidebar"
-              aria-expanded="true"
-              className="sidebar-collapse-button desktop-only"
-              onClick={toggleCollapsed}
-              title="Collapse sidebar"
-              type="button"
-            >
+          <button
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!collapsed}
+            className={`sidebar-collapse-button desktop-only ${
+              collapsed ? "is-collapsed client-sidebar-control" : ""
+            }`}
+            onClick={toggleCollapsed}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            type="button"
+          >
+            {collapsed ? (
+              <>
+                <span className="collapsed-brand-face" aria-hidden="true">
+                  {branding.logoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img alt="" src={branding.logoUrl} />
+                  ) : (
+                    branding.name.slice(0, 2).toUpperCase()
+                  )}
+                </span>
+                <span className="collapsed-open-face" aria-hidden="true">
+                  <PanelLeftOpen size={17} />
+                </span>
+              </>
+            ) : (
               <PanelLeftClose size={16} />
-            </button>
-          ) : null}
+            )}
+          </button>
           <Button
             aria-label="Close navigation"
             className="icon-button mobile-only"
@@ -306,33 +412,47 @@ export function AppShell({
             <X size={19} />
           </Button>
         </div>
-        <div className="sidebar-section-label">
-          <span>Workspace</span>
-        </div>
-        <nav className="sidebar-nav">
-          {navigation.map((item) => {
-            const Icon = navigationIcons[item.icon] ?? ClipboardList;
-            const active = isActiveNavigation(item.href);
+        <nav aria-label="Primary navigation" className="sidebar-nav">
+          {sidebarSections.map((section) => {
+            const sectionOpen = collapsed || openSidebarSections[section.key];
+            const sectionId = `sidebar-section-${section.key}`;
             return (
-              <Fragment key={item.href}>
-                {variant === "portal" && navigation.indexOf(item) === 1 ? (
-                  <span className="sidebar-inline-label">Shared views</span>
-                ) : null}
-                {variant === "portal" && item.href === "/portal/settings" ? (
-                  <span className="sidebar-inline-label">Account</span>
-                ) : null}
-                <Link
-                  className={`sidebar-link ${active ? "active" : ""}`}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  title={collapsed ? item.label : undefined}
+              <section className="sidebar-nav-section" key={section.key}>
+                <button
+                  aria-controls={sectionId}
+                  aria-expanded={sectionOpen}
+                  className="sidebar-section-toggle"
+                  onClick={() => toggleSidebarSection(section.key)}
+                  type="button"
                 >
-                  <span className="sidebar-link-icon">
-                    <Icon size={18} strokeWidth={1.9} />
-                  </span>
-                  <span className="sidebar-link-label">{item.label}</span>
-                </Link>
-              </Fragment>
+                  <span>{section.label}</span>
+                  <ChevronDown aria-hidden="true" size={13} />
+                </button>
+                <div
+                  className="sidebar-section-items"
+                  hidden={!sectionOpen}
+                  id={sectionId}
+                >
+                  {section.items.map((item) => {
+                    const Icon = navigationIcons[item.icon] ?? ClipboardList;
+                    const active = isActiveNavigation(item.href);
+                    return (
+                      <Link
+                        className={`sidebar-link ${active ? "active" : ""}`}
+                        href={item.href}
+                        key={item.href}
+                        onClick={() => setMobileOpen(false)}
+                        title={collapsed ? item.label : undefined}
+                      >
+                        <span className="sidebar-link-icon" style={item.iconColor ? ({ "--item-icon-color": item.iconColor } as CSSProperties) : undefined}>
+                          <Icon size={18} strokeWidth={1.9} />
+                        </span>
+                        <span className="sidebar-link-label">{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
             );
           })}
         </nav>
@@ -367,6 +487,12 @@ export function AppShell({
           <aside
             aria-label="Account menu"
             className={`account-drawer ${profileClosing ? "is-closing" : ""}`}
+            style={
+              {
+                "--account-menu-top": `${accountPosition.top}px`,
+                "--account-menu-right": `${accountPosition.right}px`,
+              } as CSSProperties
+            }
           >
             <div className="account-drawer-header">
               <div className="sidebar-avatar">
@@ -419,19 +545,6 @@ export function AppShell({
               >
                 <Menu size={20} />
               </Button>
-              {collapsed ? (
-                <Button
-                  aria-label="Expand sidebar"
-                  className="header-sidebar-open desktop-only"
-                  onClick={toggleCollapsed}
-                  size="icon"
-                  title="Expand sidebar"
-                  type="button"
-                  variant="ghost"
-                >
-                  <PanelLeftOpen size={17} />
-                </Button>
-              ) : null}
               <span className="header-section-icon" aria-hidden="true">
                 <HeaderIcon size={17} />
               </span>
@@ -457,6 +570,7 @@ export function AppShell({
                 onClick={profileOpen ? closeAccountDrawer : openAccountDrawer}
                 title={user.name}
                 type="button"
+                ref={accountButtonRef}
               >
                 <span className="sidebar-avatar">
                   {user.image ? (

@@ -52,13 +52,13 @@ describe("RecordSidePanel", () => {
     });
     fireEvent.keyDown(resizeHandle, { key: "ArrowLeft" });
 
-    expect(screen.getByRole("dialog")).toHaveStyle({
+    expect(screen.getByRole("complementary")).toHaveStyle({
       "--record-panel-width": "576px",
     });
     expect(window.localStorage.getItem("record-panel-width")).toBe("576");
   });
 
-  it("caps the panel at half of the viewport", () => {
+  it("keeps a usable main workspace at the maximum width", () => {
     render(
       <RecordSidePanel closeHref="/portal" title="Record details">
         <p>Details</p>
@@ -70,8 +70,8 @@ describe("RecordSidePanel", () => {
     });
     fireEvent.keyDown(resizeHandle, { key: "End" });
 
-    expect(screen.getByRole("dialog")).toHaveStyle({
-      "--record-panel-width": "700px",
+    expect(screen.getByRole("complementary")).toHaveStyle({
+      "--record-panel-width": "780px",
     });
   });
 });

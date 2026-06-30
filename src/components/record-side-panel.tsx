@@ -7,9 +7,21 @@ import { X } from "lucide-react";
 const DEFAULT_PANEL_WIDTH = 560;
 const MINIMUM_PANEL_WIDTH = 380;
 const PANEL_WIDTH_STORAGE_KEY = "record-panel-width";
+const PANEL_CLOSE_DURATION = 240;
 
 function panelWidthBounds() {
-  const maximum = Math.max(280, Math.floor(window.innerWidth * 0.5));
+  const frame = document.querySelector<HTMLElement>(".app-frame");
+  const sidebarWidth = frame
+    ? Number.parseFloat(getComputedStyle(frame).getPropertyValue("--sidebar-width")) || 0
+    : 0;
+  const workspaceMinimum = 620;
+  const maximum = Math.max(
+    320,
+    Math.min(
+      Math.floor(window.innerWidth * 0.58),
+      window.innerWidth - sidebarWidth - workspaceMinimum,
+    ),
+  );
   return {
     minimum: Math.min(MINIMUM_PANEL_WIDTH, maximum),
     maximum,
@@ -23,17 +35,20 @@ function clampPanelWidth(width: number) {
 
 export function RecordSidePanel({
   closeHref,
+  onClose,
   title,
   children,
   loading = false,
 }: {
-  closeHref: string;
+  closeHref?: string;
+  onClose?: () => void;
   title: string;
   children: React.ReactNode;
   loading?: boolean;
 }) {
   const router = useRouter();
   const panelRef = useRef<HTMLElement>(null);
+  const appFrameRef = useRef<HTMLElement | null>(null);
   const closingRef = useRef(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [closing, setClosing] = useState(false);
@@ -47,33 +62,44 @@ export function RecordSidePanel({
   const closePanel = useCallback(() => {
     if (closingRef.current) return;
     closingRef.current = true;
+    appFrameRef.current?.classList.add("record-panel-closing");
     setClosing(true);
     closeTimerRef.current = setTimeout(() => {
-      router.push(closeHref, { scroll: false });
-    }, 120);
-  }, [closeHref, router]);
+      if (onClose) onClose();
+      else if (closeHref) router.push(closeHref, { scroll: false });
+    }, PANEL_CLOSE_DURATION);
+  }, [closeHref, onClose, router]);
 
   useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
     const previousFocus = document.activeElement as HTMLElement | null;
-    document.body.style.overflow = "hidden";
     panelRef.current?.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") closePanel();
     };
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target || panelRef.current?.contains(target)) return;
+      if (target.closest("[data-record-trigger]")) return;
+      closePanel();
+    };
     window.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("pointerdown", handlePointerDown);
 
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
       window.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("pointerdown", handlePointerDown);
       previousFocus?.focus();
     };
   }, [closePanel]);
 
   useLayoutEffect(() => {
-    const savedWidth = Number(localStorage.getItem(PANEL_WIDTH_STORAGE_KEY));
+    const savedWidth = Number(
+      typeof localStorage?.getItem === "function"
+        ? localStorage.getItem(PANEL_WIDTH_STORAGE_KEY)
+        : 0,
+    );
     const initialBounds = panelWidthBounds();
     const initialWidth = clampPanelWidth(
       Number.isFinite(savedWidth) && savedWidth > 0
@@ -84,30 +110,48 @@ export function RecordSidePanel({
       "--record-panel-width",
       `${initialWidth}px`,
     );
+    const appFrame = panelRef.current?.closest<HTMLElement>(".app-frame");
+    appFrameRef.current = appFrame ?? null;
+    appFrame?.classList.add("record-panel-open");
+    appFrame?.style.setProperty("--record-panel-width", `${initialWidth}px`);
     const initializationFrame = requestAnimationFrame(() => {
       setPanelBounds(initialBounds);
       setPanelWidth(initialWidth);
     });
 
     const handleResize = () => {
-      setPanelBounds(panelWidthBounds());
-      setPanelWidth((current) => clampPanelWidth(current));
+      const bounds = panelWidthBounds();
+      setPanelBounds(bounds);
+      setPanelWidth((current) => {
+        const next = Math.min(bounds.maximum, Math.max(bounds.minimum, current));
+        appFrame?.style.setProperty("--record-panel-width", `${next}px`);
+        return next;
+      });
     };
     window.addEventListener("resize", handleResize);
     return () => {
       cancelAnimationFrame(initializationFrame);
       window.removeEventListener("resize", handleResize);
+      appFrame?.classList.remove("record-panel-open");
+      appFrame?.classList.remove("record-panel-closing");
+      appFrame?.style.removeProperty("--record-panel-width");
+      appFrameRef.current = null;
     };
   }, []);
 
   const savePanelWidth = useCallback((width: number) => {
     const nextWidth = clampPanelWidth(width);
     setPanelWidth(nextWidth);
-    localStorage.setItem(PANEL_WIDTH_STORAGE_KEY, String(nextWidth));
+    if (typeof localStorage?.setItem === "function") {
+      localStorage.setItem(PANEL_WIDTH_STORAGE_KEY, String(nextWidth));
+    }
+    panelRef.current
+      ?.closest<HTMLElement>(".app-frame")
+      ?.style.setProperty("--record-panel-width", `${nextWidth}px`);
   }, []);
 
   const startResize = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (window.innerWidth < 640) return;
+    if (window.innerWidth < 1024) return;
     event.preventDefault();
     const handle = event.currentTarget;
     handle.setPointerCapture(event.pointerId);
@@ -140,7 +184,7 @@ export function RecordSidePanel({
       savePanelWidth(MINIMUM_PANEL_WIDTH);
     } else if (event.key === "End") {
       event.preventDefault();
-      savePanelWidth(window.innerWidth * 0.5);
+      savePanelWidth(Number.POSITIVE_INFINITY);
     }
   };
 
@@ -154,16 +198,9 @@ export function RecordSidePanel({
         .filter(Boolean)
         .join(" ")}
     >
-      <button
-        aria-label="Close record"
-        className={`record-panel-backdrop ${closing ? "is-closing" : ""}`}
-        onClick={closePanel}
-        type="button"
-      />
       <aside
         aria-label={title}
         aria-busy={loading}
-        aria-modal="true"
         className={[
           "record-side-panel",
           loading ? "is-loading" : "",
@@ -172,7 +209,7 @@ export function RecordSidePanel({
           .filter(Boolean)
           .join(" ")}
         ref={panelRef}
-        role="dialog"
+        role="complementary"
         style={{ "--record-panel-width": `${panelWidth}px` } as React.CSSProperties}
         tabIndex={-1}
       >
@@ -196,6 +233,7 @@ export function RecordSidePanel({
           aria-label="Close record"
           className="icon-button record-panel-close"
           onClick={closePanel}
+          title="Close record details"
           type="button"
         >
           <X size={17} />

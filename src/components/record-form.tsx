@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { AppSelect } from "@/components/ui/app-select";
+
 import type {
   PortalFieldConfig,
   TwentyFieldMetadata,
@@ -110,7 +112,7 @@ export function RecordForm({
           return (
             <div className="field" key={field.id}>
               <label htmlFor={field.name}>{label}</label>
-              <select
+              <AppSelect
                 className="input"
                 defaultValue={String(values[field.name] ?? false)}
                 id={field.name}
@@ -119,7 +121,7 @@ export function RecordForm({
               >
                 <option value="false">No</option>
                 <option value="true">Yes</option>
-              </select>
+              </AppSelect>
             </div>
           );
         }
@@ -127,7 +129,7 @@ export function RecordForm({
           return (
             <div className="field" key={field.id}>
               <label htmlFor={field.name}>{label}</label>
-              <select
+              <AppSelect
                 className="input"
                 defaultValue={recordInputDefaultValue(
                   values[field.name],
@@ -143,7 +145,7 @@ export function RecordForm({
                     {option.label}
                   </option>
                 ))}
-              </select>
+              </AppSelect>
             </div>
           );
         }

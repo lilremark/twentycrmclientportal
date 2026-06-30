@@ -6,6 +6,7 @@ import {
   BarChart3,
   Columns3,
   GripVertical,
+  Globe2,
   LayoutPanelTop,
   LockKeyhole,
   PieChart,
@@ -47,6 +48,7 @@ import {
   type DashboardResult,
 } from "@/lib/portal-dashboard";
 import { DashboardReportSurface } from "@/components/dashboard-report-surface";
+import { AppSelect } from "@/components/ui/app-select";
 
 type InitialView = {
   label: string;
@@ -67,6 +69,8 @@ type InitialView = {
   formatSelectValues: boolean;
   dashboardWidgets: PortalDashboardWidget[];
   navigationOrder: number;
+  navigationIcon: string;
+  navigationIconColor: string;
 };
 
 type ViewFormState = {
@@ -465,7 +469,7 @@ function FixedFilterBuilder({
                 <div className="fixed-filter-controls">
                   <div className="field">
                     <label htmlFor={`fixed-field-${filter.id}`}>Field</label>
-                    <select
+                    <AppSelect
                       className="input"
                       id={`fixed-field-${filter.id}`}
                       onChange={(event) => {
@@ -490,7 +494,7 @@ function FixedFilterBuilder({
                           {item.label} · {item.type.replaceAll("_", " ")}
                         </option>
                       ))}
-                    </select>
+                    </AppSelect>
                   </div>
 
                   {field ? (
@@ -500,7 +504,7 @@ function FixedFilterBuilder({
                           <label htmlFor={`fixed-operator-${filter.id}`}>
                             Match
                           </label>
-                          <select
+                          <AppSelect
                             className="input"
                             id={`fixed-operator-${filter.id}`}
                             onChange={(event) =>
@@ -515,7 +519,7 @@ function FixedFilterBuilder({
                                 {operatorLabels[operator] ?? operator}
                               </option>
                             ))}
-                          </select>
+                          </AppSelect>
                         </div>
                       ) : (
                         <div className="fixed-filter-operator">
@@ -554,7 +558,7 @@ function FixedFilterBuilder({
                             ))}
                           </div>
                         ) : field.type === "BOOLEAN" ? (
-                          <select
+                          <AppSelect
                             className="input"
                             onChange={(event) =>
                               updateFilter(filter.id, {
@@ -567,7 +571,7 @@ function FixedFilterBuilder({
                             <option value="">Choose a value</option>
                             <option value="true">Yes</option>
                             <option value="false">No</option>
-                          </select>
+                          </AppSelect>
                         ) : (
                           <input
                             className="input"
@@ -633,6 +637,7 @@ const widgetIcons = {
   number: Sigma,
   bar: BarChart3,
   donut: PieChart,
+  embed: Globe2,
 };
 
 function DashboardWidgetBuilder({
@@ -680,6 +685,9 @@ function DashboardWidgetBuilder({
   };
   const previewItems = widgets.map((widget, index): DashboardResult => {
     const layout = normalizeDashboardLayout(widget.layout, widget.type, index);
+    if (widget.type === "embed") {
+      return { id: widget.id, type: "embed", label: widget.label || "Embedded content", embedUrl: widget.embedUrl || "https://example.com/", layout };
+    }
     if (widget.type === "number") {
       return {
         id: widget.id,
@@ -718,6 +726,7 @@ function DashboardWidgetBuilder({
             aggregate: widget.aggregate,
             field: widget.aggregate === "count" ? "" : widget.field,
             groupBy: widget.type === "number" ? "" : widget.groupBy,
+            embedUrl: widget.type === "embed" ? widget.embedUrl : "",
             layout: normalizeDashboardLayout(widget.layout, widget.type, index),
           })}
         />
@@ -983,7 +992,7 @@ function DashboardWidgetBuilder({
                             <label htmlFor={`dashboard-type-${widget.id}`}>
                               Type
                             </label>
-                            <select
+                            <AppSelect
                               className="input"
                               id={`dashboard-type-${widget.id}`}
                               onChange={(event) =>
@@ -1001,13 +1010,20 @@ function DashboardWidgetBuilder({
                               <option value="number">Main number</option>
                               <option value="bar">Bar chart</option>
                               <option value="donut">Donut chart</option>
-                            </select>
+                              <option value="embed">Secure web embed</option>
+                            </AppSelect>
                           </div>
-                          <div className="field">
+                          {widget.type === "embed" ? (
+                            <div className="field">
+                              <label htmlFor={`dashboard-embed-${widget.id}`}>HTTPS embed URL</label>
+                              <input className="input" id={`dashboard-embed-${widget.id}`} onChange={(event) => updateWidget(widget.id, { embedUrl: event.target.value })} placeholder="https://dashboard.example.com/embed/..." required type="url" value={widget.embedUrl ?? ""} />
+                              <span className="field-help">Public HTTPS URLs only. Embedded content runs in an isolated sandbox.</span>
+                            </div>
+                          ) : <div className="field">
                             <label htmlFor={`dashboard-aggregate-${widget.id}`}>
                               Calculation
                             </label>
-                            <select
+                            <AppSelect
                               className="input"
                               id={`dashboard-aggregate-${widget.id}`}
                               onChange={(event) =>
@@ -1025,14 +1041,14 @@ function DashboardWidgetBuilder({
                               <option value="count">Record count</option>
                               <option value="sum">Sum</option>
                               <option value="average">Average</option>
-                            </select>
-                          </div>
-                          {widget.aggregate !== "count" ? (
+                            </AppSelect>
+                          </div>}
+                          {widget.type !== "embed" && widget.aggregate !== "count" ? (
                             <div className="field">
                               <label htmlFor={`dashboard-field-${widget.id}`}>
                                 Number field
                               </label>
-                              <select
+                              <AppSelect
                                 className="input"
                                 id={`dashboard-field-${widget.id}`}
                                 onChange={(event) =>
@@ -1049,15 +1065,15 @@ function DashboardWidgetBuilder({
                                     {field.label}
                                   </option>
                                 ))}
-                              </select>
+                              </AppSelect>
                             </div>
                           ) : null}
-                          {widget.type !== "number" ? (
+                          {widget.type !== "number" && widget.type !== "embed" ? (
                             <div className="field">
                               <label htmlFor={`dashboard-group-${widget.id}`}>
                                 Group by
                               </label>
-                              <select
+                              <AppSelect
                                 className="input"
                                 id={`dashboard-group-${widget.id}`}
                                 onChange={(event) =>
@@ -1075,7 +1091,7 @@ function DashboardWidgetBuilder({
                                     {field.type.replaceAll("_", " ")}
                                   </option>
                                 ))}
-                              </select>
+                              </AppSelect>
                             </div>
                           ) : null}
                         </div>
@@ -1309,6 +1325,16 @@ export function PortalViewForm({
                 &quot;settings&quot; is reserved.
               </span>
             </div>
+            <div className="field">
+              <label htmlFor="navigationIcon">Navigation icon</label>
+              <AppSelect className="input" defaultValue={initial?.navigationIcon ?? "records"} id="navigationIcon" name="navigationIcon">
+                <option value="records">Records</option><option value="table">Table</option><option value="folder">Folder</option><option value="briefcase">Briefcase</option><option value="users">People</option><option value="calendar">Calendar</option><option value="chart">Chart</option><option value="file">File</option><option value="target">Target</option>
+              </AppSelect>
+            </div>
+            <div className="field">
+              <label htmlFor="navigationIconColor">Icon color</label>
+              <div className="portal-icon-color-field"><input defaultValue={initial?.navigationIconColor ?? "#3157d5"} id="navigationIconColor" name="navigationIconColor" type="color" /><span>Used for this view in client navigation.</span></div>
+            </div>
           </div>
         </section>
 
@@ -1336,7 +1362,7 @@ export function PortalViewForm({
             </div>
             <div className="field">
               <label htmlFor="objectNameSingular">Twenty object</label>
-              <select
+              <AppSelect
                 className="input"
                 id="objectNameSingular"
                 name="objectNameSingular"
@@ -1360,7 +1386,7 @@ export function PortalViewForm({
                     {item.labelSingular} · {item.nameSingular}
                   </option>
                 ))}
-              </select>
+              </AppSelect>
             </div>
           </div>
         </section>
@@ -1379,7 +1405,7 @@ export function PortalViewForm({
           <div className="portal-form-grid two-column">
             <div className="field">
               <label htmlFor="scopeMode">Sharing method</label>
-              <select
+              <AppSelect
                 className="input"
                 id="scopeMode"
                 name="scopeMode"
@@ -1390,12 +1416,12 @@ export function PortalViewForm({
                 <option value="all">All current records</option>
                 <option value="person">Records linked to a Person</option>
                 <option value="records">Only specific records</option>
-              </select>
+              </AppSelect>
             </div>
             {scopeMode === "person" ? (
               <div className="field">
                 <label htmlFor="scopeFieldName">Person scope field</label>
-                <select
+                <AppSelect
                   className="input"
                   defaultValue={initialApplies ? initial?.scopeFieldName : ""}
                   id="scopeFieldName"
@@ -1411,7 +1437,7 @@ export function PortalViewForm({
                       {field.label} · {field.type}
                     </option>
                   ))}
-                </select>
+                </AppSelect>
               </div>
             ) : scopeMode === "records" ? (
               <div className="portal-record-panel">
@@ -1596,7 +1622,7 @@ export function PortalViewForm({
           <div className="portal-form-grid three-column">
             <div className="field">
               <label htmlFor="recordTitleField">Sidebar header field</label>
-              <select
+              <AppSelect
                 className="input"
                 defaultValue={
                   initialApplies
@@ -1616,14 +1642,14 @@ export function PortalViewForm({
                     {field.label}
                   </option>
                 ))}
-              </select>
+              </AppSelect>
               <span className="field-help">
                 Used as the title when a record opens in the right sidebar.
               </span>
             </div>
             <div className="field">
               <label htmlFor="defaultSortField">Default sort field</label>
-              <select
+              <AppSelect
                 className="input"
                 defaultValue={
                   initialApplies ? (initial?.defaultSortField ?? "") : ""
@@ -1638,11 +1664,11 @@ export function PortalViewForm({
                     {field.label}
                   </option>
                 ))}
-              </select>
+              </AppSelect>
             </div>
             <div className="field">
               <label htmlFor="defaultSortDirection">Sort direction</label>
-              <select
+              <AppSelect
                 className="input"
                 defaultValue={initial?.defaultSortDirection ?? "asc"}
                 id="defaultSortDirection"
@@ -1650,7 +1676,7 @@ export function PortalViewForm({
               >
                 <option value="asc">Ascending</option>
                 <option value="desc">Descending</option>
-              </select>
+              </AppSelect>
             </div>
             <div className="field">
               <label htmlFor="navigationOrder">Navigation order</label>

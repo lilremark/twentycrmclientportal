@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { DeleteUploadButton } from "@/components/delete-upload-button";
+import { AppSelect } from "@/components/ui/app-select";
 import type {
   PortalFilterConfig,
   TwentyFieldMetadata,
@@ -149,7 +150,7 @@ export function PortalFilterForm({
           <div className="portal-sort-controls">
             <label>
               <span>Sort</span>
-              <select
+              <AppSelect
                 className="input"
                 onChange={(event) => {
                   const next = currentParams();
@@ -166,9 +167,9 @@ export function PortalFilterForm({
                     {field.label}
                   </option>
                 ))}
-              </select>
+              </AppSelect>
             </label>
-            <select
+            <AppSelect
               aria-label="Sort direction"
               className="input"
               disabled={!sortField}
@@ -182,13 +183,13 @@ export function PortalFilterForm({
             >
               <option value="asc">Ascending</option>
               <option value="desc">Descending</option>
-            </select>
+            </AppSelect>
           </div>
         ) : null}
         <div className="portal-saved-view-controls">
           <label>
             <Bookmark size={14} />
-            <select
+            <AppSelect
               aria-label="Saved view"
               className="input"
               onChange={(event) => {
@@ -204,7 +205,7 @@ export function PortalFilterForm({
                   {view.name}
                 </option>
               ))}
-            </select>
+            </AppSelect>
           </label>
           {saveViewAction ? (
             <button
@@ -357,7 +358,7 @@ export function PortalFilterForm({
                               type="hidden"
                               value={defaultOperator}
                             />
-                            <select
+                            <AppSelect
                               className="input"
                               defaultValue={value}
                               id={`f_${field.name}`}
@@ -372,7 +373,7 @@ export function PortalFilterForm({
                                   {option.label}
                                 </option>
                               ))}
-                            </select>
+                            </AppSelect>
                           </div>
                         );
                       }
@@ -386,7 +387,7 @@ export function PortalFilterForm({
                               type="hidden"
                               value="eq"
                             />
-                            <select
+                            <AppSelect
                               className="input"
                               defaultValue={value}
                               id={`f_${field.name}`}
@@ -395,7 +396,7 @@ export function PortalFilterForm({
                               <option value="">Any</option>
                               <option value="true">Yes</option>
                               <option value="false">No</option>
-                            </select>
+                            </AppSelect>
                           </div>
                         );
                       }
@@ -404,7 +405,7 @@ export function PortalFilterForm({
                         <div className="field" key={field.id}>
                           <label htmlFor={`f_${field.name}`}>{label}</label>
                           <div className="control-pair">
-                            <select
+                            <AppSelect
                               className="input"
                               defaultValue={selectedOperator}
                               name={`op_${field.name}`}
@@ -414,7 +415,7 @@ export function PortalFilterForm({
                                   {operatorLabels[operator] ?? operator}
                                 </option>
                               ))}
-                            </select>
+                            </AppSelect>
                             <input
                               className="input"
                               defaultValue={value}

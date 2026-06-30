@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { ShieldAlert, X } from "lucide-react";
 
 import { updateUserPortalAccessAction } from "@/app/actions/admin";
+import { AppSelect } from "@/components/ui/app-select";
 
 type AssignedPortal = {
   portalViewId: string;
@@ -244,7 +245,7 @@ export function AssignPortals({
                               />
                               <span>{view.label}</span>
                             </label>
-                            <select
+                            <AppSelect
                               className="input"
                               disabled={!current.checked}
                               onChange={(e) => {
@@ -267,7 +268,7 @@ export function AssignPortals({
                             >
                               <option value="viewer">Viewer</option>
                               <option value="contributor">Contributor</option>
-                            </select>
+                            </AppSelect>
                           </div>
                         );
                       })

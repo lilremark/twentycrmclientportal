@@ -31,7 +31,8 @@ export default async function PortalLayout({
         ...context.views.map((view) => ({
           href: `/portal/${view.slug}`,
           label: view.label,
-          icon: "records",
+          icon: view.navigationIcon,
+          iconColor: view.navigationIconColor,
           reportsEnabled: view.dashboardWidgets.length > 0,
         })),
         { href: "/portal/settings", label: "Settings", icon: "settings" },

@@ -2,6 +2,7 @@ import { and, desc, eq, gte, ilike, lte } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { auditEvents, clientAccounts, user } from "@/lib/db/schema";
+import { AppSelect } from "@/components/ui/app-select";
 
 export async function AuditHistory({
   query,
@@ -65,7 +66,7 @@ export async function AuditHistory({
         ))}
         <div className="field">
           <label htmlFor="status">Status</label>
-          <select
+          <AppSelect
             className="input"
             defaultValue={query.status ?? ""}
             id="status"
@@ -75,7 +76,7 @@ export async function AuditHistory({
             <option value="success">Success</option>
             <option value="failure">Failure</option>
             <option value="external">External</option>
-          </select>
+          </AppSelect>
         </div>
         <div className="field">
           <label htmlFor="from">From</label>

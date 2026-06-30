@@ -23,6 +23,7 @@ import {
   testSetupSmtpAction,
   type SetupSmtpTestState,
 } from "@/app/actions/auth";
+import { AppSelect } from "@/components/ui/app-select";
 
 const steps = [
   {
@@ -379,7 +380,7 @@ export function SetupForm() {
             </div>
             <div className="field setup-field-wide">
               <label htmlFor="smtpSecure">Encryption mode</label>
-              <select
+              <AppSelect
                 className="input"
                 defaultValue="false"
                 id="smtpSecure"
@@ -389,7 +390,7 @@ export function SetupForm() {
                   STARTTLS / standard SMTP (port 587 or 25)
                 </option>
                 <option value="true">Implicit TLS (port 465)</option>
-              </select>
+              </AppSelect>
               <p className="setup-field-note">
                 Port 587 starts as SMTP and upgrades with STARTTLS. Port 465
                 starts encrypted immediately.

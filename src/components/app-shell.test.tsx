@@ -124,4 +124,26 @@ describe("AppShell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Open navigation" }));
     expect(container.querySelector(".app-sidebar")).toHaveClass("mobile-open");
   });
+
+  it("collapses and restores navigation sections", () => {
+    render(
+      <AppShell {...props} variant="portal">
+        <p>Workspace</p>
+      </AppShell>,
+    );
+
+    const sharedViewsToggle = screen.getByRole("button", {
+      name: "Shared Views",
+    });
+    fireEvent.click(sharedViewsToggle);
+
+    expect(sharedViewsToggle).toHaveAttribute("aria-expanded", "false");
+    expect(window.localStorage.getItem("sidebar-sections")).toContain(
+      '"shared":false',
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }));
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Overview" })).toBeVisible();
+  });
 });

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 
 import {
+  bulkUpdateRecordsAction,
   createRecordAction,
   createNoteAction,
   deletePortalFilterViewAction,
@@ -333,8 +334,8 @@ export default async function PortalListPage({
               id: saved.id,
               name: saved.name,
             }))}
-            sortDirection={requestedSortDirection}
-            sortField={requestedSortField}
+            sortDirection={effectiveSortDirection === "desc" ? "desc" : "asc"}
+            sortField={effectiveSortField}
             sortFields={view.columns.map((column) => ({
               name: column.name,
               label:
@@ -348,9 +349,11 @@ export default async function PortalListPage({
         {result ? (
           <section className="card table-shell">
             <PortalDataTable
+              bulkEditAction={bulkUpdateRecordsAction.bind(null, view.slug, listParams.toString())}
               columns={view.columns}
               formatSelectValues={view.formatSelectValues}
               metadataFields={object.fields}
+              editableFields={context.role === "contributor" ? view.editFields : []}
               recordTitleField={effectiveRecordTitleField}
               records={result.edges.map(({ node }) => node as { id: string })}
               endCursor={result.pageInfo.endCursor ?? null}
@@ -360,8 +363,8 @@ export default async function PortalListPage({
                 null,
                 view.slug,
                 requestedFilters,
-                requestedSortField,
-                requestedSortDirection,
+                effectiveSortField,
+                effectiveSortDirection === "desc" ? "desc" : "asc",
               )}
               recordCloseHref={closeHref}
               recordPanel={

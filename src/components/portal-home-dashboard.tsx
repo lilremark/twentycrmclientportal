@@ -113,14 +113,6 @@ export function PortalHomeDashboard({
   return (
     <div className="portal-home-dashboard">
       <section className="portal-home-hero">
-        <div>
-          <p className="eyebrow">Workspace overview</p>
-          <h2>Your client portals, at a glance.</h2>
-          <p>
-            Review shared work, recent record changes, and reporting dashboards
-            from one place.
-          </p>
-        </div>
         <button
           aria-expanded={customizing}
           className="button secondary portal-customize-button"
@@ -210,7 +202,7 @@ export function PortalHomeDashboard({
             const content = (
               <>
                 <span className="activity-icon"><Clock3 size={15} /></span>
-                <span className="portal-activity-copy"><strong>{activity.label}</strong><span>{activity.portalLabel}{activity.status === "failure" ? " · Failed" : ""}</span></span>
+                <span className="portal-activity-copy"><strong>{activity.label.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase())}</strong><span>{activity.portalLabel}{activity.status === "failure" ? " · Failed" : ""}</span></span>
                 <time dateTime={activity.time} title={activity.titleTime}>{activity.relativeTime}</time>
                 {activity.portalSlug && activity.recordId ? <ArrowRight className="portal-activity-arrow" size={14} /> : null}
               </>
