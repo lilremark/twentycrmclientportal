@@ -612,6 +612,7 @@ export function AppShell({
                   </Link>
                 );
               })}
+              <div className="app-section-actions" id="portal-section-actions" />
             </nav>
           ) : null}
         </header>

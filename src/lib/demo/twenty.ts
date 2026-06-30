@@ -196,7 +196,19 @@ export function listDemoRecords(input: {
   const records = [...(store[input.objectNamePlural] ?? [])].filter((record) => matches(record, input.filter));
   const [sortField, sortDirection] = Object.entries(input.orderBy ?? {})[0] ?? [];
   if (sortField) {
-    records.sort((left, right) => String(left[sortField] ?? "").localeCompare(String(right[sortField] ?? "")) * (sortDirection === "DescNullsLast" || sortDirection === "DESC" ? -1 : 1));
+    const direction =
+      sortDirection &&
+      typeof sortDirection === "object" &&
+      "__enum" in sortDirection
+        ? String((sortDirection as { __enum: unknown }).__enum)
+        : String(sortDirection ?? "");
+    const multiplier = direction === "DescNullsLast" || direction === "DESC" ? -1 : 1;
+    records.sort(
+      (left, right) =>
+        String(left[sortField] ?? "").localeCompare(
+          String(right[sortField] ?? ""),
+        ) * multiplier,
+    );
   }
   return {
     edges: records.map((node) => ({ node: { ...node } })),

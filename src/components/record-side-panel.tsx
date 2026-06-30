@@ -36,12 +36,14 @@ function clampPanelWidth(width: number) {
 export function RecordSidePanel({
   closeHref,
   onClose,
+  onOpened,
   title,
   children,
   loading = false,
 }: {
   closeHref?: string;
   onClose?: () => void;
+  onOpened?: () => void;
   title: string;
   children: React.ReactNode;
   loading?: boolean;
@@ -50,6 +52,7 @@ export function RecordSidePanel({
   const panelRef = useRef<HTMLElement>(null);
   const appFrameRef = useRef<HTMLElement | null>(null);
   const closingRef = useRef(false);
+  const openedRef = useRef(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [closing, setClosing] = useState(false);
   const [panelWidth, setPanelWidth] = useState(DEFAULT_PANEL_WIDTH);
@@ -62,6 +65,7 @@ export function RecordSidePanel({
   const closePanel = useCallback(() => {
     if (closingRef.current) return;
     closingRef.current = true;
+    appFrameRef.current?.classList.remove("record-panel-opening");
     appFrameRef.current?.classList.add("record-panel-closing");
     setClosing(true);
     closeTimerRef.current = setTimeout(() => {
@@ -77,22 +81,28 @@ export function RecordSidePanel({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") closePanel();
     };
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (!target || panelRef.current?.contains(target)) return;
-      if (target.closest("[data-record-trigger]")) return;
-      closePanel();
-    };
     window.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("pointerdown", handlePointerDown);
 
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
       window.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("pointerdown", handlePointerDown);
       previousFocus?.focus();
     };
   }, [closePanel]);
+
+  useEffect(() => {
+    if (
+      typeof window.matchMedia !== "function" ||
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) return;
+    const frame = requestAnimationFrame(() => {
+      if (!openedRef.current) {
+        openedRef.current = true;
+        onOpened?.();
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [onOpened]);
 
   useLayoutEffect(() => {
     const savedWidth = Number(
@@ -112,8 +122,14 @@ export function RecordSidePanel({
     );
     const appFrame = panelRef.current?.closest<HTMLElement>(".app-frame");
     appFrameRef.current = appFrame ?? null;
-    appFrame?.classList.add("record-panel-open");
+    appFrame?.classList.add("record-panel-open", "record-panel-opening");
     appFrame?.style.setProperty("--record-panel-width", `${initialWidth}px`);
+    const finishOpening = (event: AnimationEvent) => {
+      if (event.animationName === "record-workspace-smooth-open") {
+        appFrame?.classList.remove("record-panel-opening");
+      }
+    };
+    appFrame?.addEventListener("animationend", finishOpening);
     const initializationFrame = requestAnimationFrame(() => {
       setPanelBounds(initialBounds);
       setPanelWidth(initialWidth);
@@ -132,8 +148,10 @@ export function RecordSidePanel({
     return () => {
       cancelAnimationFrame(initializationFrame);
       window.removeEventListener("resize", handleResize);
+      appFrame?.removeEventListener("animationend", finishOpening);
       appFrame?.classList.remove("record-panel-open");
       appFrame?.classList.remove("record-panel-closing");
+      appFrame?.classList.remove("record-panel-opening");
       appFrame?.style.removeProperty("--record-panel-width");
       appFrameRef.current = null;
     };
@@ -210,6 +228,15 @@ export function RecordSidePanel({
           .join(" ")}
         ref={panelRef}
         role="complementary"
+        onAnimationEnd={(event) => {
+          if (
+            event.animationName === "record-panel-smooth-open" &&
+            !openedRef.current
+          ) {
+            openedRef.current = true;
+            onOpened?.();
+          }
+        }}
         style={{ "--record-panel-width": `${panelWidth}px` } as React.CSSProperties}
         tabIndex={-1}
       >

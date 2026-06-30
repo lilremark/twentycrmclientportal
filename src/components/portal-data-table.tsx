@@ -185,7 +185,7 @@ export function PortalDataTable({
   const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const [bulkEditorOpen, setBulkEditorOpen] = useState(false);
   const [bulkField, setBulkField] = useState(editableFields[0]?.name ?? "");
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const visibleRecords = useMemo(
     () => favoritesOnly
       ? loadedRecords.filter((record) => favoriteIds.has(record.id))
@@ -356,13 +356,20 @@ export function PortalDataTable({
   const openRecord = (recordId: string) => {
     if (!recordSelectionHref) return;
     setPendingRecordId(recordId);
+    if (selectedRecordId) commitRecordNavigation(recordId);
+  };
+
+  const commitRecordNavigation = (recordId: string) => {
     startTransition(() => {
-      router.push(
-        `${recordSelectionHref}${encodeURIComponent(recordId)}`,
-        { scroll: false },
-      );
+      router.push(`${recordSelectionHref}${encodeURIComponent(recordId)}`, {
+        scroll: false,
+      });
     });
   };
+
+  const pendingPanelVisible = Boolean(
+    pendingRecordId && selectedRecordId !== pendingRecordId,
+  );
 
   return (
     <div className="table-scroll">
@@ -387,7 +394,7 @@ export function PortalDataTable({
           <button aria-label="Clear selection" className="icon-button" onClick={() => setSelectedIds(new Set())} type="button"><X size={15} /></button>
         </div>
       ) : null}
-      <table className="data-table">
+      <table className="data-table portal-records-table">
         <thead>
           {table.getHeaderGroups().map((group) => (
             <tr key={group.id}>
@@ -417,7 +424,7 @@ export function PortalDataTable({
                 recordSelectionHref ? "data-table-clickable-row" : "",
                 selectedRecordId === row.original.id ? "is-selected" : "",
                 favoriteIds.has(row.original.id) ? "is-favorite" : "",
-                isPending && pendingRecordId === row.original.id
+                pendingRecordId === row.original.id
                   ? "is-loading"
                   : "",
               ]
@@ -518,27 +525,24 @@ export function PortalDataTable({
         ) : null}
       </div>
       {recordCloseHref &&
-      ((isPending &&
-        pendingRecordId &&
-        selectedRecordId !== pendingRecordId) ||
+      (pendingPanelVisible ||
         (selectedRecordId && recordPanel)) ? (
         <RecordSidePanel
           closeHref={recordCloseHref}
-          loading={
-            Boolean(isPending && pendingRecordId) &&
-            selectedRecordId !== pendingRecordId
-          }
+          loading={pendingPanelVisible}
+          onOpened={() => {
+            if (pendingRecordId && pendingPanelVisible) {
+              commitRecordNavigation(pendingRecordId);
+            }
+          }}
           title={recordPanelTitle}
         >
-          {isPending &&
-          pendingRecordId &&
-          selectedRecordId !== pendingRecordId ? (
+          {pendingPanelVisible && pendingRecordId ? (
             <>
               <header className="record-panel-header">
                 <div className="record-panel-heading">
                   <p className="eyebrow">Record</p>
                   <h2>{pendingTitle || "Loading record"}</h2>
-                  <p title={pendingRecordId}>{pendingRecordId}</p>
                 </div>
               </header>
               <div className="record-panel-body">

@@ -11923,7 +11923,11 @@ body,
 
 /* Dense table utilities: frozen identity columns and quiet favorite states. */
 .table-view-toolbar {
+  position: sticky;
+  z-index: 16;
+  left: 0;
   display: flex;
+  width: 100%;
   min-height: 38px;
   align-items: center;
   gap: 10px;
@@ -11959,22 +11963,22 @@ body,
 .table-view-toolbar button > span { min-width: 17px; border-radius: 999px; background: var(--surface-subtle); padding: 1px 5px; text-align: center; font-size: .62rem; }
 .table-view-toolbar small { color: var(--muted-foreground); font-size: .66rem; }
 
-.data-table th:first-child,
-.data-table td:first-child,
-.data-table th:nth-child(2),
-.data-table td:nth-child(2) {
+.portal-records-table th:first-child,
+.portal-records-table td:first-child,
+.portal-records-table th:nth-child(2),
+.portal-records-table td:nth-child(2) {
   position: sticky;
   background: var(--surface);
 }
 
-.data-table th:first-child,
-.data-table td:first-child { left: 0; z-index: 7; }
-.data-table th:nth-child(2),
-.data-table td:nth-child(2) { left: 44px; z-index: 6; }
-.data-table th:first-child,
-.data-table th:nth-child(2) { z-index: 14; background: var(--surface); }
-.data-table th:nth-child(2),
-.data-table td:nth-child(2) { box-shadow: 1px 0 0 var(--border), 7px 0 12px -12px rgb(0 0 0 / 42%); }
+.portal-records-table th:first-child,
+.portal-records-table td:first-child { left: 0; z-index: 7; }
+.portal-records-table th:nth-child(2),
+.portal-records-table td:nth-child(2) { left: 44px; z-index: 6; }
+.portal-records-table th:first-child,
+.portal-records-table th:nth-child(2) { z-index: 14; background: var(--surface); }
+.portal-records-table th:nth-child(2),
+.portal-records-table td:nth-child(2) { box-shadow: 1px 0 0 var(--border), 7px 0 12px -12px rgb(0 0 0 / 42%); }
 
 .data-table tbody tr.is-favorite td {
   background: color-mix(in srgb, var(--brand-primary) 4.5%, var(--surface));
@@ -12016,4 +12020,227 @@ body,
 
 @keyframes record-panel-smooth-close {
   to { transform: translate3d(100%, 0, 0); opacity: .96; }
+}
+
+/* Header actions share the records/reports rail and stay aligned to its far edge. */
+.app-section-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  margin-left: auto;
+  padding-bottom: 5px;
+}
+
+.portal-header-page-actions { flex-wrap: nowrap; gap: 7px; }
+.portal-header-page-actions .button { min-height: 30px; padding: 5px 10px; font-size: .7rem; }
+
+/* The frozen identity field is slightly brighter, with a deliberate grid edge. */
+.portal-records-table th:nth-child(2),
+.portal-records-table td:nth-child(2) {
+  border-right: 1px solid color-mix(in srgb, var(--border-strong) 72%, var(--border));
+  background: color-mix(in srgb, var(--surface) 93%, white 7%);
+  box-shadow: 8px 0 14px -14px rgb(0 0 0 / 55%);
+}
+
+.portal-records-table tbody tr.is-favorite td:nth-child(2) {
+  background: color-mix(in srgb, var(--brand-primary) 4%, color-mix(in srgb, var(--surface) 93%, white 7%));
+}
+
+/* Opening mirrors the coordinated panel/table close gesture. */
+@media (min-width: 1024px) {
+  .app-frame.record-panel-open.record-panel-opening {
+    animation: record-workspace-smooth-open 300ms cubic-bezier(.4, 0, .2, 1) both;
+  }
+  .app-frame.record-panel-open .app-main { will-change: width; }
+}
+
+.record-side-panel {
+  animation: record-panel-smooth-open 300ms cubic-bezier(.4, 0, .2, 1) both;
+}
+
+@keyframes record-panel-smooth-open {
+  from { transform: translate3d(100%, 0, 0); opacity: .96; }
+  to { transform: translate3d(0, 0, 0); opacity: 1; }
+}
+
+@keyframes record-workspace-smooth-open {
+  from { padding-right: 0; }
+  to { padding-right: var(--record-panel-width, 560px); }
+}
+
+/* PDF controls remain one anchored, viewport-wide command rail. */
+.dashboard-pdf-modal { padding: 88px 24px 24px; }
+.dashboard-pdf-shell { width: 100%; max-width: none; }
+.dashboard-pdf-toolbar {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  left: 10px;
+  width: auto;
+  min-height: 62px;
+  flex-wrap: nowrap;
+  border-radius: 10px;
+  padding: 9px 12px;
+}
+
+.dashboard-pdf-toolbar > div:first-child { min-width: 118px; flex: 0 0 auto; }
+.dashboard-pdf-controls { min-width: 0; flex: 1; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+.dashboard-pdf-controls > button,
+.dashboard-pdf-controls .segmented-control { flex: 0 0 auto; white-space: nowrap; }
+.dashboard-pdf-controls .button { min-height: 34px; padding: 6px 10px; font-size: .7rem; }
+.dashboard-print-area { display: flex; justify-content: center; align-items: flex-start; min-width: min-content; }
+.dashboard-pdf-page { zoom: var(--pdf-zoom, 1); }
+
+.dashboard-pdf-zoom {
+  display: inline-flex;
+  min-height: 34px;
+  flex: 0 0 auto;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-subtle);
+  overflow: hidden;
+}
+
+.dashboard-pdf-zoom button { display: grid; width: 32px; height: 32px; place-items: center; border: 0; background: transparent; color: var(--foreground); cursor: pointer; }
+.dashboard-pdf-zoom button:hover:not(:disabled) { background: var(--surface-hover); }
+.dashboard-pdf-zoom button:disabled { opacity: .35; cursor: default; }
+.dashboard-pdf-zoom span { min-width: 44px; border-inline: 1px solid var(--border); text-align: center; font-size: .66rem; font-weight: 720; }
+
+@media print {
+  .dashboard-pdf-page { zoom: 1 !important; }
+}
+
+/* Admin shell uses the same compact navigation contract as the client portal. */
+@media (min-width: 1024px) {
+  .admin-shell .app-main {
+    margin: 8px 8px 8px 0;
+    overflow: clip;
+    border-radius: 28px 0 0 28px !important;
+  }
+
+  .admin-shell .sidebar-nav { gap: 1px !important; }
+  .admin-shell .sidebar-link {
+    min-height: 32px !important;
+    height: 32px !important;
+    gap: 7px !important;
+    border-radius: 7px !important;
+    padding: 4px 7px !important;
+    font-size: .75rem;
+  }
+
+  .admin-shell .sidebar-link-icon {
+    width: 20px !important;
+    min-width: 20px !important;
+    height: 20px !important;
+    min-height: 20px !important;
+    max-height: 20px !important;
+    flex: 0 0 20px !important;
+    border: 0 !important;
+    border-radius: 6px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .admin-shell .sidebar-link-icon svg { width: 16px !important; height: 16px !important; }
+  .admin-shell .sidebar-link.active { border: 0 !important; background: color-mix(in srgb, var(--icon-color) 7%, transparent) !important; box-shadow: none !important; }
+  .admin-shell .sidebar-link.active::before,
+  .admin-shell .sidebar-link.active::after { display: none !important; }
+  .admin-shell .sidebar-link.active .sidebar-link-icon { border: 0 !important; background: color-mix(in srgb, var(--icon-color) 12%, transparent) !important; color: var(--icon-color, var(--brand-primary)) !important; box-shadow: none !important; }
+  .admin-shell.sidebar-collapsed { --sidebar-width: 56px !important; }
+  .admin-shell.sidebar-collapsed .app-sidebar { padding: 8px 10px 14px !important; }
+  .admin-shell.sidebar-collapsed .sidebar-brand,
+  .admin-shell.sidebar-collapsed .sidebar-nav { width: 36px !important; }
+  .admin-shell.sidebar-collapsed .sidebar-link { width: 32px !important; min-width: 32px !important; max-width: 32px !important; height: 32px !important; min-height: 32px !important; max-height: 32px !important; }
+  .admin-shell.sidebar-collapsed .sidebar-link.active { background: transparent !important; }
+  .admin-shell.sidebar-collapsed .sidebar-link.active .sidebar-link-icon { background: color-mix(in srgb, var(--icon-color) 13%, transparent) !important; }
+}
+
+/* Portal configuration is a solid workspace, not a stack of nested cards. */
+.admin-shell .portal-view-form {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.admin-shell .builder-stage-nav {
+  top: 8px;
+  z-index: 30;
+  grid-template-columns: repeat(4, minmax(110px, 1fr));
+  gap: 18px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--background) 96%, transparent);
+  padding: 0 4px;
+  box-shadow: none;
+  backdrop-filter: blur(18px);
+}
+
+.admin-shell .builder-stage-nav button { position: relative; min-height: 44px; border-radius: 0; }
+.admin-shell .builder-stage-nav button.active { background: transparent; color: var(--foreground); box-shadow: none; }
+.admin-shell .builder-stage-nav button.active::after { position: absolute; right: 0; bottom: -1px; left: 0; height: 2px; border-radius: 999px 999px 0 0; background: var(--brand-primary); content: ""; }
+.admin-shell .portal-form-section { border-top-color: color-mix(in srgb, var(--border) 72%, transparent); }
+.admin-shell .portal-view-form .portal-form-section-heading p,
+.admin-shell .portal-view-form .dashboard-summary-info > p,
+.admin-shell .portal-view-form .dashboard-inline-header p,
+.admin-shell .preview-banner p { display: none; }
+
+.admin-shell .portal-view-form .field-help { display: none; }
+
+.admin-shell .portal-view-form .dashboard-summary-card {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.admin-shell .portal-view-form > .form-actions:last-child,
+.admin-shell .portal-view-form > div:last-child > .form-actions:last-child {
+  border: 0 !important;
+  border-top: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  background: color-mix(in srgb, var(--background) 96%, transparent) !important;
+  padding: 10px 0 !important;
+  box-shadow: none !important;
+}
+
+.admin-shell .dashboard-inline-body,
+.admin-shell .dashboard-modal-right,
+.admin-shell .dashboard-modal-canvas-wrapper,
+.admin-shell .dashboard-surface {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.admin-shell .dashboard-modal-canvas-wrapper { padding: 0 !important; }
+.admin-shell .dashboard-grid {
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--muted-foreground) 28%, transparent) 1px, transparent 1.2px);
+  background-size: 18px 18px;
+}
+
+/* Admin overview mirrors the client dashboard with a restrained dot matrix field. */
+.admin-home-dashboard {
+  border-radius: 14px;
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--muted-foreground) 22%, transparent) 1px, transparent 1.2px);
+  background-size: 18px 18px;
+  padding: 2px;
+}
+
+.admin-home-hero,
+.admin-home-dashboard .portal-home-section { background-color: color-mix(in srgb, var(--background) 94%, transparent); backdrop-filter: blur(4px); }
+.admin-home-dashboard .portal-home-stats { grid-template-columns: repeat(4, minmax(120px, 1fr)); }
+.admin-dashboard-actions { grid-column: 2; grid-row: 1; align-self: start; }
+.admin-home-dashboard .portal-overview-card { min-height: 0; }
+.admin-home-dashboard .portal-overview-actions { margin-top: auto; }
+.admin-metadata-section { min-height: 74px; }
+
+@media (max-width: 900px) {
+  .admin-home-dashboard .portal-home-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-dashboard-actions { grid-column: 1; grid-row: auto; }
 }

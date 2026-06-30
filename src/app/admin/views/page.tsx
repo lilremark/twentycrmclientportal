@@ -25,9 +25,6 @@ export default async function ViewsPage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="font-bold">{view.label}</h3>
-                <p className="mt-1 text-sm text-[#68758a]">
-                  {view.objectNameSingular} · /portal/{view.slug}
-                </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <span className="badge">

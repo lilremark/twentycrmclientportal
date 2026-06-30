@@ -1240,10 +1240,6 @@ export function PortalViewForm({
           <h2 className="text-lg font-bold">
             {initial ? `Edit ${initial.label}` : "Create a portal view"}
           </h2>
-          <p className="mt-1 text-sm text-[#68758a]">
-            Choose an object, then select the fields clients can see, filter,
-            and edit. API names are filled from synchronized Twenty metadata.
-          </p>
         </div>
 
         <nav
@@ -1333,7 +1329,7 @@ export function PortalViewForm({
             </div>
             <div className="field">
               <label htmlFor="navigationIconColor">Icon color</label>
-              <div className="portal-icon-color-field"><input defaultValue={initial?.navigationIconColor ?? "#3157d5"} id="navigationIconColor" name="navigationIconColor" type="color" /><span>Used for this view in client navigation.</span></div>
+              <div className="portal-icon-color-field"><input defaultValue={initial?.navigationIconColor ?? "#3157d5"} id="navigationIconColor" name="navigationIconColor" type="color" /></div>
             </div>
           </div>
         </section>

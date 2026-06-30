@@ -15,6 +15,8 @@ import {
   Sun,
   Type,
   X,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 
 import type {
@@ -252,6 +254,7 @@ function PrintPreview({
   const [images, setImages] = useState<Array<{ id: string; src: string; alt: string }>>([]);
   const [customizing, setCustomizing] = useState(false);
   const [labelOverrides, setLabelOverrides] = useState<Record<string, string>>({});
+  const [pdfZoom, setPdfZoom] = useState(100);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const previewItems = items.map((item, index) => ({
     ...item,
@@ -348,6 +351,11 @@ function PrintPreview({
               <RotateCcw size={16} />
               Reset PDF
             </button>
+            <div aria-label="PDF zoom" className="dashboard-pdf-zoom" role="group">
+              <button aria-label="Zoom out" disabled={pdfZoom <= 70} onClick={() => setPdfZoom((current) => Math.max(70, current - 10))} type="button"><ZoomOut size={15} /></button>
+              <span>{pdfZoom}%</span>
+              <button aria-label="Zoom in" disabled={pdfZoom >= 150} onClick={() => setPdfZoom((current) => Math.min(150, current + 10))} type="button"><ZoomIn size={15} /></button>
+            </div>
             <button className="button secondary" onClick={() => setCustomizing((current) => !current)} type="button">
               <Type size={16} />
               {customizing ? "Done editing text" : "Edit text"}
@@ -378,6 +386,7 @@ function PrintPreview({
         <div className="dashboard-print-area">
           <section
             className={`dashboard-pdf-page dashboard-pdf-tone-${cardTone}`}
+            style={{ "--pdf-zoom": pdfZoom / 100 } as CSSProperties}
           >
             <div className="dashboard-pdf-safe-frame" aria-hidden="true">
               <span>Bleed / print-safe area</span>

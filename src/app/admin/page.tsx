@@ -96,40 +96,30 @@ export default async function AdminOverviewPage() {
   );
 
   return (
-    <div className="page-stack">
-      <div className="page-actions">
-        <ConnectionTestButton />
-        <form action={syncMetadataAction}>
-          <button className="button" type="submit">
-            <Database size={17} />
-            Synchronize metadata
-          </button>
-        </form>
-      </div>
-
-      <section className="stat-grid">
-        <StatCard icon={<Rows3 size={17} />} label="Active portals" value={activeViews.length} />
-        <StatCard icon={<Building2 size={17} />} label="Active clients" value={clients.length} />
-        <StatCard icon={<Activity size={17} />} label="Activity, 24 hours" value={activityToday.length} />
-        <StatCard
-          icon={<Database size={17} />}
-          label="Synchronized objects"
-          value={latest?.objects.length ?? 0}
-        />
+    <div className="portal-home-dashboard admin-home-dashboard">
+      <section className="portal-home-hero admin-home-hero">
+        <div className="page-actions admin-dashboard-actions">
+          <ConnectionTestButton />
+          <form action={syncMetadataAction}>
+            <button className="button" type="submit"><Database size={16} />Synchronize metadata</button>
+          </form>
+        </div>
+        <div className="portal-home-stats" aria-label="Administration summary">
+          <div><Rows3 size={16} /><strong>{activeViews.length}</strong><span>Active portals</span></div>
+          <div><Building2 size={16} /><strong>{clients.length}</strong><span>Active clients</span></div>
+          <div><Activity size={16} /><strong>{activityToday.length}</strong><span>Changes today</span></div>
+          <div><Database size={16} /><strong>{latest?.objects.length ?? 0}</strong><span>CRM objects</span></div>
+        </div>
       </section>
 
       {needsAttention.length ? (
-        <section className="preview-banner">
+        <section className="preview-banner admin-attention-banner">
           <div>
             <strong className="flex items-center gap-2 text-sm">
               <CircleAlert size={17} />
               {needsAttention.length} portal
               {needsAttention.length === 1 ? "" : "s"} need attention
             </strong>
-            <p>
-              Disabled portals or schema validation errors should be corrected
-              before inviting users.
-            </p>
           </div>
           <Link className="button secondary" href="/admin/views">
             Review portals
@@ -137,19 +127,12 @@ export default async function AdminOverviewPage() {
         </section>
       ) : null}
 
-      <section>
-        <div className="mb-3 flex items-end justify-between gap-3 px-0.5">
-          <div>
-            <h2 className="text-base font-bold">Active portals</h2>
-            <p className="mt-1 text-xs text-[var(--muted)]">
-              Open a scoped preview or edit the configuration.
-            </p>
-          </div>
-          <Link className="text-sm font-semibold text-[var(--brand-primary)]" href="/admin/views">
-            Manage all
-          </Link>
+      <section className="portal-home-section">
+        <div className="portal-home-section-heading">
+          <div><p className="eyebrow">Configured</p><h3>Active portals</h3></div>
+          <Link href="/admin/views">Manage all</Link>
         </div>
-        <div className="portal-card-grid">
+        <div className="portal-overview-grid">
           {activeViews.map((view) => {
             const lastActivity = recentActivity.find(
               (event) =>
@@ -157,52 +140,26 @@ export default async function AdminOverviewPage() {
                 event.objectName === view.objectNameSingular,
             );
             return (
-              <article className="card portal-summary-card" key={view.id}>
-                <div>
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="activity-icon">
-                      <Rows3 size={17} />
-                    </span>
-                    <span className="badge">Active</span>
-                  </div>
-                  <h3 className="mt-4 font-bold">{view.label}</h3>
-                  <p className="mt-1 text-xs text-[var(--muted)]">
-                    {view.objectNamePlural} ·{" "}
-                    {view.scopeMode === "all"
-                      ? "All current records"
-                      : view.scopeMode === "person"
-                        ? "Person scoped"
-                        : `${view.allowedRecordIds.length} specific records`}
-                  </p>
+              <article className="portal-overview-card" key={view.id}>
+                <div className="portal-overview-card-heading">
+                  <span className="portal-glyph"><Rows3 size={17} /></span>
+                  <div><h3>{view.label}</h3><p>{view.objectNamePlural}</p></div>
+                  <Link aria-label={`Configure ${view.label}`} href={`/admin/views/${view.id}`}><ArrowRight size={16} /></Link>
                 </div>
-                <div>
-                  <p className="mb-3 text-xs text-[var(--muted)]">
-                    {lastActivity
-                      ? `Last activity ${lastActivity.createdAt.toLocaleString()}`
-                      : "No portal activity recorded yet"}
-                  </p>
-                  <div className="form-actions">
-                    <Link
-                      className="button secondary"
-                      href={`/admin/views/${view.id}/preview`}
-                    >
-                      <Eye size={16} />
-                      Preview
-                    </Link>
-                    <Link
-                      className="text-xs font-semibold text-[var(--brand-primary)]"
-                      href={`/admin/views/${view.id}`}
-                    >
-                      Configure <ArrowRight className="inline" size={13} />
-                    </Link>
-                  </div>
+                <div className="portal-overview-metrics">
+                  <span><Eye size={13} /><strong>{view.scopeMode === "records" ? view.allowedRecordIds.length : "All"}</strong> scope</span>
+                  <span><Activity size={13} /><strong>{lastActivity ? "Recent" : "—"}</strong> activity</span>
+                </div>
+                <div className="portal-overview-actions">
+                  <Link href={`/admin/views/${view.id}/preview`}>Preview <ArrowRight size={13} /></Link>
+                  <Link href={`/admin/views/${view.id}`}>Configure</Link>
                 </div>
               </article>
             );
           })}
         </div>
         {!activeViews.length ? (
-          <div className="card empty-state mt-3">
+          <div className="portal-home-empty">
             <div>
               <Rows3 className="mx-auto mb-3" size={24} />
               <p>No active portals are configured.</p>
@@ -217,32 +174,29 @@ export default async function AdminOverviewPage() {
         ) : null}
       </section>
 
-      <section className="card table-shell">
-        <div className="section-heading">
-          <div>
-            <h2>Recent portal activity</h2>
-            <p>Record writes, portal changes, invitations, and webhooks.</p>
-          </div>
+      <section className="portal-home-section portal-activity-card">
+        <div className="portal-home-section-heading">
+          <div><p className="eyebrow">Live trail</p><h3>Recent portal activity</h3></div>
           <Link className="button secondary" href="/admin/audit">
             <FileClock size={16} />
             Full audit
           </Link>
         </div>
-        <div className="activity-list">
+        <div className="portal-activity-list">
           {recentActivity.map((event) => (
-            <div className="activity-item" key={event.id}>
+            <div className="portal-activity-item" key={event.id}>
               <span className="activity-icon">
                 <ActivityIcon action={event.action} />
               </span>
-              <div className="activity-copy">
+              <span className="portal-activity-copy">
                 <strong>{activityLabel(event.action)}</strong>
                 <span>
                   {event.userName ?? "Twenty webhook"}
                   {event.objectName ? ` · ${event.objectName}` : ""}
                   {event.status === "failure" ? " · Failed" : ""}
                 </span>
-              </div>
-              <time className="activity-time">
+              </span>
+              <time>
                 {event.createdAt.toLocaleString()}
               </time>
             </div>
@@ -255,24 +209,10 @@ export default async function AdminOverviewPage() {
         </div>
       </section>
 
-      <section className="card p-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="activity-icon">
-              <Building2 size={17} />
-            </span>
-            <div>
-              <h2 className="text-sm font-bold">Twenty CRM metadata</h2>
-              <p className="mt-1 text-xs text-[var(--muted)]">
-                {latest
-                  ? `Last synchronized ${latest.syncedAt.toLocaleString()}`
-                  : "Metadata has not been synchronized."}
-              </p>
-            </div>
-          </div>
-          <span className="badge">
-            {latest ? `${latest.objects.length} objects` : "Not synchronized"}
-          </span>
+      <section className="portal-home-section admin-metadata-section">
+        <div className="portal-home-section-heading">
+          <div><p className="eyebrow">System</p><h3>Twenty CRM metadata</h3></div>
+          <span>{latest ? `${latest.objects.length} objects` : "Not synchronized"}</span>
         </div>
       </section>
     </div>
@@ -288,25 +228,5 @@ function portalActivitySinceYesterday() {
       like(auditEvents.action, "invitation.%"),
       eq(auditEvents.status, "external"),
     ),
-  );
-}
-
-function StatCard({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-}) {
-  return (
-    <article className="card stat-card">
-      <span className="stat-card-icon">{icon}</span>
-      <div>
-        <span>{label}</span>
-        <strong>{value}</strong>
-      </div>
-    </article>
   );
 }

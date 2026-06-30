@@ -18,6 +18,7 @@ import { PortalAttachments } from "@/components/portal-attachments";
 import { PortalDataTable } from "@/components/portal-data-table";
 import { PortalExportButton } from "@/components/portal-export-button";
 import { PortalFilterForm } from "@/components/portal-filter-form";
+import { PortalHeaderActions } from "@/components/portal-header-actions";
 import { PortalNotes } from "@/components/portal-notes";
 import { RecordForm } from "@/components/record-form";
 import { RecordPanelDetailsForm } from "@/components/record-panel-details-form";
@@ -286,7 +287,8 @@ export default async function PortalListPage({
   return (
     <>
       <div className="page-stack">
-        <div className="page-actions">
+        <PortalHeaderActions>
+          <div className="page-actions portal-header-page-actions">
           <PortalExportButton
             columns={view.columns.map((column) => ({
               name: column.name,
@@ -308,7 +310,8 @@ export default async function PortalListPage({
               Add record
             </Link>
           ) : null}
-        </div>
+          </div>
+        </PortalHeaderActions>
         {view.filterFields.length || view.columns.length || savedViews.length ? (
           <PortalFilterForm
             fields={object.fields}
@@ -374,7 +377,6 @@ export default async function PortalListPage({
                       <div className="record-panel-heading">
                         <p className="eyebrow">{object.labelSingular}</p>
                         <h2>{recordTitle || object.labelSingular}</h2>
-                        <p title={selectedRecordId}>{selectedRecordId}</p>
                       </div>
                       {selectedRecord ? (
                         <div className="record-panel-actions">
