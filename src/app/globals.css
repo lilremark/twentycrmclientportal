@@ -991,6 +991,12 @@ input.input[type="datetime-local"] {
   gap: 14px;
 }
 
+.dashboard-grid:not(.is-editing),
+.admin-home-dashboard,
+.portal-home-dashboard {
+  background-image: none !important;
+}
+
 .dashboard-card {
   position: relative;
   overflow: hidden;
@@ -4710,30 +4716,126 @@ select.input[multiple] option {
   overflow: hidden;
 }
 
-.login-submit::after {
-  position: absolute;
-  inset: 0;
-  content: "";
-  transform: translateX(-120%);
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.28), transparent);
-}
-
-.login-form.is-signing-in .login-submit::after {
-  animation: auth-shimmer 1s ease-in-out infinite;
-}
-
 .login-submit-spinner {
-  display: none;
+  display: inline-block;
   height: 15px;
   width: 15px;
   border: 2px solid rgb(255 255 255 / 0.45);
   border-top-color: white;
   border-radius: 999px;
+  animation: auth-spin 700ms linear infinite;
 }
 
-.login-form.is-signing-in .login-submit-spinner {
-  display: inline-block;
-  animation: auth-spin 700ms linear infinite;
+.password-field-control {
+  position: relative;
+}
+
+.password-field-control .input {
+  width: 100%;
+  padding-right: 46px;
+}
+
+.password-reveal-button {
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.password-reveal-button:hover {
+  background: var(--surface-hover);
+  color: var(--foreground);
+}
+
+.password-reveal-button:focus-visible {
+  outline: 2px solid var(--brand-primary, var(--primary));
+  outline-offset: 1px;
+}
+
+.admin-metadata-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.admin-metadata-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.admin-metadata-heading h2 {
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.admin-metadata-heading p {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.admin-metadata-list {
+  display: grid;
+  max-height: 290px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--border);
+}
+
+.admin-metadata-object {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--surface);
+  padding: 11px 12px;
+}
+
+.admin-metadata-object div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.admin-metadata-object strong,
+.admin-metadata-object span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-metadata-object strong {
+  font-size: 0.76rem;
+}
+
+.admin-metadata-object span,
+.admin-metadata-empty {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.admin-metadata-object > span {
+  flex: 0 0 auto;
+}
+
+.admin-metadata-empty {
+  border-top: 1px solid var(--border);
+  padding-top: 13px;
 }
 
 .record-notes-section {
@@ -4837,12 +4939,6 @@ select.input[multiple] option {
   }
 }
 
-@keyframes auth-shimmer {
-  to {
-    transform: translateX(120%);
-  }
-}
-
 @keyframes auth-spin {
   to {
     transform: rotate(360deg);
@@ -4876,13 +4972,16 @@ select.input[multiple] option {
   .auth-preview-grid {
     grid-template-columns: 1fr;
   }
+
+  .admin-metadata-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .auth-card,
   .auth-preview,
-  .login-form.is-signing-in .login-submit::after,
-  .login-form.is-signing-in .login-submit-spinner {
+  .login-submit-spinner {
     animation: none;
   }
 }
@@ -7875,4 +7974,3 @@ select.input[multiple] option {
 .hidden {
   display: none !important;
 }
-

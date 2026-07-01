@@ -117,6 +117,44 @@ export default async function AdminOverviewPage() {
         />
       </section>
 
+      <section aria-labelledby="admin-metadata-heading" className="card admin-metadata-card">
+        <div className="admin-metadata-heading">
+          <div className="flex items-center gap-3">
+            <span className="activity-icon">
+              <Building2 size={17} />
+            </span>
+            <div>
+              <h2 id="admin-metadata-heading">Twenty CRM metadata</h2>
+              <p>
+                {latest
+                  ? `Last synchronized ${latest.syncedAt.toLocaleString()}`
+                  : "Metadata has not been synchronized."}
+              </p>
+            </div>
+          </div>
+          <span className="badge">
+            {latest ? `${latest.objects.length} objects` : "Not synchronized"}
+          </span>
+        </div>
+        {latest?.objects.length ? (
+          <div className="admin-metadata-list">
+            {latest.objects.map((object) => (
+              <div className="admin-metadata-object" key={object.id}>
+                <div>
+                  <strong>{object.labelPlural}</strong>
+                  <span>{object.namePlural}</span>
+                </div>
+                <span>{object.fields.length} fields</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="admin-metadata-empty">
+            Synchronize metadata to display the available Twenty CRM objects.
+          </div>
+        )}
+      </section>
+
       {needsAttention.length ? (
         <section className="preview-banner">
           <div>
@@ -254,26 +292,6 @@ export default async function AdminOverviewPage() {
         </div>
       </section>
 
-      <section className="card p-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="activity-icon">
-              <Building2 size={17} />
-            </span>
-            <div>
-              <h2 className="text-sm font-bold">Twenty CRM metadata</h2>
-              <p className="mt-1 text-xs text-[var(--muted)]">
-                {latest
-                  ? `Last synchronized ${latest.syncedAt.toLocaleString()}`
-                  : "Metadata has not been synchronized."}
-              </p>
-            </div>
-          </div>
-          <span className="badge">
-            {latest ? `${latest.objects.length} objects` : "Not synchronized"}
-          </span>
-        </div>
-      </section>
     </div>
   );
 }
