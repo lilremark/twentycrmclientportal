@@ -1,5 +1,6 @@
 "use client";
 
+import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 
 import { authClient } from "@/lib/auth-client";
@@ -15,6 +16,7 @@ export function LoginForm({
 }) {
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="login-methods">
@@ -77,7 +79,7 @@ export function LoginForm({
         </div>
       ) : null}
       <form
-        className={`login-form ${pending ? "is-signing-in" : ""}`}
+        className="login-form"
         onSubmit={async (event) => {
           event.preventDefault();
           setError("");
@@ -107,16 +109,33 @@ export function LoginForm({
         </div>
         <div className="field">
           <label htmlFor="password">Password</label>
-          <Input id="password" name="password" type="password" required />
+          <div className="password-field-control">
+            <Input
+              autoComplete="current-password"
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              required
+            />
+            <button
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-pressed={showPassword}
+              className="password-reveal-button"
+              onClick={() => setShowPassword((visible) => !visible)}
+              type="button"
+            >
+              {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+            </button>
+          </div>
         </div>
         <Button
+          aria-busy={pending}
           className="login-submit"
           disabled={pending}
           loading={pending}
           size="lg"
           type="submit"
         >
-          <span className="login-submit-spinner" aria-hidden="true" />
           {pending ? "Signing in..." : "Sign in"}
         </Button>
         <a

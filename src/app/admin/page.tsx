@@ -211,9 +211,35 @@ export default async function AdminOverviewPage() {
 
       <section className="portal-home-section admin-metadata-section">
         <div className="portal-home-section-heading">
-          <div><p className="eyebrow">System</p><h3>Twenty CRM metadata</h3></div>
+          <div>
+            <p className="eyebrow">System</p>
+            <h3>Twenty CRM metadata</h3>
+            <span className="admin-metadata-synced-at">
+              {latest
+                ? `Last synchronized ${latest.syncedAt.toLocaleString()}`
+                : "Metadata has not been synchronized."}
+            </span>
+          </div>
           <span>{latest ? `${latest.objects.length} objects` : "Not synchronized"}</span>
         </div>
+        {latest?.objects.length ? (
+          <div className="admin-metadata-list">
+            {latest.objects.map((object) => (
+              <div className="admin-metadata-object" key={object.id}>
+                <span className="portal-glyph"><Database size={15} /></span>
+                <div>
+                  <strong>{object.labelPlural}</strong>
+                  <span>{object.namePlural}</span>
+                </div>
+                <span>{object.fields.length} fields</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="admin-metadata-empty">
+            Synchronize metadata to display the available Twenty CRM objects.
+          </p>
+        )}
       </section>
     </div>
   );

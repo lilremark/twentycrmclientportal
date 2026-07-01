@@ -4760,30 +4760,44 @@ select.input[multiple] option {
   overflow: hidden;
 }
 
-.login-submit::after {
+.password-field-control {
+  position: relative;
+}
+
+.password-field-control [data-slot="input"] {
+  padding-right: 44px;
+}
+
+.password-reveal-button {
   position: absolute;
-  inset: 0;
-  content: "";
-  transform: translateX(-120%);
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.28), transparent);
+  z-index: 1;
+  top: 50%;
+  right: 4px;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transform: translateY(-50%);
 }
 
-.login-form.is-signing-in .login-submit::after {
-  animation: auth-shimmer 1s ease-in-out infinite;
+.password-reveal-button:hover {
+  background: var(--surface-hover);
+  color: var(--foreground);
 }
 
-.login-submit-spinner {
-  display: none;
-  height: 15px;
-  width: 15px;
-  border: 2px solid rgb(255 255 255 / 0.45);
-  border-top-color: white;
-  border-radius: 999px;
+.password-reveal-button:focus-visible {
+  outline: 2px solid var(--brand-primary, var(--primary));
+  outline-offset: 1px;
 }
 
-.login-form.is-signing-in .login-submit-spinner {
-  display: inline-block;
-  animation: auth-spin 700ms linear infinite;
+.password-reveal-button svg {
+  width: 17px;
+  height: 17px;
 }
 
 .record-notes-section {
@@ -4887,18 +4901,6 @@ select.input[multiple] option {
   }
 }
 
-@keyframes auth-shimmer {
-  to {
-    transform: translateX(120%);
-  }
-}
-
-@keyframes auth-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 @media (max-width: 900px) {
   .settings-grid,
   .configuration-list,
@@ -4930,9 +4932,7 @@ select.input[multiple] option {
 
 @media (prefers-reduced-motion: reduce) {
   .auth-card,
-  .auth-preview,
-  .login-form.is-signing-in .login-submit::after,
-  .login-form.is-signing-in .login-submit-spinner {
+  .auth-preview {
     animation: none;
   }
 }
@@ -12220,15 +12220,13 @@ body,
 
 .admin-shell .dashboard-modal-canvas-wrapper { padding: 0 !important; }
 .admin-shell .dashboard-grid {
-  background-image: radial-gradient(circle, color-mix(in srgb, var(--muted-foreground) 28%, transparent) 1px, transparent 1.2px);
-  background-size: 18px 18px;
+  background-image: none;
 }
 
-/* Admin overview mirrors the client dashboard with a restrained dot matrix field. */
+/* Admin overview mirrors the client's solid dashboard workspace. */
 .admin-home-dashboard {
   border-radius: 14px;
-  background-image: radial-gradient(circle, color-mix(in srgb, var(--muted-foreground) 22%, transparent) 1px, transparent 1.2px);
-  background-size: 18px 18px;
+  background-image: none;
   padding: 2px;
 }
 
@@ -12239,8 +12237,36 @@ body,
 .admin-home-dashboard .portal-overview-card { min-height: 0; }
 .admin-home-dashboard .portal-overview-actions { margin-top: auto; }
 .admin-metadata-section { min-height: 74px; }
+.admin-metadata-synced-at { display: block; margin-top: 4px; color: var(--muted-foreground); font-size: 0.68rem; }
+.admin-metadata-list {
+  display: grid;
+  max-height: 290px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--border);
+}
+.admin-metadata-object {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  background: var(--background);
+  padding: 11px 12px;
+}
+.admin-metadata-object > div { display: grid; min-width: 0; gap: 2px; }
+.admin-metadata-object strong,
+.admin-metadata-object span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-metadata-object strong { font-size: 0.75rem; }
+.admin-metadata-object span { color: var(--muted-foreground); font-size: 0.66rem; }
+.admin-metadata-object > span:last-child { color: var(--muted-foreground); }
+.admin-metadata-empty { margin: 0; color: var(--muted-foreground); font-size: 0.75rem; }
 
 @media (max-width: 900px) {
   .admin-home-dashboard .portal-home-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .admin-dashboard-actions { grid-column: 1; grid-row: auto; }
+  .admin-metadata-list { grid-template-columns: 1fr; }
 }
