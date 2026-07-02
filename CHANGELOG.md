@@ -4,6 +4,80 @@ All notable changes to Twenty CRM Client Portal are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [2.0.0] - 2026-07-02
+
+### Highlights
+
+- Rebuilt the client and administrator portals around a shared, responsive
+  workspace shell with compact navigation, anchored headers, consistent icon
+  states, and coordinated right-side panels.
+- Added a client home dashboard with configurable workspace cards, recent
+  records, portal activity, and clear routes into records and reports.
+- Redesigned administrator overview, settings, portal configuration, users,
+  client accounts, invitations, audit, and health surfaces to use the same
+  visual system as the client portal.
+
+### Added
+
+- Added multi-record selection, bulk editing, record context menus, local
+  favorites, favorites-only filtering, and anchored identity columns to portal
+  record tables.
+- Added searchable, custom dropdowns and a complete Lucide icon catalog for
+  assigning per-view navigation icons and colors.
+- Added secure HTTPS dashboard embeds with private-network, credential, and
+  unsafe-protocol rejection.
+- Added editable PDF report titles, subtitles, text blocks, images, card theme,
+  bleed guides, zoom controls, and a persistent preview toolbar.
+- Added redesigned CSV and XLSX export controls in a resizable side workspace.
+- Added modal workflows for inviting users and creating client accounts.
+- Added client and administrator profile images with local upload or secure
+  external URL support.
+- Added repeatable demo mode data, seeded administrator/client workflows, and
+  mock Twenty CRM records for local product evaluation.
+
+### Changed
+
+- Replaced native selects across the application with accessible, themed menus
+  that remain attached to their fields and scroll within the viewport.
+- Reworked record, bulk-edit, filter, and export drawers so the table and panel
+  animate as one layout without reload flashes or empty viewport regions.
+- Moved record and export actions into the records/reports command rail and
+  removed redundant table controls and record subtitle text.
+- Unified profile configuration, confirmation dialogs, action buttons, form
+  spacing, and dark-mode contrast between administrator and client portals.
+- Made report and portal configuration command rails sticky while their content
+  scrolls independently beneath them.
+
+### Fixed
+
+- Fixed ascending and descending table sorting and retained sorting in scoped
+  exports.
+- Fixed collapsed sidebar icon, logo, hover, and active-state alignment.
+- Fixed dropdowns and the navigation icon picker rendering behind sticky or
+  clipped layout layers.
+- Fixed account menus opening away from their trigger when a right-side panel
+  is active.
+- Fixed duplicate sign-in loading indicators and added password visibility
+  controls.
+- Fixed administrator metadata visibility and recent-activity capitalization.
+
+### Security
+
+- Validated dashboard embed targets as public HTTPS URLs and rejected local,
+  private-network, credential-bearing, and malformed destinations.
+- Preserved server-side authorization, record scoping, editable-field
+  validation, and write-rate limiting for bulk record updates.
+
+### Upgrade notes
+
+- Database migrations `0015` and `0016` add application icon color and
+  per-portal navigation icon/color fields. Container startup applies them
+  automatically; host deployments must run `npm run db:migrate`.
+- Review portal navigation icons after upgrade. Existing views receive safe
+  default icons and colors.
+- The production image, package, Compose default, and deployment identifier now
+  use version `2.0.0` / `v2-0-0`.
+
 ## [1.5.2] - 2026-06-26
 
 ### Changed
@@ -315,6 +389,7 @@ PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
 
 After the health check passes, open the configured `APP_URL` and complete the one-time `/setup` flow.
 
+[2.0.0]: https://github.com/lilremark/twentycrmclientportal/releases/tag/v2.0.0
 [1.5.2]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.5.2
 [1.5.1]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.5.1
 [1.5.0]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.5.0
