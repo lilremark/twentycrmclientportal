@@ -1030,6 +1030,12 @@ input.input[type="datetime-local"] {
   gap: 14px;
 }
 
+.dashboard-grid:not(.is-editing),
+.admin-home-dashboard,
+.portal-home-dashboard {
+  background-image: none !important;
+}
+
 .dashboard-card {
   position: relative;
   overflow: hidden;
@@ -4928,6 +4934,10 @@ select.input[multiple] option {
   .auth-preview-grid {
     grid-template-columns: 1fr;
   }
+
+  .admin-metadata-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -7925,7 +7935,6 @@ select.input[multiple] option {
 .hidden {
   display: none !important;
 }
-
 @theme inline {
   --animate-skeleton: skeleton 2s -1s infinite linear;
   --font-heading: var(--font-heading, ui-sans-serif, system-ui, sans-serif);
