@@ -12999,3 +12999,334 @@ body > .record-panel-layer .export-workspace {
     flex-basis: 60px;
   }
 }
+
+/* Custom brand artwork is presented as artwork, without the fallback monogram tile. */
+.auth-story-brand.has-custom-logo .auth-custom-logo,
+.auth-card-heading.has-custom-logo .auth-custom-logo {
+  display: block;
+  width: auto;
+  max-width: min(190px, 52vw);
+  height: auto;
+  max-height: 48px;
+  flex: 0 1 auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  object-fit: contain;
+  object-position: left center;
+  padding: 0;
+}
+
+.auth-story-brand.has-custom-logo .auth-custom-logo {
+  max-width: 180px;
+  max-height: 38px;
+}
+
+.auth-card-heading.has-custom-logo .auth-custom-logo {
+  margin-bottom: 18px;
+}
+
+/* Record workspace tabs share one anchored control rail and one scroll surface. */
+.record-panel-tabs-shell {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  background: var(--background);
+}
+
+.record-panel-tabs {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  background: var(--background);
+  padding: 8px 18px 0;
+}
+
+.record-panel-tab {
+  position: relative;
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 670;
+  padding: 0 12px 8px;
+  transition: color 140ms ease, background 140ms ease;
+}
+
+.record-panel-tab::after {
+  position: absolute;
+  right: 9px;
+  bottom: -1px;
+  left: 9px;
+  height: 2px;
+  border-radius: 999px 999px 0 0;
+  background: transparent;
+  content: "";
+}
+
+.record-panel-tab:hover {
+  border-radius: 8px 8px 0 0;
+  background: var(--surface-subtle);
+  color: var(--foreground);
+}
+
+.record-panel-tab[aria-selected="true"] {
+  color: var(--foreground);
+}
+
+.record-panel-tab[aria-selected="true"]::after {
+  background: var(--brand-primary, var(--primary));
+}
+
+.record-panel-tab small {
+  display: grid;
+  min-width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-subtle);
+  color: var(--muted-foreground);
+  font-size: 0.58rem;
+  padding-inline: 4px;
+}
+
+.record-panel-tab:focus-visible {
+  border-radius: 7px;
+  outline: 2px solid var(--brand-primary, var(--primary));
+  outline-offset: -2px;
+}
+
+.record-panel-tab-viewport {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: color-mix(in srgb, var(--surface-subtle) 48%, var(--background));
+  scrollbar-color: var(--border-strong) transparent;
+  scrollbar-width: thin;
+}
+
+.record-panel-tabpanel {
+  min-height: 100%;
+  padding: 18px;
+}
+
+.record-panel-tabpanel[hidden] {
+  display: none;
+}
+
+.record-panel-tabpanel > .record-panel-details {
+  box-shadow: 0 8px 22px rgb(0 0 0 / 4%);
+}
+
+.record-panel-tabpanel .record-notes-section,
+.record-panel-tabpanel .record-attachments-section {
+  margin: 0;
+  gap: 18px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+}
+
+.record-section-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 11px;
+}
+
+.record-section-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--brand-primary, var(--primary)) 22%, var(--border));
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--brand-primary, var(--primary)) 8%, var(--background));
+  color: var(--brand-primary, var(--primary));
+}
+
+.record-section-title h3 {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 0.86rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+}
+
+.record-section-title p {
+  margin: 3px 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.66rem;
+  line-height: 1.4;
+}
+
+.record-panel-tabpanel .record-notes-layout {
+  grid-template-columns: minmax(138px, 0.38fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.record-panel-tabpanel .record-note-list,
+.record-panel-tabpanel .record-note-detail,
+.record-panel-tabpanel .record-file-list,
+.record-panel-tabpanel .record-attachment-upload {
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--background);
+}
+
+.record-panel-tabpanel .record-note-list {
+  align-content: start;
+  padding: 6px;
+}
+
+.record-panel-tabpanel .record-note-detail {
+  min-height: 180px;
+  padding: 0;
+}
+
+.record-panel-tabpanel .record-note-detail > :is(.record-note-view, .record-note-form) {
+  height: 100%;
+  border: 0;
+  border-radius: inherit;
+}
+
+.record-panel-tabpanel .record-file-list {
+  display: grid;
+  gap: 0;
+  overflow: hidden;
+}
+
+.record-panel-tabpanel .record-files-empty {
+  display: flex;
+  min-height: 82px;
+  align-items: center;
+  gap: 11px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--background);
+  color: var(--brand-primary, var(--primary));
+  padding: 14px;
+}
+
+.record-panel-tabpanel .record-files-empty strong,
+.record-panel-tabpanel .record-files-empty p {
+  display: block;
+  margin: 0;
+}
+
+.record-panel-tabpanel .record-files-empty strong {
+  color: var(--foreground);
+  font-size: 0.76rem;
+}
+
+.record-panel-tabpanel .record-files-empty p {
+  margin-top: 3px;
+  color: var(--muted-foreground);
+  font-size: 0.66rem;
+}
+
+.record-panel-tabpanel .record-file-item + .record-file-item {
+  border-top: 1px solid var(--border);
+}
+
+.record-panel-tabpanel .record-file-heading {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 12px;
+}
+
+.record-panel-tabpanel .record-file-heading a {
+  background: var(--surface-subtle);
+  color: var(--foreground);
+}
+
+.record-panel-tabpanel .record-file-heading a:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+
+.record-panel-tabpanel .record-attachment-upload {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  border-style: dashed;
+  background: color-mix(in srgb, var(--brand-primary, var(--primary)) 4%, var(--background));
+  padding: 14px;
+}
+
+.record-panel-empty-tab {
+  display: grid;
+  min-height: 260px;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+
+.record-panel-empty-tab > span {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 3px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--background);
+  color: var(--brand-primary, var(--primary));
+}
+
+.record-panel-empty-tab strong {
+  color: var(--foreground);
+  font-size: 0.8rem;
+}
+
+.record-panel-empty-tab p {
+  max-width: 250px;
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 560px) {
+  .record-panel-tabs {
+    padding-inline: 10px;
+  }
+
+  .record-panel-tab {
+    flex: 1;
+    justify-content: center;
+    padding-inline: 6px;
+  }
+
+  .record-panel-tabpanel {
+    padding: 14px;
+  }
+
+  .record-panel-tabpanel .record-notes-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .record-panel-tabpanel .record-attachment-upload {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .record-panel-tabpanel .record-attachment-upload .button {
+    grid-column: 1 / -1;
+  }
+}

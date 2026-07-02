@@ -22,11 +22,13 @@ import { PortalHeaderActions } from "@/components/portal-header-actions";
 import { PortalNotes } from "@/components/portal-notes";
 import { RecordForm } from "@/components/record-form";
 import { RecordPanelDetailsForm } from "@/components/record-panel-details-form";
+import { RecordPanelTabs } from "@/components/record-panel-tabs";
 import { RecordSidePanel } from "@/components/record-side-panel";
 import { RefreshButton } from "@/components/refresh-button";
 import { requirePortalViewContext } from "@/lib/access";
 import { db } from "@/lib/db";
 import { portalSavedViews } from "@/lib/db/schema";
+import { extractPortalFiles } from "@/lib/file-values";
 import {
   displayValue,
   getLatestMetadata,
@@ -385,8 +387,8 @@ export default async function PortalListPage({
                       ) : null}
                     </header>
 
-                    <div className="record-panel-body">
-                      {selectedRecordError ? (
+                    <RecordPanelTabs
+                      fields={selectedRecordError ? (
                         <div className="record-panel-message">
                           <strong>Record unavailable</strong>
                           <p>{selectedRecordError}</p>
@@ -410,7 +412,8 @@ export default async function PortalListPage({
                           values={selectedRecord}
                         />
                       ) : null}
-                      {selectedRecord && noteTargetsField ? (
+                      noteCount={selectedNotes.length}
+                      notes={selectedRecord && noteTargetsField ? (
                         <PortalNotes
                           canEdit={context.role === "contributor"}
                           createAction={createNoteAction.bind(
@@ -427,8 +430,15 @@ export default async function PortalListPage({
                             listParams.toString(),
                           )}
                         />
-                      ) : null}
-                      {selectedRecord && attachmentsField ? (
+                      ) : undefined}
+                      fileCount={
+                        selectedRecord && attachmentsField
+                          ? extractPortalFiles(
+                              selectedRecord[attachmentsField.name],
+                            ).length
+                          : 0
+                      }
+                      files={selectedRecord && attachmentsField ? (
                         <PortalAttachments
                           canUpload={context.role === "contributor"}
                           deleteAttachmentAction={deleteRecordAttachmentAction.bind(
@@ -445,8 +455,8 @@ export default async function PortalListPage({
                           )}
                           value={selectedRecord[attachmentsField.name]}
                         />
-                      ) : null}
-                    </div>
+                      ) : undefined}
+                    />
                   </>
                 ) : null
               }

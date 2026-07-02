@@ -46,10 +46,16 @@ export async function AuthCard({
         }`}
       >
         <div className="auth-story-copy">
-          <div className="auth-story-brand">
+          <div
+            className={`auth-story-brand ${branding.logoUrl ? "has-custom-logo" : ""}`}
+          >
             {branding.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img alt={branding.name} src={branding.logoUrl} />
+              <img
+                alt={branding.name}
+                className="auth-custom-logo"
+                src={branding.logoUrl}
+              />
             ) : (
               <span>{branding.name.slice(0, 2).toUpperCase()}</span>
             )}
@@ -101,12 +107,14 @@ export async function AuthCard({
       </section>
       <div className="auth-form-pane">
         <section className="auth-card">
-          <div className="auth-card-heading">
+          <div
+            className={`auth-card-heading ${branding.logoUrl ? "has-custom-logo" : ""}`}
+          >
             {branding.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 alt={branding.name}
-                className="brand-logo"
+                className="auth-custom-logo"
                 src={branding.logoUrl}
               />
             ) : (
