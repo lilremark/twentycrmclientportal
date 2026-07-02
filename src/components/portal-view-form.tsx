@@ -48,6 +48,7 @@ import {
   type DashboardResult,
 } from "@/lib/portal-dashboard";
 import { DashboardReportSurface } from "@/components/dashboard-report-surface";
+import { LucideIconPicker } from "@/components/lucide-icon-picker";
 import { AppSelect } from "@/components/ui/app-select";
 
 type InitialView = {
@@ -1323,9 +1324,11 @@ export function PortalViewForm({
             </div>
             <div className="field">
               <label htmlFor="navigationIcon">Navigation icon</label>
-              <AppSelect className="input" defaultValue={initial?.navigationIcon ?? "records"} id="navigationIcon" name="navigationIcon">
-                <option value="records">Records</option><option value="table">Table</option><option value="folder">Folder</option><option value="briefcase">Briefcase</option><option value="users">People</option><option value="calendar">Calendar</option><option value="chart">Chart</option><option value="file">File</option><option value="target">Target</option>
-              </AppSelect>
+              <LucideIconPicker
+                defaultValue={initial?.navigationIcon ?? "records"}
+                id="navigationIcon"
+                name="navigationIcon"
+              />
             </div>
             <div className="field">
               <label htmlFor="navigationIconColor">Icon color</label>

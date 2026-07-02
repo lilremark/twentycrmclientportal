@@ -1,7 +1,5 @@
 import {
   Box,
-  CheckCircle2,
-  CircleAlert,
   Cloud,
   Database,
   ExternalLink,
@@ -17,9 +15,6 @@ import { DOCKER_HUB_REPOSITORY } from "@/lib/version";
 
 export default async function SettingsHealthPage() {
   const health = await getSystemHealth();
-  const coreOperational =
-    health.portal.status === "operational" &&
-    health.database.status === "operational";
 
   return (
     <div className="page-stack health-page">
@@ -34,29 +29,6 @@ export default async function SettingsHealthPage() {
         </div>
         <HealthRefreshButton />
       </div>
-
-      <section
-        className={`health-summary ${coreOperational ? "is-operational" : "is-degraded"}`}
-      >
-        <span className="health-summary-icon">
-          {coreOperational ? (
-            <CheckCircle2 size={22} />
-          ) : (
-            <CircleAlert size={22} />
-          )}
-        </span>
-        <div>
-          <strong>
-            {coreOperational
-              ? "Portal services are operational"
-              : "Portal services need attention"}
-          </strong>
-          <p>
-            Last checked {health.checkedAt.toLocaleString()} from this portal
-            container.
-          </p>
-        </div>
-      </section>
 
       <section className="health-grid">
         <HealthCard

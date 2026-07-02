@@ -29,7 +29,11 @@ export function ConfirmationModal({
       }}
       open
     >
-      <AlertDialogPopup className="destructive-confirmation-card">
+      <AlertDialogPopup
+        bottomStickOnMobile={false}
+        className="destructive-confirmation-card"
+        viewportClassName="confirmation-viewport"
+      >
         <Button
           aria-label="Close confirmation"
           className="confirmation-close"

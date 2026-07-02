@@ -1,8 +1,8 @@
 import {
-  createClientAccountAction,
   deleteClientAccountAction,
   setClientAccountStatusAction,
 } from "@/app/actions/admin";
+import { ClientAccountModal } from "@/components/admin-actions";
 import { ConfirmDeleteForm } from "@/components/confirm-delete-form";
 import { db } from "@/lib/db";
 import { clientAccounts } from "@/lib/db/schema";
@@ -11,42 +11,15 @@ export default async function InvitationClientsPage() {
   const clients = await db.select().from(clientAccounts);
   return (
     <div className="page-stack">
-      <form action={createClientAccountAction} className="card form-card">
-        <div>
-          <h2 className="text-base font-bold">Add client account</h2>
-          <p className="mt-1 text-xs text-[var(--muted)]">
-            Person mappings are optional for general portal invitations and
-            required only for Person-scoped portal views.
-          </p>
-        </div>
-        <div className="form-grid two-column">
-          <div className="field">
-            <label htmlFor="name">Client name</label>
-            <input className="input" id="name" name="name" required />
-          </div>
-          <div className="field">
-            <label htmlFor="twentyPersonId">Twenty Person ID</label>
-            <input
-              className="input"
-              id="twentyPersonId"
-              name="twentyPersonId"
-              placeholder="UUID from Twenty"
-              required
-            />
-          </div>
-        </div>
-        <div className="form-actions">
-          <button className="button" type="submit">
-            Add client
-          </button>
-        </div>
-      </form>
       <section className="card table-shell">
-        <div className="section-heading">
-          <h2 className="text-lg font-bold">Client accounts</h2>
-          <p className="mt-1 text-sm text-[#68758a]">
-            Suspended clients cannot be used for Person-scoped portal access.
-          </p>
+        <div className="section-heading client-accounts-section-heading">
+          <div>
+            <h2 className="text-lg font-bold">Client accounts</h2>
+            <p className="mt-1 text-sm text-[#68758a]">
+              Suspended clients cannot be used for Person-scoped portal access.
+            </p>
+          </div>
+          <ClientAccountModal />
         </div>
         <div className="table-scroll">
           <table className="data-table">

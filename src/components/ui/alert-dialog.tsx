@@ -57,10 +57,12 @@ export function AlertDialogPopup({
   className,
   bottomStickOnMobile = true,
   portalProps,
+  viewportClassName,
   ...props
 }: AlertDialogPrimitive.Popup.Props & {
   bottomStickOnMobile?: boolean;
   portalProps?: AlertDialogPrimitive.Portal.Props;
+  viewportClassName?: string;
 }): React.ReactElement {
   return (
     <AlertDialogPortal {...portalProps}>
@@ -69,6 +71,7 @@ export function AlertDialogPopup({
         className={cn(
           bottomStickOnMobile &&
             "max-sm:grid-rows-[1fr_auto] max-sm:p-0 max-sm:pt-12",
+          viewportClassName,
         )}
       >
         <AlertDialogPrimitive.Popup

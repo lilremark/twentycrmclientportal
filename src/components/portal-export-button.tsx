@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Check,
   Database,
@@ -75,7 +76,7 @@ export function PortalExportButton({
       <button className="button secondary" disabled={!columns.length} onClick={() => setOpen(true)} type="button">
         <Download size={15} /> Export
       </button>
-      {open ? (
+      {open ? createPortal(
         <RecordSidePanel onClose={close} title={`Export ${objectLabel}`}>
           <div className="export-workspace">
             <header className="export-workspace-header">
@@ -138,7 +139,8 @@ export function PortalExportButton({
               </a>
             </footer>
           </div>
-        </RecordSidePanel>
+        </RecordSidePanel>,
+        document.body,
       ) : null}
     </>
   );

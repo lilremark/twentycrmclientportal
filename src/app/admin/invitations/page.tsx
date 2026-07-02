@@ -1,31 +1,16 @@
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 import {
   deleteInvitationAction,
   revokeInvitationAction,
 } from "@/app/actions/admin";
-import { InvitationForm } from "@/components/admin-actions";
 import { ConfirmDeleteForm } from "@/components/confirm-delete-form";
 import { db } from "@/lib/db";
-import {
-  clientAccounts,
-  invitations,
-  portalViews,
-} from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { clientAccounts, invitations, portalViews } from "@/lib/db/schema";
 
 export default async function InvitationsPage() {
-  const [views, clients, invites] = await Promise.all([
-    db
-      .select()
-      .from(portalViews)
-      .where(eq(portalViews.isEnabled, true)),
-    db
-      .select()
-      .from(clientAccounts)
-      .where(eq(clientAccounts.isActive, true)),
-    db
-      .select({
+  const invites = await db
+    .select({
         id: invitations.id,
         email: invitations.email,
         role: invitations.role,
@@ -40,11 +25,9 @@ export default async function InvitationsPage() {
         clientAccounts,
         eq(clientAccounts.id, invitations.clientAccountId),
       )
-      .orderBy(desc(invitations.createdAt)),
-  ]);
+      .orderBy(desc(invitations.createdAt));
   return (
     <div className="page-stack">
-      <InvitationForm clients={clients} views={views} />
       <section className="card table-shell">
         <div className="section-heading">
           <h2 className="text-lg font-bold">Invitation history</h2>

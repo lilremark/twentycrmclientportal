@@ -12270,3 +12270,723 @@ body,
   .admin-dashboard-actions { grid-column: 1; grid-row: auto; }
   .admin-metadata-list { grid-template-columns: 1fr; }
 }
+
+/* Admin settings use the full workspace beneath the primary settings tabs. */
+.admin-shell .app-content:has(.settings-layout) { padding-top: 0; }
+.admin-shell .settings-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 22px;
+}
+
+.admin-shell .settings-local-nav {
+  position: sticky;
+  z-index: 18;
+  top: 101px;
+  display: flex;
+  max-height: none;
+  align-items: center;
+  gap: 5px;
+  margin-inline: calc(clamp(18px, 2.4vw, 32px) * -1);
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--background) 96%, transparent);
+  padding: 8px clamp(18px, 2.4vw, 32px);
+  box-shadow: none;
+  overscroll-behavior: none;
+  backdrop-filter: blur(16px);
+}
+
+.admin-shell .settings-local-nav-heading {
+  min-width: max-content;
+  padding: 0 12px 0 0;
+}
+
+.admin-shell .settings-local-nav-heading p { margin: 0; }
+.admin-shell .settings-local-nav-heading span { display: none; }
+.admin-shell .settings-local-nav button {
+  display: inline-flex;
+  width: auto;
+  min-width: max-content;
+  min-height: 34px;
+  align-items: center;
+  gap: 7px;
+  border-radius: 7px;
+  padding: 6px 10px;
+}
+.admin-shell .settings-local-nav button svg { margin: 0; }
+.admin-shell .settings-local-nav button span { display: inline; }
+.admin-shell .settings-local-nav button strong { font-size: 0.72rem; }
+.admin-shell .settings-local-nav button small { display: none; }
+.admin-shell .settings-workspace { width: 100%; }
+
+/* Deployment readiness is presented as an operational status surface. */
+.deployment-settings-panel { display: grid; gap: 18px; }
+.deployment-settings-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 15px;
+}
+.deployment-settings-heading h2 { margin: 0; font-size: 1rem; font-weight: 720; }
+.deployment-settings-heading p { margin: 4px 0 0; color: var(--muted-foreground); font-size: 0.74rem; }
+.deployment-status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  overflow: hidden;
+}
+.deployment-status {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border-right: 1px solid var(--border);
+  background: var(--background);
+  padding: 14px;
+}
+.deployment-status:last-child { border-right: 0; }
+.deployment-status > div { display: grid; min-width: 0; gap: 3px; }
+.deployment-status strong { overflow: hidden; font-size: 0.76rem; text-overflow: ellipsis; white-space: nowrap; }
+.deployment-status > div span { color: var(--muted-foreground); font-size: 0.66rem; }
+.deployment-status.needs-attention > div span { color: var(--warning, #b46b00); }
+.deployment-settings-footer {
+  border-left: 2px solid var(--border-strong);
+  color: var(--muted-foreground);
+  padding: 2px 0 2px 12px;
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+/* Keep every table scroll boundary contained inside the application. */
+html,
+body,
+.table-scroll,
+.table-shell { overscroll-behavior: none; }
+
+.table-scroll { max-width: 100%; }
+.users-table { width: 100%; min-width: 0; table-layout: fixed; }
+.users-table th,
+.users-table td { padding-inline: 10px; }
+.users-table th:first-child,
+.users-table td:first-child { width: 17%; min-width: 0; }
+.users-table th:nth-child(2),
+.users-table td:nth-child(2) { width: 11%; }
+.users-table th:nth-child(3),
+.users-table td:nth-child(3) { width: 19%; min-width: 0; }
+.users-table th:nth-child(4),
+.users-table td:nth-child(4) { width: 10%; }
+.users-table th:nth-child(5),
+.users-table td:nth-child(5) { width: 11%; }
+.users-table th:last-child,
+.users-table td:last-child { width: 32%; min-width: 0; }
+.users-table .stacked-meta,
+.users-table td:first-child { overflow: hidden; }
+.users-table .stacked-meta span,
+.users-table td:first-child span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-management-actions { min-width: 0; gap: 4px; }
+.user-management-actions .table-actions { flex-wrap: nowrap; gap: 4px; }
+.user-management-actions .button {
+  min-height: 29px;
+  border-radius: 7px;
+  padding: 5px 7px;
+  font-size: 0.65rem;
+  white-space: nowrap;
+}
+
+/* Sidebar hover marks stay close to the glyph instead of becoming large tiles. */
+@media (min-width: 1024px) {
+  .admin-shell .sidebar-link-icon,
+  .portal-shell .sidebar-link-icon {
+    width: 18px !important;
+    min-width: 18px !important;
+    height: 18px !important;
+    min-height: 18px !important;
+    max-height: 18px !important;
+    flex-basis: 18px !important;
+    border-radius: 5px !important;
+  }
+  .admin-shell .sidebar-link-icon svg,
+  .portal-shell .sidebar-link-icon svg { width: 15px !important; height: 15px !important; }
+  .admin-shell .sidebar-link:hover .sidebar-link-icon,
+  .portal-shell .sidebar-link:hover .sidebar-link-icon {
+    background: color-mix(in srgb, var(--icon-color) 9%, transparent) !important;
+  }
+}
+
+/* Portal views use their configured navigation identity in the admin catalog. */
+.admin-portal-view-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.admin-portal-view-card {
+  display: grid;
+  min-width: 0;
+  gap: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--background);
+  padding: 16px;
+}
+.admin-portal-view-heading {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+}
+.admin-portal-view-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--portal-view-color) 24%, var(--border));
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--portal-view-color) 9%, var(--background));
+  color: var(--portal-view-color);
+}
+.admin-portal-view-heading > div { min-width: 0; }
+.admin-portal-view-heading h3 { overflow: hidden; margin: 0; font-size: 0.88rem; font-weight: 720; text-overflow: ellipsis; white-space: nowrap; }
+.admin-portal-view-heading > div > span { color: var(--muted-foreground); font-size: 0.68rem; }
+.admin-portal-view-status {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted-foreground);
+  padding: 4px 7px;
+  font-size: 0.62rem;
+  font-weight: 680;
+}
+.admin-portal-view-status.is-enabled { border-color: color-mix(in srgb, var(--success) 28%, var(--border)); color: var(--success); }
+.admin-portal-view-meta { display: flex; gap: 8px; color: var(--muted-foreground); font-size: 0.67rem; }
+.admin-portal-view-meta span + span::before { margin-right: 8px; content: "·"; }
+.admin-portal-view-actions { display: flex; align-items: center; gap: 6px; border-top: 1px solid var(--border); padding-top: 12px; }
+.admin-portal-view-actions .button { min-height: 30px; border-radius: 7px; padding: 5px 8px; font-size: 0.67rem; }
+.admin-portal-view-errors { margin: 0; padding-left: 18px; font-size: 0.72rem; }
+
+.portal-home-manage-link { min-height: 30px; border-radius: 7px; padding: 5px 10px; font-size: 0.68rem; }
+
+/* Destructive confirmation is centered, measured, and theme-legible. */
+.confirmation-viewport {
+  grid-template-rows: minmax(0, 1fr) !important;
+  place-items: center !important;
+  padding: 24px !important;
+}
+.confirmation-viewport .destructive-confirmation-card {
+  grid-row: 1 !important;
+  width: min(100%, 480px);
+  margin: auto;
+  border-radius: 14px;
+}
+.destructive-confirmation-card .confirmation-heading { gap: 15px; padding: 24px 24px 18px; }
+.destructive-confirmation-card .confirmation-content { padding: 0 24px 24px; }
+.destructive-confirmation-card .confirmation-form { gap: 20px; }
+.destructive-confirmation-card .confirmation-form .form-actions { justify-content: flex-end; gap: 8px; padding-top: 2px; }
+.destructive-confirmation-card [data-slot="input-control"] { background: var(--background); }
+.destructive-confirmation-card [data-slot="input"] { color: var(--foreground) !important; -webkit-text-fill-color: var(--foreground); }
+
+@media (max-width: 1000px) {
+  .deployment-status-grid,
+  .admin-portal-view-grid { grid-template-columns: 1fr; }
+  .deployment-status { border-right: 0; border-bottom: 1px solid var(--border); }
+  .deployment-status:last-child { border-bottom: 0; }
+}
+
+@media (max-width: 720px) {
+  .admin-shell .settings-local-nav-heading { display: none; }
+  .users-table { min-width: 860px; }
+}
+
+/* Settings sections are flat workspace regions separated by structure, not cards. */
+.admin-shell .settings-section-panel .settings-card {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+.admin-shell .settings-section-panel > .settings-card + .settings-card {
+  border-top: 1px solid var(--border) !important;
+  padding-top: 28px !important;
+}
+.admin-shell .settings-section-panel .settings-card-heading {
+  border-bottom: 1px solid var(--border);
+  padding: 0 0 16px;
+}
+.admin-shell .settings-section-panel .settings-grid,
+.admin-shell .settings-section-panel .profile-editor,
+.admin-shell .settings-section-panel .email-template-workbench {
+  padding-block: 2px;
+}
+.admin-shell .settings-local-nav { top: 115px; }
+
+/* Shared icon language: a compact tinted tile, with destructive controls retaining red. */
+.activity-icon,
+  .configuration-icon,
+  .settings-section-icon,
+  .dashboard-widget-icon,
+  .health-summary-icon,
+  .stat-card-icon,
+  .portal-glyph,
+  .header-section-icon,
+  .admin-portal-view-icon,
+  .lucide-icon-picker-glyph {
+  border: 1px solid color-mix(in srgb, var(--icon-color, var(--brand-primary)) 22%, var(--border)) !important;
+  border-radius: 9px !important;
+  background: color-mix(in srgb, var(--icon-color, var(--brand-primary)) 9%, var(--background)) !important;
+  color: var(--icon-color, var(--brand-primary)) !important;
+  box-shadow: none !important;
+}
+.destructive-confirmation-card .confirmation-icon {
+  border-color: color-mix(in srgb, var(--destructive) 28%, var(--border)) !important;
+  background: color-mix(in srgb, var(--destructive) 11%, var(--background)) !important;
+  color: var(--destructive) !important;
+}
+
+/* The curved workspace owns scrolling so its header remains anchored. */
+@media (min-width: 1024px) {
+  .admin-shell .app-main,
+  .portal-shell .app-main {
+    height: calc(100dvh - 16px);
+    max-height: calc(100dvh - 16px);
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: none;
+    scrollbar-gutter: stable;
+  }
+  .admin-shell .app-header,
+  .portal-shell .app-header {
+    position: sticky;
+    z-index: 40;
+    top: 0;
+  }
+}
+
+/* Portal configuration has a top stage rail and bottom action rail. */
+.admin-shell .portal-view-form { padding-bottom: 0 !important; }
+.admin-shell .app-main:has(.portal-view-form) { scroll-padding-bottom: 78px; }
+.admin-shell .builder-stage-nav {
+  position: sticky;
+  z-index: 35;
+  top: 115px;
+  background: var(--background);
+  backdrop-filter: none;
+}
+.admin-shell .portal-view-form > .form-actions:last-child,
+.admin-shell .portal-view-form > div:last-child > .form-actions:last-child {
+  z-index: 34;
+  bottom: 0 !important;
+  min-height: 62px;
+  margin-top: 16px;
+  margin-bottom: calc(clamp(18px, 2.4vw, 32px) * -1);
+  border-top: 1px solid var(--border) !important;
+  background: var(--background) !important;
+  padding: 12px 0 !important;
+  backdrop-filter: none;
+}
+
+/* Collapsed hover and current-view marks use the exact same glyph footprint. */
+@media (min-width: 1024px) {
+  .admin-shell.sidebar-collapsed .sidebar-link:hover,
+  .portal-shell.sidebar-collapsed .sidebar-link:hover,
+  .admin-shell.sidebar-collapsed .sidebar-link.active,
+  .portal-shell.sidebar-collapsed .sidebar-link.active {
+    background: transparent !important;
+  }
+  .admin-shell.sidebar-collapsed .sidebar-link:hover .sidebar-link-icon,
+  .portal-shell.sidebar-collapsed .sidebar-link:hover .sidebar-link-icon,
+  .admin-shell.sidebar-collapsed .sidebar-link.active .sidebar-link-icon,
+  .portal-shell.sidebar-collapsed .sidebar-link.active .sidebar-link-icon {
+    width: 18px !important;
+    min-width: 18px !important;
+    height: 18px !important;
+    min-height: 18px !important;
+    max-height: 18px !important;
+    border-radius: 5px !important;
+    background: color-mix(in srgb, var(--icon-color) 13%, transparent) !important;
+  }
+}
+
+/* Searchable Lucide icon catalog used by Portal View configuration. */
+.lucide-icon-picker { position: relative; }
+.lucide-icon-picker-trigger {
+  display: grid;
+  width: 100%;
+  min-height: 38px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--background);
+  color: var(--foreground);
+  padding: 4px 9px 4px 5px;
+  cursor: pointer;
+  text-align: left;
+}
+.lucide-icon-picker-trigger > span:nth-child(2) { overflow: hidden; font-size: 0.75rem; font-weight: 620; text-overflow: ellipsis; white-space: nowrap; }
+.lucide-icon-picker-glyph { display: grid; width: 28px; height: 28px; place-items: center; }
+.lucide-icon-picker-popover {
+  position: absolute;
+  z-index: 80;
+  top: calc(100% + 6px);
+  left: 0;
+  display: grid;
+  width: min(540px, calc(100vw - 48px));
+  gap: 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 11px;
+  background: var(--popover);
+  padding: 10px;
+  box-shadow: 0 18px 56px rgb(0 0 0 / 18%);
+}
+.lucide-icon-picker-search {
+  display: grid;
+  min-height: 36px;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--background);
+  color: var(--muted-foreground);
+  padding: 0 10px;
+}
+.lucide-icon-picker-search input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--foreground); font-size: 0.74rem; }
+.lucide-icon-picker-results {
+  display: grid;
+  max-height: 320px;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.lucide-icon-picker-results button {
+  position: relative;
+  display: grid;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+.lucide-icon-picker-results button:hover,
+.lucide-icon-picker-results button.is-selected {
+  border-color: color-mix(in srgb, var(--icon-color) 22%, var(--border));
+  background: color-mix(in srgb, var(--icon-color) 9%, var(--background));
+  color: var(--icon-color, var(--brand-primary));
+}
+.lucide-icon-picker-check { position: absolute; right: 3px; bottom: 3px; }
+.lucide-icon-picker-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.lucide-icon-picker-count { color: var(--muted-foreground); font-size: 0.64rem; }
+.lucide-icon-picker-more { border: 0; background: transparent; color: var(--icon-color, var(--brand-primary)); cursor: pointer; font-size: 0.65rem; font-weight: 680; }
+
+@media (max-width: 639px) {
+  .lucide-icon-picker-results { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .admin-shell .builder-stage-nav { top: 99px; }
+}
+
+@media (min-width: 1024px) {
+  .app-frame.sidebar-collapsed .sidebar-link:not(.active):hover .sidebar-link-icon,
+  .app-frame.sidebar-collapsed .sidebar-link.active .sidebar-link-icon {
+    background-color: color-mix(in srgb, var(--icon-color) 13%, transparent) !important;
+    background-image: none !important;
+  }
+}
+
+/* Eliminate the sticky-rail seam and only scroll genuinely overflowing pages. */
+.admin-shell .settings-local-nav,
+.admin-shell .builder-stage-nav { top: 108px; }
+.admin-shell .app-content,
+.portal-shell .app-content { min-height: 0 !important; }
+
+/* Legacy and design-system table actions share one compact button contract. */
+.table-actions :is(.button, [data-slot="button"]),
+.admin-portal-view-actions :is(.button, [data-slot="button"]) {
+  height: 32px;
+  min-height: 32px;
+  border-radius: 8px;
+  padding: 0 11px;
+  font-family: var(--font-sans), sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1;
+  white-space: nowrap;
+}
+.table-actions .button.secondary,
+.admin-portal-view-actions .button.secondary {
+  border: 1px solid var(--border-strong);
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
+}
+.table-actions .button.secondary:hover,
+.admin-portal-view-actions .button.secondary:hover { background: var(--surface-hover); }
+
+/* Floating menus stay attached to their field and scroll internally. */
+[data-slot="select-positioner"] {
+  z-index: 520 !important;
+  max-height: min(360px, var(--available-height));
+}
+[data-slot="select-popup"] {
+  max-height: min(360px, var(--available-height));
+  overflow: hidden;
+}
+.app-select-list,
+[data-slot="select-list"] {
+  max-height: min(320px, calc(var(--available-height) - 8px)) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+/* The icon catalog is portaled to the viewport so sticky rails cannot clip it. */
+.lucide-icon-picker-popover {
+  position: fixed;
+  z-index: 520;
+  min-height: 0;
+  overflow: hidden;
+}
+.lucide-icon-picker-results {
+  min-height: 0;
+  max-height: min(320px, calc(100dvh - 170px));
+}
+
+/* User invitations are created from the Users view without displacing the table. */
+.users-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.invite-user-modal {
+  grid-row: 1 !important;
+  width: min(620px, calc(100vw - 32px));
+  max-height: min(760px, calc(100dvh - 32px));
+  overflow-y: auto;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: var(--popover);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 32%);
+  scrollbar-width: thin;
+}
+.invite-user-modal-heading {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: start;
+  gap: 14px;
+  padding: 24px 24px 18px;
+  text-align: left;
+}
+.invite-user-modal-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 24%, var(--border));
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--brand-primary) 10%, var(--background));
+  color: var(--brand-primary);
+}
+.invite-user-modal-content { padding: 0 24px 24px; }
+.invite-user-form { display: grid; gap: 18px; }
+.invite-user-form .form-actions {
+  justify-content: flex-end;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+/* Raise dashboard contrast in dark mode while retaining information hierarchy. */
+.dark .admin-home-dashboard .portal-home-section-heading h3,
+.dark .admin-home-dashboard .portal-activity-item strong,
+.dark .admin-home-dashboard .admin-metadata-object strong {
+  color: color-mix(in srgb, white 90%, var(--foreground));
+}
+.dark .admin-home-dashboard .portal-home-section-heading .eyebrow,
+.dark .admin-home-dashboard .portal-activity-copy > span,
+.dark .admin-home-dashboard .portal-activity-item time,
+.dark .admin-home-dashboard .admin-metadata-synced-at {
+  color: color-mix(in srgb, white 62%, var(--muted-foreground));
+}
+
+@media (max-width: 639px) {
+  .users-section-heading { align-items: stretch; flex-direction: column; }
+  .users-section-heading > [data-slot="button"] { width: 100%; }
+  .invite-user-modal-heading { padding: 20px 18px 16px; }
+  .invite-user-modal-content { padding: 0 18px 20px; }
+}
+
+/* Admin creation flows use one measured, centered modal language. */
+.admin-form-modal {
+  grid-row: 1 !important;
+  width: min(640px, calc(100vw - 32px));
+  max-width: none;
+  max-height: min(780px, calc(100dvh - 32px));
+  overflow-y: auto;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: var(--popover);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 32%);
+  scrollbar-width: thin;
+}
+.admin-form-modal-heading {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  border-bottom: 1px solid var(--border);
+  padding: 22px 24px 18px;
+  text-align: left;
+}
+.admin-form-modal-heading > div { display: grid; gap: 5px; }
+.admin-form-modal-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 24%, var(--border));
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--brand-primary) 10%, var(--background));
+  color: var(--brand-primary);
+}
+.admin-form-modal-content { padding: 0 24px 22px; }
+.admin-modal-form-section {
+  display: grid;
+  gap: 14px;
+  border-bottom: 1px solid var(--border);
+  padding: 18px 0;
+}
+.admin-modal-form-section-heading {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+}
+.admin-modal-form-section-heading > span {
+  padding-top: 2px;
+  color: var(--muted-light);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.62rem;
+}
+.admin-modal-form-section-heading > div { display: grid; gap: 2px; }
+.admin-modal-form-section-heading strong { font-size: 0.76rem; }
+.admin-modal-form-section-heading p {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+.admin-form-modal-content :is(.invite-user-form, .client-account-modal-form) {
+  display: grid;
+  width: 100%;
+  gap: 0;
+}
+.admin-form-modal-content .form-grid {
+  width: 100%;
+  gap: 14px;
+}
+.admin-form-modal-content .field {
+  width: 100%;
+  min-width: 0;
+  gap: 6px;
+}
+.admin-form-modal-content .field > :is(.input, [data-slot="select-trigger"]) {
+  width: 100%;
+  min-height: 40px;
+  background: var(--background);
+}
+.admin-form-modal-content .field label {
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.admin-form-modal-content .field-help {
+  max-width: 100%;
+  color: var(--muted-foreground);
+  font-size: 0.64rem;
+  line-height: 1.45;
+}
+.admin-form-modal-content .form-actions {
+  justify-content: flex-end;
+  border-top: 0;
+  padding-top: 16px;
+}
+.invite-user-portal-field { grid-column: 1 / -1; }
+.client-account-modal { width: min(540px, calc(100vw - 32px)); }
+.client-account-fields { grid-template-columns: minmax(0, 1fr); }
+.client-accounts-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* Export drawers are portaled to the viewport, so their content fills the pane. */
+body > .record-panel-layer {
+  right: 0;
+  left: auto;
+}
+body > .record-panel-layer .record-side-panel,
+body > .record-panel-layer .export-workspace {
+  width: 100%;
+  max-width: none;
+}
+
+@media (max-width: 639px) {
+  .admin-form-modal-heading { padding: 20px 18px 16px; }
+  .admin-form-modal-content { padding: 0 18px 20px; }
+  .invite-user-identity-grid,
+  .invite-user-access-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .invite-user-portal-field { grid-column: auto; }
+  .client-accounts-section-heading { align-items: stretch; flex-direction: column; }
+  .client-accounts-section-heading > [data-slot="button"] { width: 100%; }
+}
+
+/* Client profile mirrors the admin profile's flat, full-width settings workspace. */
+.portal-shell .portal-profile-settings-layout {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 22px;
+}
+.portal-shell .portal-profile-settings-layout .settings-workspace {
+  width: 100%;
+  min-width: 0;
+}
+.portal-shell .portal-profile-settings-layout .settings-card {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+.portal-shell .portal-profile-settings-layout .settings-card-heading {
+  border-bottom: 1px solid var(--border);
+  padding: 0 0 16px;
+}
+.portal-shell .portal-profile-settings-layout .profile-editor {
+  padding-block: 2px;
+}
+.portal-shell .portal-profile-settings-layout .settings-submit {
+  margin-top: 2px;
+}
+
+@media (max-width: 639px) {
+  .portal-shell .portal-profile-settings-layout .profile-editor {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .portal-shell .portal-profile-settings-layout .settings-avatar {
+    width: 60px;
+    height: 60px;
+    flex-basis: 60px;
+  }
+}

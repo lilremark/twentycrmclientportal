@@ -130,7 +130,7 @@ export default async function AdminOverviewPage() {
       <section className="portal-home-section">
         <div className="portal-home-section-heading">
           <div><p className="eyebrow">Configured</p><h3>Active portals</h3></div>
-          <Link href="/admin/views">Manage all</Link>
+          <Link className="button secondary portal-home-manage-link" href="/admin/views">Manage all</Link>
         </div>
         <div className="portal-overview-grid">
           {activeViews.map((view) => {

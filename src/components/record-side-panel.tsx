@@ -120,7 +120,9 @@ export function RecordSidePanel({
       "--record-panel-width",
       `${initialWidth}px`,
     );
-    const appFrame = panelRef.current?.closest<HTMLElement>(".app-frame");
+    const appFrame =
+      panelRef.current?.closest<HTMLElement>(".app-frame") ??
+      document.querySelector<HTMLElement>(".app-frame");
     appFrameRef.current = appFrame ?? null;
     appFrame?.classList.add("record-panel-open", "record-panel-opening");
     appFrame?.style.setProperty("--record-panel-width", `${initialWidth}px`);
@@ -163,9 +165,10 @@ export function RecordSidePanel({
     if (typeof localStorage?.setItem === "function") {
       localStorage.setItem(PANEL_WIDTH_STORAGE_KEY, String(nextWidth));
     }
-    panelRef.current
-      ?.closest<HTMLElement>(".app-frame")
-      ?.style.setProperty("--record-panel-width", `${nextWidth}px`);
+    appFrameRef.current?.style.setProperty(
+      "--record-panel-width",
+      `${nextWidth}px`,
+    );
   }, []);
 
   const startResize = (event: React.PointerEvent<HTMLDivElement>) => {

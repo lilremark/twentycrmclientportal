@@ -79,7 +79,7 @@ export function SettingsSectionLayout({
 
   return (
     <div className="settings-layout">
-      <aside className="settings-local-nav" aria-label="Settings sections">
+      <nav className="settings-local-nav" aria-label="Settings sections">
         <div className="settings-local-nav-heading">
           <p>Configuration</p>
           <span>Choose one area to edit.</span>
@@ -107,7 +107,7 @@ export function SettingsSectionLayout({
             </button>
           );
         })}
-      </aside>
+      </nav>
 
       <div className="settings-workspace">
         <header className="settings-workspace-heading">

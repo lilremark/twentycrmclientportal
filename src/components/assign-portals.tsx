@@ -140,8 +140,8 @@ export function AssignPortals({
 
   return (
     <>
-      <button className="button secondary" onClick={openModal} type="button">
-        Assign Portals
+      <button className="button secondary assign-portals-trigger" onClick={openModal} type="button">
+        Portals
       </button>
 
       {isOpen &&

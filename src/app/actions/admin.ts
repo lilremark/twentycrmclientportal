@@ -54,6 +54,14 @@ const portalViewSlugSchema = z
     message: '"settings" is reserved for the account settings page.',
   });
 
+const portalNavigationIconSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(80)
+  .regex(/^[A-Za-z][A-Za-z0-9]*$/)
+  .default("records");
+
 function selectedNames(formData: FormData, name: string) {
   return formData
     .getAll(name)
@@ -371,7 +379,7 @@ export async function createPortalViewAction(formData: FormData) {
         .optional()
         .transform((value) => value === "on" || value === "true"),
       navigationOrder: z.coerce.number().int().default(0),
-      navigationIcon: z.enum(["records", "table", "folder", "briefcase", "users", "calendar", "chart", "file", "target"]).default("records"),
+      navigationIcon: portalNavigationIconSchema,
       navigationIconColor: z.string().regex(/^#[0-9a-f]{6}$/i).default("#3157d5"),
     })
     .parse(Object.fromEntries(formData));
@@ -495,7 +503,7 @@ export async function updatePortalViewAction(
         .optional()
         .transform((value) => value === "on" || value === "true"),
       navigationOrder: z.coerce.number().int().default(0),
-      navigationIcon: z.enum(["records", "table", "folder", "briefcase", "users", "calendar", "chart", "file", "target"]).default("records"),
+      navigationIcon: portalNavigationIconSchema,
       navigationIconColor: z.string().regex(/^#[0-9a-f]{6}$/i).default("#3157d5"),
     })
     .parse(Object.fromEntries(formData));

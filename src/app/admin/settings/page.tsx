@@ -37,8 +37,8 @@ export default async function AdminSettingsPage() {
       }
       brand={<ApplicationSettingsForm settings={settings} />}
       deployment={
-        <section className="card settings-card">
-          <div className="settings-card-heading">
+        <section className="deployment-settings-panel">
+          <div className="deployment-settings-heading">
             <span className="settings-section-icon">
               <ServerCog size={19} />
             </span>
@@ -50,7 +50,7 @@ export default async function AdminSettingsPage() {
               </p>
             </div>
           </div>
-          <div className="configuration-list">
+          <div className="deployment-status-grid">
             <ConfigurationStatus
               configured={Boolean(
                 integrations.hasTwentyApiKey && integrations.twentyBaseUrl,
@@ -71,11 +71,9 @@ export default async function AdminSettingsPage() {
               label="Authentication secrets"
             />
           </div>
-          <p className="settings-note">
-            Update API keys, webhook secrets, SMTP credentials, URLs, and
-            authentication secrets in your deployment environment, then restart
-            the portal.
-          </p>
+          <div className="deployment-settings-footer">
+            Update deployment secrets and URLs in the server environment, then restart the portal.
+          </div>
         </section>
       }
       email={
@@ -106,11 +104,13 @@ function ConfigurationStatus({
   label: string;
 }) {
   return (
-    <div className="configuration-row">
+    <div className={`deployment-status ${configured ? "is-configured" : "needs-attention"}`}>
       <span className="configuration-icon">{icon}</span>
-      <span>{label}</span>
+      <div>
+        <strong>{label}</strong>
+        <span>{configured ? "Configured" : "Needs attention"}</span>
+      </div>
       <span className={`status-dot ${configured ? "configured" : ""}`} />
-      <strong>{configured ? "Configured" : "Needs attention"}</strong>
     </div>
   );
 }

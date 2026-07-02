@@ -5,9 +5,13 @@ import {
   setUserStatusAction,
 } from "@/app/actions/admin";
 import { AssignPortals } from "@/components/assign-portals";
+import { InvitationModal } from "@/components/admin-actions";
 import { ConfirmDeleteForm } from "@/components/confirm-delete-form";
 import { requireAdmin } from "@/lib/access";
-import { getApplicationSettings, getSettingsBranding } from "@/lib/application-settings";
+import {
+  getApplicationSettings,
+  getSettingsBranding,
+} from "@/lib/application-settings";
 import { db } from "@/lib/db";
 import {
   clientAccounts,
@@ -20,8 +24,15 @@ import {
 
 export default async function UserManagementPage() {
   const current = await requireAdmin();
-  const [users, admins, clientMemberships, directAccess, availableViews, settings] =
-    await Promise.all([
+  const [
+    users,
+    admins,
+    clientMemberships,
+    directAccess,
+    availableViews,
+    availableClients,
+    settings,
+  ] = await Promise.all([
     db
       .select({
         id: user.id,
@@ -57,10 +68,20 @@ export default async function UserManagementPage() {
       .select({
         id: portalViews.id,
         label: portalViews.label,
+        scopeMode: portalViews.scopeMode,
       })
       .from(portalViews)
       .where(eq(portalViews.isEnabled, true))
       .orderBy(portalViews.navigationOrder, portalViews.label),
+    db
+      .select({
+        id: clientAccounts.id,
+        name: clientAccounts.name,
+        twentyPersonId: clientAccounts.twentyPersonId,
+      })
+      .from(clientAccounts)
+      .where(eq(clientAccounts.isActive, true))
+      .orderBy(clientAccounts.name),
     getApplicationSettings(),
   ]);
   const branding = getSettingsBranding(settings);
@@ -84,11 +105,14 @@ export default async function UserManagementPage() {
   return (
     <div className="page-stack">
       <section className="card table-shell">
-        <div className="section-heading">
-          <h2 className="text-lg font-bold">Users</h2>
-          <p className="mt-1 text-sm text-[#68758a]">
-            Suspending a user immediately revokes active sessions.
-          </p>
+        <div className="section-heading users-section-heading">
+          <div>
+            <h2 className="text-lg font-bold">Users</h2>
+            <p className="mt-1 text-sm text-[#68758a]">
+              Suspending a user immediately revokes active sessions.
+            </p>
+          </div>
+          <InvitationModal clients={availableClients} views={availableViews} />
         </div>
         <div className="table-scroll">
           <table className="data-table users-table">

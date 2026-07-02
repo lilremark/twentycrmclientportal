@@ -27,6 +27,7 @@ import {
   UserPlus,
   Users,
   X,
+  icons,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -434,7 +435,7 @@ export function AppShell({
                   id={sectionId}
                 >
                   {section.items.map((item) => {
-                    const Icon = navigationIcons[item.icon] ?? ClipboardList;
+                    const Icon = navigationIcons[item.icon] ?? (icons[item.icon as keyof typeof icons] as LucideIcon | undefined) ?? ClipboardList;
                     const active = isActiveNavigation(item.href);
                     return (
                       <Link
