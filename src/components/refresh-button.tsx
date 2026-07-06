@@ -8,15 +8,19 @@ import { refreshPortalDataAction } from "@/app/actions/portal";
 
 export function RefreshButton({
   label = "Refresh",
+  iconOnly = false,
 }: {
   label?: string;
+  iconOnly?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   return (
     <button
-      className="button secondary"
+      aria-busy={pending}
+      aria-label={pending ? "Refreshing record" : label}
+      className={`button secondary ${iconOnly ? "refresh-icon-button" : ""}`}
       disabled={pending}
       onClick={() =>
         startTransition(async () => {
@@ -24,10 +28,11 @@ export function RefreshButton({
           router.refresh();
         })
       }
+      title={label}
       type="button"
     >
       <RefreshCw className={pending ? "spin-icon" : undefined} size={14} />
-      {label}
+      {iconOnly ? null : label}
     </button>
   );
 }

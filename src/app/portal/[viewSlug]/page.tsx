@@ -375,19 +375,16 @@ export default async function PortalListPage({
               recordPanel={
                 selectedRecordId ? (
                   <>
-                    <header className="record-panel-header">
-                      <div className="record-panel-heading">
-                        <p className="eyebrow">{object.labelSingular}</p>
-                        <h2>{recordTitle || object.labelSingular}</h2>
-                      </div>
-                      {selectedRecord ? (
-                        <div className="record-panel-actions">
-                          <RefreshButton />
-                        </div>
-                      ) : null}
-                    </header>
-
                     <RecordPanelTabs
+                      heading={
+                        <div className="record-panel-heading">
+                          <p className="eyebrow">{object.labelSingular}</p>
+                          <h2>{recordTitle || object.labelSingular}</h2>
+                        </div>
+                      }
+                      headerAction={
+                        selectedRecord ? <RefreshButton iconOnly /> : undefined
+                      }
                       fields={selectedRecordError ? (
                         <div className="record-panel-message">
                           <strong>Record unavailable</strong>

@@ -13330,3 +13330,68 @@ body > .record-panel-layer .export-workspace {
     grid-column: 1 / -1;
   }
 }
+
+/* The record header owns navigation and keeps its utility action at the edge. */
+.record-panel-tabbed-header {
+  gap: 14px;
+  padding: 22px 22px 0;
+}
+
+.record-panel-tabbed-header .record-panel-heading {
+  padding-right: 36px;
+}
+
+.record-panel-toolbar {
+  display: flex;
+  min-width: 0;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.record-panel-tabbed-header .record-panel-tabs {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.record-panel-header-action {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  align-self: center;
+  margin: 0 0 8px auto;
+}
+
+.record-panel-header-action .refresh-icon-button {
+  display: inline-grid;
+  width: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  place-items: center;
+  border-color: var(--border);
+  border-radius: 8px;
+  background: var(--surface-subtle);
+  color: var(--foreground);
+  padding: 0;
+}
+
+.record-panel-header-action .refresh-icon-button:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+
+@media (max-width: 560px) {
+  .record-panel-tabbed-header {
+    padding-inline: 14px;
+  }
+
+  .record-panel-toolbar {
+    gap: 6px;
+  }
+
+  .record-panel-tabbed-header .record-panel-tab {
+    padding-inline: 5px;
+  }
+}

@@ -13,6 +13,8 @@ describe("RecordPanelTabs", () => {
   it("switches between fields, notes, and files", () => {
     render(
       <RecordPanelTabs
+        heading={<h2>Example record</h2>}
+        headerAction={<button aria-label="Refresh record" />}
         fields={<p>Record fields</p>}
         fileCount={1}
         files={<p>Record files</p>}
@@ -26,6 +28,13 @@ describe("RecordPanelTabs", () => {
       "true",
     );
     expect(screen.getByText("Record fields")).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Refresh record" }).closest(
+        ".record-panel-header",
+      ),
+    ).toContainElement(
+      screen.getByRole("tab", { name: "Fields" }),
+    );
 
     fireEvent.click(screen.getByRole("tab", { name: /Notes/ }));
     expect(screen.getByText("Record notes")).toBeVisible();
@@ -41,7 +50,12 @@ describe("RecordPanelTabs", () => {
   });
 
   it("shows clear empty states when notes or files are not configured", () => {
-    render(<RecordPanelTabs fields={<p>Record fields</p>} />);
+    render(
+      <RecordPanelTabs
+        heading={<h2>Example record</h2>}
+        fields={<p>Record fields</p>}
+      />,
+    );
 
     fireEvent.click(screen.getByRole("tab", { name: "Notes" }));
     expect(screen.getByText("No notes available")).toBeVisible();

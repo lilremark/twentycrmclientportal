@@ -17,12 +17,16 @@ const tabs: Array<{
 ];
 
 export function RecordPanelTabs({
+  heading,
+  headerAction,
   fields,
   notes,
   files,
   noteCount = 0,
   fileCount = 0,
 }: {
+  heading: ReactNode;
+  headerAction?: ReactNode;
   fields: ReactNode;
   notes?: ReactNode;
   files?: ReactNode;
@@ -77,30 +81,47 @@ export function RecordPanelTabs({
 
   return (
     <div className="record-panel-tabs-shell">
-      <div aria-label="Record sections" className="record-panel-tabs" role="tablist">
-        {tabs.map((tab, index) => {
-          const Icon = tab.icon;
-          const count = tab.id === "notes" ? noteCount : tab.id === "files" ? fileCount : null;
-          return (
-            <button
-              aria-controls={`record-tabpanel-${tab.id}`}
-              aria-selected={activeTab === tab.id}
-              className="record-panel-tab"
-              id={`record-tab-${tab.id}`}
-              key={tab.id}
-              onClick={() => selectTab(tab.id)}
-              onKeyDown={(event) => handleKeyDown(event, index)}
-              role="tab"
-              tabIndex={activeTab === tab.id ? 0 : -1}
-              type="button"
-            >
-              <Icon size={15} />
-              <span>{tab.label}</span>
-              {count !== null && count > 0 ? <small>{count}</small> : null}
-            </button>
-          );
-        })}
-      </div>
+      <header className="record-panel-header record-panel-tabbed-header">
+        {heading}
+        <div className="record-panel-toolbar">
+          <div
+            aria-label="Record sections"
+            className="record-panel-tabs"
+            role="tablist"
+          >
+            {tabs.map((tab, index) => {
+              const Icon = tab.icon;
+              const count =
+                tab.id === "notes"
+                  ? noteCount
+                  : tab.id === "files"
+                    ? fileCount
+                    : null;
+              return (
+                <button
+                  aria-controls={`record-tabpanel-${tab.id}`}
+                  aria-selected={activeTab === tab.id}
+                  className="record-panel-tab"
+                  id={`record-tab-${tab.id}`}
+                  key={tab.id}
+                  onClick={() => selectTab(tab.id)}
+                  onKeyDown={(event) => handleKeyDown(event, index)}
+                  role="tab"
+                  tabIndex={activeTab === tab.id ? 0 : -1}
+                  type="button"
+                >
+                  <Icon size={15} />
+                  <span>{tab.label}</span>
+                  {count !== null && count > 0 ? <small>{count}</small> : null}
+                </button>
+              );
+            })}
+          </div>
+          {headerAction ? (
+            <div className="record-panel-header-action">{headerAction}</div>
+          ) : null}
+        </div>
+      </header>
       <div className="record-panel-tab-viewport" ref={viewportRef}>
         {tabs.map((tab) => (
           <section
