@@ -413,7 +413,7 @@ PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
 
 After the health check passes, open the configured `APP_URL` and complete the one-time `/setup` flow.
 
-[2.1.0]: https://github.com/lilremark/twentycrmclientportal/releases/tag/v2.1.0
+[2.1.0]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=2.1.0
 [2.0.0]: https://github.com/lilremark/twentycrmclientportal/releases/tag/v2.0.0
 [1.5.2]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.5.2
 [1.5.1]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.5.1
