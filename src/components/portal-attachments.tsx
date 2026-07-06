@@ -1,6 +1,7 @@
-import { Paperclip, Upload } from "lucide-react";
+import { FolderOpen, Paperclip, Upload } from "lucide-react";
 
 import { PortalRecordValue } from "@/components/portal-record-value";
+import { extractPortalFiles } from "@/lib/file-values";
 
 export function PortalAttachments({
   value,
@@ -15,20 +16,39 @@ export function PortalAttachments({
     attachmentId: string,
   ) => void | Promise<void>;
 }) {
+  const files = extractPortalFiles(value);
+
   return (
     <section className="record-attachments-section">
       <div className="record-attachments-heading">
-        <div>
-          <p className="eyebrow">Files</p>
-          <h3>Attachments</h3>
+        <div className="record-section-title">
+          <span className="record-section-icon">
+            <FolderOpen size={16} />
+          </span>
+          <div>
+            <h3>Files and attachments</h3>
+            <p>Preview, download, or add files shared with this record</p>
+          </div>
         </div>
       </div>
-      <PortalRecordValue
-        deleteAttachmentAction={canUpload ? deleteAttachmentAction : undefined}
-        pdfPreview
-        type="RELATION"
-        value={value}
-      />
+      {files.length ? (
+        <PortalRecordValue
+          deleteAttachmentAction={
+            canUpload ? deleteAttachmentAction : undefined
+          }
+          pdfPreview
+          type="RELATION"
+          value={value}
+        />
+      ) : (
+        <div className="record-files-empty">
+          <Paperclip size={17} />
+          <div>
+            <strong>No files attached</strong>
+            <p>Files added to this record will appear here.</p>
+          </div>
+        </div>
+      )}
       {canUpload ? (
         <form
           action={uploadAction}

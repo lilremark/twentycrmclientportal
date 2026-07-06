@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { FileText, Maximize2, Plus, X } from "lucide-react";
+import { FileText, Maximize2, NotebookPen, Plus, X } from "lucide-react";
 
 import type { PortalNote } from "@/lib/portal-notes";
 
@@ -34,9 +34,18 @@ export function PortalNotes({
   return (
     <section className="record-notes-section">
       <div className="record-notes-heading">
-        <div>
-          <p className="eyebrow">Notes</p>
-          <h3>Record notes</h3>
+        <div className="record-section-title">
+          <span className="record-section-icon">
+            <NotebookPen size={16} />
+          </span>
+          <div>
+            <h3>Record notes</h3>
+            <p>
+              {notes.length
+                ? `${notes.length} note${notes.length === 1 ? "" : "s"} attached to this record`
+                : "Keep context with this record"}
+            </p>
+          </div>
         </div>
         {canEdit ? (
           <button
