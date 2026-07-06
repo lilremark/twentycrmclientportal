@@ -65,7 +65,7 @@ while [ "$attempt" -lt 60 ]; do
 
     echo "Fresh database verified: all Better Auth ID defaults are installed."
     echo "Portal readiness check passed."
-    echo "Open the APP_URL from .env and complete /setup using SETUP_TOKEN."
+    echo "Open the APP_URL from .env and complete the initial administrator setup."
     exit 0
   fi
 

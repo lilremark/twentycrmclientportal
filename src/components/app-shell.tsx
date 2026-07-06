@@ -440,6 +440,15 @@ export function AppShell({
                     return (
                       <Link
                         className={`sidebar-link ${active ? "active" : ""}`}
+                        data-tour-target={
+                          item.href === "/admin/views"
+                            ? "views"
+                            : item.href === "/admin/invitations"
+                              ? "invitations"
+                              : item.href === "/admin/settings"
+                                ? "settings"
+                                : undefined
+                        }
                         href={item.href}
                         key={item.href}
                         onClick={() => setMobileOpen(false)}

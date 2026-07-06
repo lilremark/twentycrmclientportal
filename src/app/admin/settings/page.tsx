@@ -66,7 +66,7 @@ export default async function AdminSettingsPage() {
               label="Email delivery"
             />
             <ConfigurationStatus
-              configured={Boolean(env.AUTH_SECRET && env.SETUP_TOKEN)}
+              configured={Boolean(env.AUTH_SECRET)}
               icon={<ShieldCheck size={18} />}
               label="Authentication secrets"
             />

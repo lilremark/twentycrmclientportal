@@ -9,7 +9,6 @@ const envSchema = z.object({
   APP_URL: z.url().refine(isHttpUrl, "APP_URL must use HTTP or HTTPS."),
   TRUSTED_ORIGINS: optionalString,
   AUTH_SECRET: z.string().min(32),
-  SETUP_TOKEN: z.string().min(16),
   TWENTY_BASE_URL: optionalString,
   TWENTY_API_KEY: optionalString,
   TWENTY_WEBHOOK_SECRET: optionalString,

@@ -8,11 +8,13 @@ import {
   LoaderCircle,
   Mail,
   Palette,
+  Rocket,
   UserRound,
 } from "lucide-react";
 import {
   type FormEvent,
   useActionState,
+  useEffect,
   useRef,
   useState,
   useTransition,
@@ -21,6 +23,7 @@ import {
 import {
   setupAction,
   testSetupSmtpAction,
+  type AuthActionState,
   type SetupSmtpTestState,
 } from "@/app/actions/auth";
 import { AppSelect } from "@/components/ui/app-select";
@@ -48,16 +51,119 @@ const steps = [
   },
 ] as const;
 
-export function SetupForm() {
-  const [state, action, pending] = useActionState(setupAction, {
-    error: undefined,
-  });
+const launchStep = {
+  title: "Launch",
+  description: "Build the workspace and prepare sign-in.",
+  icon: Rocket,
+} as const;
+
+const provisioningTasks = [
+  "Securing the administrator account",
+  "Saving workspace connections",
+  "Applying the portal brand system",
+  "Preparing your sign-in experience",
+] as const;
+
+export function SetupForm({
+  brandName = "Twenty Portal",
+  brandLogoUrl = null,
+}: {
+  brandName?: string;
+  brandLogoUrl?: string | null;
+}) {
+  const [provisioning, setProvisioning] = useState(false);
+  const [setupSucceeded, setSetupSucceeded] = useState(false);
+  const [showCompletion, setShowCompletion] = useState(false);
+  const [provisioningProgress, setProvisioningProgress] = useState(0);
+  const [stepTransitioning, setStepTransitioning] = useState(false);
+  const [transitionId, setTransitionId] = useState(0);
+  const submissionTimerRef = useRef<number | null>(null);
+  const completionTimerRef = useRef<number | null>(null);
+  const stepTransitionTimerRef = useRef<number | null>(null);
+  const [state, action, actionPending] = useActionState(
+    async (previousState: AuthActionState, formData: FormData) => {
+      const result = await setupAction(previousState, formData);
+      if (result.error) {
+        setProvisioning(false);
+        setSetupSucceeded(false);
+        setProvisioningProgress(0);
+        setTransitionId((value) => value + 1);
+      } else if (result.setupComplete) {
+        setSetupSucceeded(true);
+        setProvisioningProgress(100);
+        completionTimerRef.current = window.setTimeout(() => {
+          setShowCompletion(true);
+          setTransitionId((value) => value + 1);
+        }, 1200);
+      }
+      return result;
+    },
+    { error: undefined },
+  );
   const [currentStep, setCurrentStep] = useState(0);
   const [furthestStep, setFurthestStep] = useState(0);
+  const [direction, setDirection] = useState<"forward" | "backward">(
+    "forward",
+  );
   const [smtpTestState, setSmtpTestState] =
     useState<SetupSmtpTestState | null>(null);
+  const [setupSubmitting, startSetupTransition] = useTransition();
   const [testingSmtp, startSmtpTest] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
+  const pending = actionPending || setupSubmitting;
+
+  useEffect(
+    () => () => {
+      if (submissionTimerRef.current !== null) {
+        window.clearTimeout(submissionTimerRef.current);
+      }
+      if (completionTimerRef.current !== null) {
+        window.clearTimeout(completionTimerRef.current);
+      }
+      if (stepTransitionTimerRef.current !== null) {
+        window.clearTimeout(stepTransitionTimerRef.current);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!provisioning || setupSucceeded) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      setProvisioningProgress(8);
+    });
+    const interval = window.setInterval(() => {
+      setProvisioningProgress((value) => {
+        const remaining = 92 - value;
+        return Math.min(92, value + Math.max(0.35, remaining * 0.075));
+      });
+    }, 120);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearInterval(interval);
+    };
+  }, [provisioning, setupSucceeded]);
+
+  function beginStepTransition() {
+    setStepTransitioning(true);
+    if (stepTransitionTimerRef.current !== null) {
+      window.clearTimeout(stepTransitionTimerRef.current);
+    }
+    stepTransitionTimerRef.current = window.setTimeout(() => {
+      setStepTransitioning(false);
+      stepTransitionTimerRef.current = null;
+    }, 420);
+  }
+
+  function finishStepTransition() {
+    if (stepTransitionTimerRef.current !== null) {
+      window.clearTimeout(stepTransitionTimerRef.current);
+      stepTransitionTimerRef.current = null;
+    }
+    setStepTransitioning(false);
+  }
 
   function validateCurrentStep() {
     const panel = formRef.current?.querySelector<HTMLElement>(
@@ -78,20 +184,31 @@ export function SetupForm() {
   }
 
   function continueSetup() {
-    if (!validateCurrentStep()) return;
+    if (stepTransitioning || !validateCurrentStep()) return;
     const nextStep = Math.min(currentStep + 1, steps.length - 1);
+    beginStepTransition();
+    setDirection("forward");
+    setTransitionId((value) => value + 1);
     setCurrentStep(nextStep);
     setFurthestStep((previous) => Math.max(previous, nextStep));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function goToStep(index: number) {
-    if (index > furthestStep) return;
+    if (index > furthestStep || provisioning || stepTransitioning) return;
+    if (index === currentStep) return;
+    setDirection(index < currentStep ? "backward" : "forward");
+    beginStepTransition();
+    setTransitionId((value) => value + 1);
     setCurrentStep(index);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    if (stepTransitioning) {
+      event.preventDefault();
+      return;
+    }
     if (currentStep < steps.length - 1) {
       event.preventDefault();
       continueSetup();
@@ -104,7 +221,20 @@ export function SetupForm() {
       submitter.dataset.setupComplete !== "true"
     ) {
       event.preventDefault();
+      return;
     }
+
+    event.preventDefault();
+    if (provisioning) return;
+
+    const formData = new FormData(event.currentTarget);
+    setTransitionId((value) => value + 1);
+    setProvisioning(true);
+    setProvisioningProgress(0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    submissionTimerRef.current = window.setTimeout(() => {
+      startSetupTransition(() => action(formData));
+    }, 1200);
   }
 
   function testSmtpConnection() {
@@ -124,18 +254,8 @@ export function SetupForm() {
       }
     }
 
-    const setupToken = form.elements.namedItem("setupToken");
-    if (!(setupToken instanceof HTMLInputElement) || !setupToken.value) {
-      setSmtpTestState({
-        status: "error",
-        message: "Enter the setup token in the Administrator step first.",
-      });
-      return;
-    }
-
     const formData = new FormData();
     for (const name of [
-      "setupToken",
       "smtpHost",
       "smtpPort",
       "smtpSecure",
@@ -161,51 +281,222 @@ export function SetupForm() {
 
   return (
     <form
-      action={action}
-      className="setup-workflow-form"
+      className={`setup-workflow-form ${
+        currentStep === 0 && !provisioning && !showCompletion
+          ? "is-welcome"
+          : "is-guided"
+      }`}
       encType="multipart/form-data"
       onSubmit={handleSubmit}
       ref={formRef}
     >
-      <nav aria-label="Setup progress" className="setup-progress">
-        {steps.map((step, index) => {
+      <aside
+        aria-hidden={currentStep !== 0 || provisioning || showCompletion}
+        className="setup-welcome-panel"
+        hidden={currentStep !== 0 || provisioning || showCompletion}
+      >
+        <SetupBrand brandLogoUrl={brandLogoUrl} brandName={brandName} inverse />
+        <div className="setup-welcome-copy">
+          <p className="eyebrow">New client workspace</p>
+          <h1>A few focused steps from a portal that feels like yours.</h1>
+          <p>
+            Create the first administrator, connect Twenty, and shape the
+            experience your clients will see.
+          </p>
+        </div>
+        <div aria-hidden="true" className="setup-welcome-collage">
+          <article className="setup-welcome-card setup-welcome-card-data">
+            <span className="setup-welcome-card-icon">
+              <Database size={17} />
+            </span>
+            <small>Twenty workspace</small>
+            <strong>Connected</strong>
+            <p><i /> Records ready to sync</p>
+          </article>
+          <article className="setup-welcome-card setup-welcome-card-brand">
+            <span className="setup-welcome-card-icon">
+              <Palette size={17} />
+            </span>
+            <small>Client experience</small>
+            <strong>Branded</strong>
+            <div className="setup-welcome-swatches">
+              <i />
+              <i />
+              <i />
+            </div>
+          </article>
+        </div>
+      </aside>
+
+      <nav
+        aria-label="Setup progress"
+        className="setup-progress"
+        hidden={currentStep === 0 && !provisioning && !showCompletion}
+      >
+        <SetupBrand brandLogoUrl={brandLogoUrl} brandName={brandName} />
+        {[...steps, launchStep].map((step, index) => {
           const Icon = step.icon;
-          const isActive = index === currentStep;
-          const isComplete = index < currentStep || index < furthestStep;
+          const isLaunch = index === steps.length;
+          const isActive = provisioning ? isLaunch : index === currentStep;
+          const isComplete = provisioning
+            ? index < steps.length
+            : index < currentStep || index < furthestStep;
           return (
             <button
               aria-current={isActive ? "step" : undefined}
               className={`setup-progress-item${isActive ? " is-active" : ""}${
                 isComplete ? " is-complete" : ""
               }`}
-              disabled={index > furthestStep}
+              disabled={provisioning || isLaunch || index > furthestStep}
               key={step.title}
               onClick={() => goToStep(index)}
               type="button"
             >
               <span className="setup-progress-number">
-                {isComplete && !isActive ? <Check size={15} /> : index + 1}
+                {isComplete && !isActive ? (
+                  <Check size={15} />
+                ) : (
+                  <Icon aria-hidden="true" size={15} />
+                )}
               </span>
               <span className="setup-progress-copy">
+                <small>Step {String(index + 1).padStart(2, "0")}</small>
                 <strong>{step.title}</strong>
-                <small>{step.description}</small>
               </span>
-              <Icon aria-hidden="true" className="setup-progress-icon" size={18} />
             </button>
           );
         })}
+        <div className="setup-rail-summary">
+          <span>
+            Workspace setup
+            <strong>
+              {provisioning ? steps.length + 1 : currentStep + 1} of{" "}
+              {steps.length + 1}
+            </strong>
+          </span>
+          <progress
+            aria-label="Setup steps completed"
+            max={steps.length + 1}
+            value={provisioning ? steps.length + 1 : currentStep + 1}
+          />
+        </div>
       </nav>
 
-      <div className="setup-stage">
-        <div className="setup-stage-kicker">
-          Step {currentStep + 1} of {steps.length}
-        </div>
-
-        {state.error ? (
-          <p className="error setup-error" role="alert">
-            {state.error}
+      <div
+        className={`setup-stage is-${direction}${
+          provisioning && !showCompletion ? " is-provisioning" : ""
+        }${showCompletion ? " is-complete" : ""}`}
+      >
+        <span
+          aria-hidden="true"
+          className="setup-transition-wash"
+          key={transitionId}
+          onAnimationEnd={finishStepTransition}
+        />
+        <section
+          aria-labelledby="setup-provisioning-title"
+          aria-live="polite"
+          className={`setup-provisioning${setupSucceeded ? " is-complete" : ""}`}
+          hidden={!provisioning || showCompletion}
+        >
+            <span className="setup-provisioning-icon">
+              {setupSucceeded ? (
+                <Check size={22} />
+              ) : (
+                <LoaderCircle className="spin-icon" size={22} />
+              )}
+            </span>
+            <p className="eyebrow">Workspace initialization</p>
+            <h2 id="setup-provisioning-title">Building your client portal</h2>
+            <p className="setup-provisioning-copy">
+              Your configuration is being secured and assembled. Keep this
+              window open until sign-in is ready.
+            </p>
+            <div
+              aria-label="Workspace setup progress"
+              aria-valuemax={100}
+              aria-valuemin={0}
+              aria-valuenow={Math.round(provisioningProgress)}
+              className="setup-provisioning-progress"
+              role="progressbar"
+            >
+              <span style={{ width: `${provisioningProgress}%` }} />
+            </div>
+            <div className="setup-provisioning-status">
+              <span>
+                {setupSucceeded
+                  ? "Workspace configuration complete"
+                  : pending
+                    ? "Finalizing workspace"
+                    : "Starting setup"}
+              </span>
+              <strong>
+                {Math.round(provisioningProgress)}%
+              </strong>
+            </div>
+            <ul className="setup-provisioning-tasks">
+              {provisioningTasks.map((task, index) => (
+                <li
+                  key={task}
+                  style={{ "--task-index": index } as React.CSSProperties}
+                >
+                  <span>
+                    <Check size={13} />
+                  </span>
+                  {task}
+                </li>
+              ))}
+            </ul>
+        </section>
+        <section
+          aria-labelledby="setup-complete-title"
+          className="setup-complete"
+          hidden={!showCompletion}
+        >
+          <span className="setup-complete-icon">
+            <Check size={24} />
+          </span>
+          <p className="eyebrow">Workspace ready</p>
+          <h2 id="setup-complete-title">Your portal is ready for sign-in.</h2>
+          <p>
+            Start with a short guided tour of portal views, invitations, and
+            settings, or head directly to the administrator dashboard.
           </p>
-        ) : null}
+          <div className="setup-complete-actions">
+            <a
+              className="button"
+              href="/login?setup=complete&tour=1"
+              onClick={() =>
+                window.sessionStorage.setItem("admin-tour-pending", "1")
+              }
+            >
+              Sign in and take the tour
+              <ArrowRight size={15} />
+            </a>
+            <a
+              className="button secondary"
+              href="/login?setup=complete"
+              onClick={() =>
+                window.sessionStorage.removeItem("admin-tour-pending")
+              }
+            >
+              Skip for now
+            </a>
+          </div>
+        </section>
+        <div
+          className="setup-form-content"
+          hidden={provisioning || showCompletion}
+        >
+            <div className="setup-stage-kicker">
+              Step {currentStep + 1} of {steps.length}
+            </div>
+
+            {state.error ? (
+              <p className="error setup-error" role="alert">
+                {state.error}
+              </p>
+            ) : null}
 
         <fieldset
           className="setup-panel"
@@ -218,20 +509,6 @@ export function SetupForm() {
             administration. Setup is permanently locked after completion.
           </p>
           <div className="setup-fields">
-            <div className="field setup-field-wide">
-              <label htmlFor="setupToken">Setup token</label>
-              <input
-                autoComplete="off"
-                className="input"
-                id="setupToken"
-                name="setupToken"
-                required
-                type="password"
-              />
-              <p className="setup-field-note">
-                Use the <code>SETUP_TOKEN</code> configured on your server.
-              </p>
-            </div>
             <div className="field">
               <label htmlFor="name">Administrator name</label>
               <input
@@ -537,39 +814,67 @@ export function SetupForm() {
           </div>
         </fieldset>
 
-        <div className="setup-actions">
-          {currentStep > 0 ? (
-            <button
-              className="button secondary"
-              disabled={pending}
-              onClick={() => goToStep(currentStep - 1)}
-              type="button"
-            >
-              <ArrowLeft size={16} />
-              Back
-            </button>
-          ) : (
-            <span />
-          )}
+            <div className="setup-actions">
+              {currentStep > 0 ? (
+                <button
+                  className="button secondary"
+                  disabled={pending || stepTransitioning}
+                  onClick={() => goToStep(currentStep - 1)}
+                  type="button"
+                >
+                  <ArrowLeft size={16} />
+                  Back
+                </button>
+              ) : (
+                <span />
+              )}
 
-          {currentStep < steps.length - 1 ? (
-            <button className="button" onClick={continueSetup} type="button">
-              Continue
-              <ArrowRight size={16} />
-            </button>
-          ) : (
-            <button
-              className="button"
-              data-setup-complete="true"
-              disabled={pending}
-              type="submit"
-            >
-              {pending ? "Creating portal…" : "Complete setup"}
-              {!pending ? <Check size={16} /> : null}
-            </button>
-          )}
+              {currentStep < steps.length - 1 ? (
+                <button
+                  className="button"
+                  disabled={stepTransitioning}
+                  onClick={continueSetup}
+                  type="button"
+                >
+                  Continue
+                  <ArrowRight size={16} />
+                </button>
+              ) : (
+                <button
+                  className="button"
+                  data-setup-complete="true"
+                  disabled={pending || stepTransitioning}
+                  type="submit"
+                >
+                  {pending ? "Creating portal…" : "Launch workspace"}
+                  {!pending ? <Rocket size={16} /> : null}
+                </button>
+              )}
+            </div>
         </div>
       </div>
     </form>
+  );
+}
+
+function SetupBrand({
+  brandName,
+  brandLogoUrl,
+  inverse = false,
+}: {
+  brandName: string;
+  brandLogoUrl: string | null;
+  inverse?: boolean;
+}) {
+  return (
+    <div className={`setup-brand${inverse ? " is-inverse" : ""}`}>
+      {brandLogoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img alt="" src={brandLogoUrl} />
+      ) : (
+        <span>{brandName.slice(0, 2).toUpperCase()}</span>
+      )}
+      <strong>{brandName}</strong>
+    </div>
   );
 }

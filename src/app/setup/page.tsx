@@ -2,9 +2,12 @@ import { count } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 import { SetupForm } from "@/components/setup-form";
+import { SetupThemeToggle } from "@/components/setup-theme-toggle";
 import { db } from "@/lib/db";
 import { getDefaultApplicationSettings } from "@/lib/application-settings";
 import { portalAdministrators } from "@/lib/db/schema";
+
+import "./oobe.css";
 
 export const dynamic = "force-dynamic";
 
@@ -17,40 +20,25 @@ export default async function SetupPage() {
   const branding = getDefaultApplicationSettings();
 
   return (
-    <main
-      className="setup-shell"
-      style={{ "--brand-primary": branding.primaryColor } as React.CSSProperties}
-    >
-      <header className="setup-header">
-        <div className="setup-header-brand">
-          {branding.brandLogoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img alt="" src={branding.brandLogoUrl} />
-          ) : (
-            <span>{branding.brandName.slice(0, 2).toUpperCase()}</span>
-          )}
-          <div>
-            <strong>{branding.brandName}</strong>
-            <small>Initial configuration</small>
-          </div>
-        </div>
-        <p>Your settings remain editable after setup.</p>
-      </header>
-
-      <section className="setup-layout">
-        <div className="setup-page-intro">
-          <div>
-            <span className="eyebrow">Initial configuration</span>
-            <h1>Set up your client portal</h1>
-          </div>
-          <p>
-            Create the administrator, connect Twenty CRM, configure email, and
-            apply your branding. Nothing is saved until setup is complete.
-          </p>
-        </div>
-
-        <SetupForm />
-      </section>
-    </main>
+    <>
+      <script
+        dangerouslySetInnerHTML={{
+          __html:
+            "try{const t=localStorage.getItem('setup-theme')==='dark'?'dark':'light';const r=document.documentElement;r.dataset.theme=t;r.classList.toggle('dark',t==='dark');r.style.colorScheme=t}catch(e){}",
+        }}
+      />
+      <main
+        className="setup-shell"
+        style={{ "--brand-primary": branding.primaryColor } as React.CSSProperties}
+      >
+        <SetupThemeToggle />
+        <section className="setup-layout">
+          <SetupForm
+            brandLogoUrl={branding.brandLogoUrl}
+            brandName={branding.brandName}
+          />
+        </section>
+      </main>
+    </>
   );
 }

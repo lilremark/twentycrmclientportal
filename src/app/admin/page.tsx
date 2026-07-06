@@ -15,6 +15,7 @@ import {
 
 import { syncMetadataAction } from "@/app/actions/admin";
 import { ConnectionTestButton } from "@/components/admin-actions";
+import { AdminOnboardingTour } from "@/components/admin-onboarding-tour";
 import { db } from "@/lib/db";
 import {
   auditEvents,
@@ -43,7 +44,12 @@ function ActivityIcon({ action }: { action: string }) {
   return <Activity size={17} />;
 }
 
-export default async function AdminOverviewPage() {
+export default async function AdminOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const query = await searchParams;
   const [latest, views, clients, recentActivity, activityToday] =
     await Promise.all([
       db
@@ -96,8 +102,10 @@ export default async function AdminOverviewPage() {
   );
 
   return (
-    <div className="portal-home-dashboard admin-home-dashboard">
-      <section className="portal-home-hero admin-home-hero">
+    <>
+      {query.tour === "1" ? <AdminOnboardingTour /> : null}
+      <div className="portal-home-dashboard admin-home-dashboard">
+      <section className="portal-home-hero admin-home-hero" data-tour-target="overview">
         <div className="page-actions admin-dashboard-actions">
           <ConnectionTestButton />
           <form action={syncMetadataAction}>
@@ -241,7 +249,8 @@ export default async function AdminOverviewPage() {
           </p>
         )}
       </section>
-    </div>
+      </div>
+    </>
   );
 }
 

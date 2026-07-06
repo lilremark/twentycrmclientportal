@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function LoginForm({
+  callbackURL = "/",
   googleEnabled,
   customProvider,
 }: {
+  callbackURL?: string;
   googleEnabled: boolean;
   customProvider: { enabled: boolean; name: string };
 }) {
@@ -31,7 +33,7 @@ export function LoginForm({
                 setPending(true);
                 const result = await authClient.signIn.social({
                   provider: "google",
-                  callbackURL: "/",
+                  callbackURL,
                   errorCallbackURL: "/login?oauth=error",
                 });
                 if (result?.error) {
@@ -57,7 +59,7 @@ export function LoginForm({
                 setPending(true);
                 const result = await authClient.signIn.oauth2({
                   providerId: "custom-oauth",
-                  callbackURL: "/",
+                  callbackURL,
                   errorCallbackURL: "/login?oauth=error",
                 });
                 if (result?.error) {
@@ -99,7 +101,7 @@ export function LoginForm({
             );
             return;
           }
-          window.location.assign("/");
+          window.location.assign(callbackURL);
         }}
       >
         {error ? <p className="error text-sm">{error}</p> : null}

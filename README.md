@@ -147,7 +147,6 @@ POSTGRES_PASSWORD=replace-with-a-strong-database-password
 APP_URL=https://portal.example.com
 TRUSTED_ORIGINS=https://portal.example.com
 AUTH_SECRET=replace-with-at-least-32-random-characters
-SETUP_TOKEN=replace-with-a-one-time-setup-token
 TWENTY_BASE_URL=https://your-workspace.twenty.com
 TWENTY_API_KEY=replace-with-a-restricted-api-key
 TWENTY_WEBHOOK_SECRET=replace-with-the-webhook-signing-secret
@@ -161,8 +160,9 @@ docker compose ps
 curl --fail http://localhost:3005/health/ready
 ```
 
-Open `http://localhost:3005/setup` and use `SETUP_TOKEN` to create the first
-administrator. Migrations run automatically when the portal container starts.
+Open `http://localhost:3005/setup` to create the first administrator. Initial
+setup remains available only while no administrator exists. Migrations run
+automatically when the portal container starts.
 
 ### Evaluate with demo data
 
@@ -200,7 +200,6 @@ are the variables most deployments need to review:
 | `APP_URL` | Canonical public portal URL |
 | `TRUSTED_ORIGINS` | Additional browser origins accepted by authentication |
 | `AUTH_SECRET` | Better Auth signing/encryption secret, at least 32 characters |
-| `SETUP_TOKEN` | One-time authorization for initial administrator setup |
 | `TWENTY_BASE_URL` | Base URL of the Twenty workspace |
 | `TWENTY_API_KEY` | Restricted server-side Twenty API credential |
 | `TWENTY_WEBHOOK_SECRET` | Secret used to validate incoming webhook signatures |

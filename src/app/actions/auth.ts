@@ -1,16 +1,12 @@
 "use server";
 
-import { timingSafeEqual } from "node:crypto";
-
 import { count } from "drizzle-orm";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { writeAuditEvent } from "@/lib/audit";
 import { acceptInvitation, createCredentialUser } from "@/lib/credentials";
 import { db } from "@/lib/db";
 import { applicationSettings, portalAdministrators } from "@/lib/db/schema";
-import { getEnv } from "@/lib/env";
 import { APPLICATION_SETTINGS_ID } from "@/lib/application-settings";
 import {
   saveUploadedImage,
@@ -35,20 +31,12 @@ const passwordSchema = z
 export type AuthActionState = {
   error?: string;
   acceptedEmail?: string;
+  setupComplete?: boolean;
 };
 export type SetupSmtpTestState = {
   status: "success" | "error";
   message: string;
 };
-
-function safeTokenEqual(actual: string, expected: string) {
-  const actualBuffer = Buffer.from(actual);
-  const expectedBuffer = Buffer.from(expected);
-  return (
-    actualBuffer.length === expectedBuffer.length &&
-    timingSafeEqual(actualBuffer, expectedBuffer)
-  );
-}
 
 export async function testSetupSmtpAction(
   formData: FormData,
@@ -66,7 +54,6 @@ export async function testSetupSmtpAction(
 
     const parsed = z
       .object({
-        setupToken: z.string().min(1, "Enter the setup token first."),
         smtpHost: z.string().trim().min(1, "Enter an SMTP host."),
         smtpPort: z.coerce.number().int().positive(),
         smtpSecure: z
@@ -82,7 +69,6 @@ export async function testSetupSmtpAction(
         smtpPassword: z.string().optional(),
       })
       .safeParse({
-        setupToken: formData.get("setupToken"),
         smtpHost: formData.get("smtpHost"),
         smtpPort: formData.get("smtpPort"),
         smtpSecure: formData.get("smtpSecure"),
@@ -97,10 +83,6 @@ export async function testSetupSmtpAction(
       };
     }
     const input = parsed.data;
-
-    if (!safeTokenEqual(input.setupToken, getEnv().SETUP_TOKEN)) {
-      return { status: "error", message: "The setup token is invalid." };
-    }
 
     const transporter = createSmtpTransport({
       host: input.smtpHost,
@@ -142,7 +124,6 @@ export async function setupAction(
 
     const input = z
       .object({
-        setupToken: z.string(),
         name: z.string().trim().min(2),
         email: z.email(),
         password: passwordSchema,
@@ -197,9 +178,6 @@ export async function setupAction(
       })
       .parse(Object.fromEntries(formData));
 
-    if (!safeTokenEqual(input.setupToken, getEnv().SETUP_TOKEN)) {
-      return { error: "The setup token is invalid." };
-    }
     if (input.smtpHost) {
       validateSmtpEncryptionMode({
         port: input.smtpPort,
@@ -258,7 +236,7 @@ export async function setupAction(
     };
   }
 
-  redirect("/login?setup=complete");
+  return { setupComplete: true };
 }
 
 export async function acceptInvitationAction(
