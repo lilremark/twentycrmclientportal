@@ -152,10 +152,10 @@ TWENTY_API_KEY=replace-with-a-restricted-api-key
 TWENTY_WEBHOOK_SECRET=replace-with-the-webhook-signing-secret
 ```
 
-Start the pinned 2.0 release:
+Start the pinned 2.1 release:
 
 ```bash
-PORTAL_VERSION=2.0.0 docker compose up -d
+PORTAL_VERSION=2.1.0 docker compose up -d
 docker compose ps
 curl --fail http://localhost:3005/health/ready
 ```
@@ -204,7 +204,7 @@ are the variables most deployments need to review:
 | `TWENTY_API_KEY` | Restricted server-side Twenty API credential |
 | `TWENTY_WEBHOOK_SECRET` | Secret used to validate incoming webhook signatures |
 | `SMTP_*` | Invitation and password-reset email delivery settings |
-| `PORTAL_VERSION` | Docker image tag; defaults to `2.0.0` |
+| `PORTAL_VERSION` | Docker image tag; defaults to `2.1.0` |
 | `DEMO_MODE` | Enables local mock CRM records and demo seeding |
 
 Use `SMTP_SECURE=false` with port `587` or `25` for STARTTLS. Use

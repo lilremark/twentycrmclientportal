@@ -4,6 +4,30 @@ All notable changes to Twenty CRM Client Portal are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [2.1.0] - 2026-07-06
+
+### Highlights
+
+- Reorganized the client portal record workspace panel into a clean, tabbed interface to separate core fields, file attachments, and note records.
+- Introduced a guided out-of-box setup installation experience for new applications, complete with interactive onboarding tours and live installer theme selection.
+
+### Added
+
+- Added tabbed layout navigation (`RecordPanelTabs`) in the client portal record side panel to separate fields, file attachments, and notes.
+- Added a step-by-step guided setup walkthrough tour (`AdminOnboardingTour`) for administrators post-installation to introduce dashboard features.
+- Added a multi-stage application setup wizard (`SetupForm`) to guide administrators through database connections, SMTP setup, and portal styling.
+- Added a setup theme toggle (`SetupThemeToggle`) during installation with browser storage persistence.
+- Added manual CRM data refresh capability (`RefreshButton`) inside the tabbed record header.
+
+### Changed
+
+- Enhanced layout, styling, and action triggers for files (`portal-attachments.tsx`) and notes (`portal-notes.tsx`) sections.
+- Refined initial setup page styles under `oobe.css` and added OOBE color system classes to `globals.css`.
+
+### Upgrade notes
+
+- Docker image version and package manager configuration now use version `2.1.0` / `v2-1-0`. No manual database migrations are required for this release.
+
 ## [2.0.0] - 2026-07-02
 
 ### Highlights
@@ -389,6 +413,7 @@ PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
 
 After the health check passes, open the configured `APP_URL` and complete the one-time `/setup` flow.
 
+[2.1.0]: https://github.com/lilremark/twentycrmclientportal/releases/tag/v2.1.0
 [2.0.0]: https://github.com/lilremark/twentycrmclientportal/releases/tag/v2.0.0
 [1.5.2]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.5.2
 [1.5.1]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.5.1

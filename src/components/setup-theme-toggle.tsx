@@ -19,6 +19,7 @@ export function SetupThemeToggle() {
     const storedTheme = localStorage.getItem("setup-theme");
     const initialTheme: SetupTheme = storedTheme === "dark" ? "dark" : "light";
     applySetupTheme(initialTheme);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(initialTheme);
   }, []);
 
