@@ -1,3 +1,7 @@
+// @vitest-environment jsdom
+
+import "@testing-library/jest-dom/vitest";
+
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -66,7 +70,7 @@ describe("PortalNotes", () => {
     );
   });
 
-  it("selects a note without opening the dialog", () => {
+  it("renders notes as full-width cards without opening the dialog", () => {
     render(
       <PortalNotes
         canEdit={false}
@@ -79,11 +83,10 @@ describe("PortalNotes", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /second note/i }));
-
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(screen.getByText("Second.", { selector: ".record-note-view p" }))
+    expect(screen.getByText("Second.", { selector: ".record-note-canvas-card p" }))
       .toBeInTheDocument();
+    expect(screen.getByText("All")).toBeInTheDocument();
   });
 
   it("allows contributors to edit from the note dialog", () => {
@@ -107,6 +110,3 @@ describe("PortalNotes", () => {
     );
   });
 });
-// @vitest-environment jsdom
-
-import "@testing-library/jest-dom/vitest";

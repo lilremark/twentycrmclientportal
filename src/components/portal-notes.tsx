@@ -13,44 +13,34 @@ export function PortalNotes({
   canEdit,
   createAction,
   updateAction,
+  recordTitle,
 }: {
   notes: PortalNote[];
   canEdit: boolean;
   createAction: (formData: FormData) => void | Promise<void>;
   updateAction: (noteId: string, formData: FormData) => void | Promise<void>;
+  recordTitle?: string;
 }) {
-  const [selectedId, setSelectedId] = useState(notes[0]?.id ?? null);
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
   const [mode, setMode] = useState<NoteMode>("view");
-  const selectedNote =
-    notes.find((note) => note.id === selectedId) ?? notes[0] ?? null;
-
-  const selectNote = (noteId: string) => {
-    setSelectedId(noteId);
-    setMode("view");
-  };
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const editingNote = notes.find((note) => note.id === editingNoteId) ?? null;
   const modalNote = notes.find((note) => note.id === openNoteId) ?? null;
+  const relationLabel = recordTitle?.trim() || "Current record";
 
   return (
     <section className="record-notes-section">
       <div className="record-notes-heading">
-        <div className="record-section-title">
-          <span className="record-section-icon">
-            <NotebookPen size={16} />
-          </span>
-          <div>
-            <h3>Record notes</h3>
-            <p>
-              {notes.length
-                ? `${notes.length} note${notes.length === 1 ? "" : "s"} attached to this record`
-                : "Keep context with this record"}
-            </p>
-          </div>
-        </div>
+        <h3>
+          All <span>{notes.length}</span>
+        </h3>
         {canEdit ? (
           <button
             className="button secondary compact-button"
-            onClick={() => setMode("create")}
+            onClick={() => {
+              setEditingNoteId(null);
+              setMode("create");
+            }}
             type="button"
           >
             <Plus size={14} />
@@ -59,77 +49,66 @@ export function PortalNotes({
         ) : null}
       </div>
 
-      <div className="record-notes-layout">
-        <div className="record-note-list" role="list">
-          {notes.map((note) => (
-            <button
-              aria-pressed={mode !== "create" && selectedNote?.id === note.id}
-              className={`record-note-list-item ${
-                mode !== "create" && selectedNote?.id === note.id
-                  ? "active"
-                  : ""
-              }`}
-              key={note.id}
-              onClick={() => selectNote(note.id)}
-              type="button"
-            >
-              <span className="record-note-list-icon">
-                <FileText size={15} />
-              </span>
-              <span>
-                <strong>{note.title}</strong>
-                <small>{note.body || "No note body."}</small>
-              </span>
-            </button>
-          ))}
-          {!notes.length ? (
-            <p className="record-notes-empty">No notes have been added yet.</p>
-          ) : null}
-        </div>
-
-        <div className="record-note-detail">
-          {mode === "create" && canEdit ? (
-            <NoteForm
-              action={createAction}
-              onCancel={() => setMode("view")}
-              submitLabel="Add note"
-              title="New note"
-            />
-          ) : selectedNote && mode === "edit" && canEdit ? (
-            <NoteForm
-              action={updateAction.bind(null, selectedNote.id)}
-              body={selectedNote.body}
-              onCancel={() => setMode("view")}
-              submitLabel="Save note"
-              title={selectedNote.title}
-            />
-          ) : selectedNote ? (
-            <article className="record-note-view">
-              <div className="record-note-view-heading">
-                <h4>{selectedNote.title}</h4>
-                <div className="record-note-view-actions">
+      <div className="record-notes-canvas" role="list">
+        {mode === "create" && canEdit ? (
+          <NoteForm
+            action={createAction}
+            onCancel={() => setMode("view")}
+            submitLabel="Add note"
+            title="New note"
+          />
+        ) : null}
+        {editingNote && mode === "edit" && canEdit ? (
+          <NoteForm
+            action={updateAction.bind(null, editingNote.id)}
+            body={editingNote.body}
+            onCancel={() => {
+              setEditingNoteId(null);
+              setMode("view");
+            }}
+            submitLabel="Save note"
+            title={editingNote.title}
+          />
+        ) : null}
+        {notes.map((note) => (
+          <article className="record-note-canvas-card" key={note.id} role="listitem">
+            <div className="record-note-canvas-header">
+              <h4>{note.title}</h4>
+              <div className="record-note-view-actions">
+                <button
+                  className="button secondary compact-button"
+                  onClick={() => setOpenNoteId(note.id)}
+                  type="button"
+                >
+                  <Maximize2 size={13} />
+                  View full note
+                </button>
+                {canEdit ? (
                   <button
                     className="button secondary compact-button"
-                    onClick={() => setOpenNoteId(selectedNote.id)}
-                    type="button"
-                  >
-                    <Maximize2 size={13} />
-                    View full note
-                  </button>
-                  {canEdit ? (
-                  <button
-                    className="button secondary compact-button"
-                    onClick={() => setMode("edit")}
+                    onClick={() => {
+                      setEditingNoteId(note.id);
+                      setMode("edit");
+                    }}
                     type="button"
                   >
                     Edit
                   </button>
-                  ) : null}
-                </div>
+                ) : null}
               </div>
-              <p>{selectedNote.body || "No note body."}</p>
-            </article>
-          ) : canEdit ? (
+            </div>
+            <p>{note.body || "No note body."}</p>
+            <div className="record-note-relations">
+              <span>
+                <NotebookPen size={14} />
+                Relations
+              </span>
+              <strong title={relationLabel}>{relationLabel}</strong>
+            </div>
+          </article>
+        ))}
+        {!notes.length ? (
+          canEdit ? (
             <button
               className="record-note-empty-action"
               onClick={() => setMode("create")}
@@ -138,8 +117,14 @@ export function PortalNotes({
               <Plus size={16} />
               Add the first note
             </button>
-          ) : null}
-        </div>
+          ) : (
+            <div className="record-notes-empty">
+              <FileText size={18} />
+              <strong>No notes yet</strong>
+              <p>Notes shared with this record will appear here.</p>
+            </div>
+          )
+        ) : null}
       </div>
       {modalNote ? (
         <NoteDetailModal

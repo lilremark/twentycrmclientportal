@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
+import { ClientOnboardingTour } from "@/components/client-onboarding-tour";
 import { SignOutButton } from "@/components/sign-out-button";
 import { Button } from "@/components/ui/button";
 
@@ -332,6 +333,16 @@ export function AppShell({
       return next;
     });
   };
+  const tourTargetForItem = (href: string) => {
+    if (href === "/admin/views") return "views";
+    if (href === "/admin/invitations") return "invitations";
+    if (href === "/admin/settings") return "settings";
+    if (variant === "portal" && href === "/portal") return "client-home";
+    if (variant === "portal" && href === "/portal/settings") {
+      return "client-account";
+    }
+    return undefined;
+  };
 
   return (
     <div
@@ -423,6 +434,11 @@ export function AppShell({
                   aria-controls={sectionId}
                   aria-expanded={sectionOpen}
                   className="sidebar-section-toggle"
+                  data-tour-target={
+                    variant === "portal" && section.key === "shared"
+                      ? "client-shared-views"
+                      : undefined
+                  }
                   onClick={() => toggleSidebarSection(section.key)}
                   type="button"
                 >
@@ -440,15 +456,7 @@ export function AppShell({
                     return (
                       <Link
                         className={`sidebar-link ${active ? "active" : ""}`}
-                        data-tour-target={
-                          item.href === "/admin/views"
-                            ? "views"
-                            : item.href === "/admin/invitations"
-                              ? "invitations"
-                              : item.href === "/admin/settings"
-                                ? "settings"
-                                : undefined
-                        }
+                        data-tour-target={tourTargetForItem(item.href)}
                         href={item.href}
                         key={item.href}
                         onClick={() => setMobileOpen(false)}
@@ -581,6 +589,7 @@ export function AppShell({
                 title={user.name}
                 type="button"
                 ref={accountButtonRef}
+                data-tour-target="client-account"
               >
                 <span className="sidebar-avatar">
                   {user.image ? (
@@ -597,6 +606,9 @@ export function AppShell({
             <nav
               aria-label={`${headerTitle} sections`}
               className="app-section-tabs"
+              data-tour-target={
+                variant === "portal" ? "client-view-tabs" : undefined
+              }
             >
               {sectionTabs.map((tab) => {
                 const hasQuery = tab.href.includes("?");
@@ -628,6 +640,9 @@ export function AppShell({
         </header>
         <div className="app-content">{children}</div>
       </main>
+      {variant === "portal" ? (
+        <ClientOnboardingTour userKey={user.email || user.name} />
+      ) : null}
     </div>
   );
 }

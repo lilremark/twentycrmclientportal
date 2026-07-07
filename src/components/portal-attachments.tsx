@@ -1,6 +1,6 @@
-import { FolderOpen, Paperclip, Upload } from "lucide-react";
+import { Download, Eye, FileText, FolderOpen, Paperclip, Upload } from "lucide-react";
 
-import { PortalRecordValue } from "@/components/portal-record-value";
+import { DeleteUploadButton } from "@/components/delete-upload-button";
 import { extractPortalFiles } from "@/lib/file-values";
 
 export function PortalAttachments({
@@ -21,28 +21,51 @@ export function PortalAttachments({
   return (
     <section className="record-attachments-section">
       <div className="record-attachments-heading">
-        <div className="record-section-title">
-          <span className="record-section-icon">
-            <FolderOpen size={16} />
-          </span>
-          <div>
-            <h3>Files and attachments</h3>
-            <p>Preview, download, or add files shared with this record</p>
-          </div>
-        </div>
+        <h3>
+          All <span>{files.length}</span>
+        </h3>
       </div>
       {files.length ? (
-        <PortalRecordValue
-          deleteAttachmentAction={
-            canUpload ? deleteAttachmentAction : undefined
-          }
-          pdfPreview
-          type="RELATION"
-          value={value}
-        />
+        <div className="record-file-list record-file-tab-list">
+          {files.map((file) => (
+            <article className="record-file-item" key={`${file.href}:${file.label}`}>
+              <div className="record-file-heading">
+                <span>
+                  <FileText size={15} />
+                  {file.label}
+                </span>
+                <div>
+                  <a href={file.href} rel="noreferrer" target="_blank">
+                    <Eye size={14} />
+                    Open
+                  </a>
+                  <a href={file.downloadHref}>
+                    <Download size={14} />
+                    Download
+                  </a>
+                  {canUpload && file.attachmentId ? (
+                    <DeleteUploadButton
+                      action={deleteAttachmentAction.bind(
+                        null,
+                        file.attachmentId,
+                      )}
+                      confirmMessage={`Delete ${file.label}? This removes the attachment from Twenty.`}
+                    />
+                  ) : null}
+                </div>
+              </div>
+              {file.isPdf ? (
+                <details className="record-pdf-preview">
+                  <summary>Preview PDF</summary>
+                  <iframe loading="lazy" src={file.href} title={file.label} />
+                </details>
+              ) : null}
+            </article>
+          ))}
+        </div>
       ) : (
         <div className="record-files-empty">
-          <Paperclip size={17} />
+          <FolderOpen size={18} />
           <div>
             <strong>No files attached</strong>
             <p>Files added to this record will appear here.</p>

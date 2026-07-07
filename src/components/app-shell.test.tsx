@@ -18,6 +18,7 @@ vi.mock("next/link", () => ({
 vi.mock("next/navigation", () => ({
   useParams: () => ({}),
   usePathname: () => "/admin",
+  useRouter: () => ({ replace: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
 

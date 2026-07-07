@@ -4,6 +4,38 @@ All notable changes to Twenty CRM Client Portal are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [2.1.1] - 2026-07-07
+
+### Highlights
+
+- Polished the 2.1 client and administrator UI refresh with more stable modal layering, portal shell curvature, sidebar branding, and form input rendering.
+- Improved first-run and first-login guidance so client onboarding callouts stay attached to the UI elements they describe.
+
+### Added
+
+- Added a client portal onboarding tour that introduces the home dashboard, portal navigation, records, filters, reports, profile settings, and record details.
+- Added an invitation success confirmation dialog with a readable direct invite link and copy action after invite emails are sent.
+
+### Changed
+
+- Redesigned record notes and files tabs in the client portal detail sidebar to use fuller, purpose-built layouts instead of cramped embedded sections.
+- Updated the client portal sidebar/workspace divider to match the administrator portal's curved shell treatment.
+- Standardized client portal collapsed sidebar branding dimensions with the administrator sidebar.
+- Normalized text field font metrics and line boxes across the application so special characters do not cause vertical text jumps.
+- Improved invite-link contrast in both light and dark mode and changed dark mode link surfaces to neutral gray.
+
+### Fixed
+
+- Fixed invite-user modal handoff issues where the success dialog could clip behind or overlap the Users table while appearing.
+- Fixed invite-user modal behavior so successful sends no longer close/reopen the form without showing the invite link.
+- Fixed dropdown and icon-picker layering above dialogs.
+- Fixed client portal onboarding tour highlighting so the home target is not blurred and the description card appears near the highlighted element.
+- Fixed client portal sidebar curvature regressions, including the straight top intersection and extra grey curve fill.
+
+### Upgrade notes
+
+- Docker image version and package manager configuration now use version `2.1.1` / `v2-1-1`. No manual database migrations are required for this release.
+
 ## [2.1.0] - 2026-07-06
 
 ### Highlights
@@ -413,6 +445,7 @@ PORTAL_VERSION=1.0.0 PORTAL_DEPLOYMENT_ID=v1-0-0 docker compose up -d --build
 
 After the health check passes, open the configured `APP_URL` and complete the one-time `/setup` flow.
 
+[2.1.1]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=2.1.1
 [2.1.0]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=2.1.0
 [2.0.0]: https://github.com/lilremark/twentycrmclientportal/releases/tag/v2.0.0
 [1.5.2]: https://hub.docker.com/r/lilremark/twentycrmclientportal/tags?name=1.5.2

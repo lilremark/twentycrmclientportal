@@ -1,13 +1,22 @@
 "use client";
 
-import { Building2, Plus, Send, UserPlus, X } from "lucide-react";
-import { useActionState, useState, useTransition } from "react";
+import {
+  Building2,
+  CheckCircle2,
+  ClipboardCopy,
+  Plus,
+  Send,
+  UserPlus,
+  X,
+} from "lucide-react";
+import { useEffect, useState, useTransition } from "react";
 
 import {
   createClientAccountAction,
   createInvitationAction,
   testConnectionAction,
 } from "@/app/actions/admin";
+import type { InvitationActionState } from "@/app/actions/admin";
 import { AppSelect } from "@/components/ui/app-select";
 import {
   AlertDialog,
@@ -47,18 +56,40 @@ export function ConnectionTestButton() {
 
 export function InvitationForm({
   clients,
+  onInvited,
   views,
 }: {
   clients: Array<{ id: string; name: string; twentyPersonId: string }>;
+  onInvited: (inviteUrl: string) => void;
   views: Array<{ id: string; label: string; scopeMode: string }>;
 }) {
   const [role, setRole] = useState("viewer");
-  const [state, action, pending] = useActionState(createInvitationAction, {
+  const [state, setState] = useState<InvitationActionState>({
     error: undefined,
     inviteUrl: undefined,
   });
+  const [pending, startTransition] = useTransition();
+
   return (
-    <form action={action} className="invite-user-form">
+    <form
+      className="invite-user-form"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const formData = new FormData(form);
+        setState({ error: undefined, inviteUrl: undefined });
+        startTransition(async () => {
+          const nextState = await createInvitationAction(state, formData);
+          if (nextState.inviteUrl) {
+            form.reset();
+            setRole("viewer");
+            onInvited(nextState.inviteUrl);
+            return;
+          }
+          setState(nextState);
+        });
+      }}
+    >
       {state.error ? <p className="error text-sm">{state.error}</p> : null}
       {state.inviteUrl ? (
         <p className="success break-all text-sm">
@@ -290,6 +321,24 @@ export function InvitationModal({
   views: Array<{ id: string; label: string; scopeMode: string }>;
 }) {
   const [open, setOpen] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState<string>();
+  const [queuedInviteUrl, setQueuedInviteUrl] = useState<string>();
+  const [copied, setCopied] = useState(false);
+  const closeInviteSuccess = () => {
+    setInviteUrl(undefined);
+    setQueuedInviteUrl(undefined);
+    setCopied(false);
+  };
+
+  useEffect(() => {
+    if (open || !queuedInviteUrl) return undefined;
+    const timeout = window.setTimeout(() => {
+      setInviteUrl(queuedInviteUrl);
+      setQueuedInviteUrl(undefined);
+    }, 240);
+    return () => window.clearTimeout(timeout);
+  }, [open, queuedInviteUrl]);
+
   return (
     <>
       <Button onClick={() => setOpen(true)} type="button">
@@ -325,7 +374,74 @@ export function InvitationModal({
               </div>
             </AlertDialogHeader>
             <div className="admin-form-modal-content invite-user-modal-content">
-              <InvitationForm clients={clients} views={views} />
+              <InvitationForm
+                clients={clients}
+                onInvited={(nextInviteUrl) => {
+                  setQueuedInviteUrl(nextInviteUrl);
+                  setOpen(false);
+                  setCopied(false);
+                }}
+                views={views}
+              />
+            </div>
+          </AlertDialogPopup>
+        </AlertDialog>
+      ) : null}
+      {inviteUrl ? (
+        <AlertDialog
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen) closeInviteSuccess();
+          }}
+          open
+        >
+          <AlertDialogPopup
+            bottomStickOnMobile={false}
+            className="admin-form-modal invite-success-modal"
+            viewportClassName="confirmation-viewport"
+          >
+            <Button
+              aria-label="Close invitation confirmation"
+              className="confirmation-close"
+              onClick={closeInviteSuccess}
+              size="icon-sm"
+              type="button"
+              variant="ghost"
+            >
+              <X size={16} />
+            </Button>
+            <AlertDialogHeader className="admin-form-modal-heading invite-user-modal-heading">
+              <span className="admin-form-modal-icon invite-success-modal-icon">
+                <CheckCircle2 size={19} />
+              </span>
+              <div>
+                <AlertDialogTitle>Invitation sent</AlertDialogTitle>
+                <AlertDialogDescription>
+                  The invite email was sent. You can also copy the direct invite
+                  link below.
+                </AlertDialogDescription>
+              </div>
+            </AlertDialogHeader>
+            <div className="admin-form-modal-content invite-success-modal-content">
+              <div className="invite-success-link-card">
+                <span>Invite link</span>
+                <code>{inviteUrl}</code>
+              </div>
+              <div className="form-actions">
+                <Button
+                  onClick={() => {
+                    void navigator.clipboard?.writeText(inviteUrl);
+                    setCopied(true);
+                  }}
+                  type="button"
+                  variant="secondary"
+                >
+                  <ClipboardCopy size={16} />
+                  {copied ? "Copied" : "Copy link"}
+                </Button>
+                <Button onClick={closeInviteSuccess} type="button">
+                  Done
+                </Button>
+              </div>
             </div>
           </AlertDialogPopup>
         </AlertDialog>

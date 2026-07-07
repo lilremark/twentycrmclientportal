@@ -352,7 +352,7 @@ export default async function PortalListPage({
         ) : null}
         {error ? <p className="error">{error}</p> : null}
         {result ? (
-          <section className="card table-shell">
+          <section className="card table-shell" data-tour-target="client-records-table">
             <PortalDataTable
               bulkEditAction={bulkUpdateRecordsAction.bind(null, view.slug, listParams.toString())}
               columns={view.columns}
@@ -420,6 +420,7 @@ export default async function PortalListPage({
                             listParams.toString(),
                           )}
                           notes={selectedNotes}
+                          recordTitle={recordTitle || object.labelSingular}
                           updateAction={updateNoteAction.bind(
                             null,
                             view.slug,
