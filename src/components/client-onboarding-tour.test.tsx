@@ -87,4 +87,28 @@ describe("ClientOnboardingTour", () => {
 
     expect(replace).toHaveBeenCalledWith("/portal", { scroll: false });
   });
+
+  it("does not trap mouse wheel scrolling behind the client tour", () => {
+    const home = document.createElement("a");
+    home.dataset.tourTarget = "client-home";
+    const shell = document.createElement("div");
+    shell.className = "portal-shell";
+    const main = document.createElement("main");
+    main.className = "app-main";
+    Object.defineProperty(main, "scrollTop", {
+      configurable: true,
+      value: 0,
+      writable: true,
+    });
+    shell.append(main);
+    document.body.append(home, shell);
+
+    render(<ClientOnboardingTour userKey="client@example.test" />);
+
+    fireEvent.wheel(screen.getByRole("button", { name: "Skip client portal tour" }), {
+      deltaY: 320,
+    });
+
+    expect(main.scrollTop).toBe(320);
+  });
 });

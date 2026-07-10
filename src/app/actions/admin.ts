@@ -164,7 +164,7 @@ function portalViewFields(formData: FormData, object: TwentyObjectMetadata) {
 
 const dashboardWidgetSchema = z.object({
   id: z.string().trim().min(1),
-  type: z.enum(["number", "bar", "donut", "embed"]),
+  type: z.enum(["number", "bar", "donut", "list", "trend", "embed"]),
   label: z.string().trim().min(1).max(80),
   aggregate: z.enum(["count", "sum", "average"]),
   field: z.string().trim().optional(),

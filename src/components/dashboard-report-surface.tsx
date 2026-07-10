@@ -23,6 +23,7 @@ import type {
   PortalDashboardWidgetLayout,
 } from "@/lib/db/schema";
 import type {
+  DashboardListItem,
   DashboardChartPoint,
   DashboardResult,
 } from "@/lib/portal-dashboard";
@@ -137,6 +138,42 @@ function DonutChart({ points }: { points: DashboardChartPoint[] }) {
   );
 }
 
+function TrendChart({ points }: { points: DashboardChartPoint[] }) {
+  const max = Math.max(...points.map((point) => point.value), 1);
+
+  return (
+    <div className="dashboard-trend-chart">
+      {points.map((point, index) => (
+        <div className="dashboard-trend-column" key={`${point.label}-${index}`}>
+          <span
+            style={
+              {
+                "--trend-height": `${Math.max((point.value / max) * 100, 8)}%`,
+                "--trend-color": CHART_COLORS[index % CHART_COLORS.length],
+              } as CSSProperties
+            }
+          />
+          <strong>{point.value.toLocaleString()}</strong>
+          <small title={point.label}>{point.label}</small>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RecordList({ items }: { items: DashboardListItem[] }) {
+  return (
+    <div className="dashboard-record-list">
+      {items.map((item) => (
+        <div className="dashboard-record-list-item" key={item.id}>
+          <span title={item.label}>{item.label}</span>
+          <small>{item.meta}</small>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function DashboardCard({
   item,
   editing,
@@ -193,6 +230,20 @@ function DashboardCard({
           <span contentEditable={contentEditing} onBlur={(event) => onLabelChange?.(item.id, event.currentTarget.textContent ?? "")} suppressContentEditableWarning>{item.label}</span>
           <strong>{item.value}</strong>
         </>
+      ) : item.type === "list" ? (
+        <>
+          <header>
+            <div>
+              <span contentEditable={contentEditing} onBlur={(event) => onLabelChange?.(item.id, event.currentTarget.textContent ?? "")} suppressContentEditableWarning>{item.label}</span>
+              <strong>{item.total.toLocaleString()}</strong>
+            </div>
+          </header>
+          {item.items.length ? (
+            <RecordList items={item.items} />
+          ) : (
+            <p className="dashboard-empty-chart">No records are visible yet.</p>
+          )}
+        </>
       ) : (
         <>
           <header>
@@ -204,6 +255,8 @@ function DashboardCard({
           {item.points.length ? (
             item.type === "bar" ? (
               <BarChart points={item.points} />
+            ) : item.type === "trend" ? (
+              <TrendChart points={item.points} />
             ) : (
               <DonutChart points={item.points} />
             )

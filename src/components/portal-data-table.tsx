@@ -172,6 +172,7 @@ export function PortalDataTable({
 }) {
   const router = useRouter();
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
   const [loadedRecords, setLoadedRecords] = useState(records);
   const [nextCursor, setNextCursor] = useState(endCursor);
@@ -305,6 +306,27 @@ export function PortalDataTable({
     return () => observer.disconnect();
   }, [loadMore, moreAvailable]);
 
+  useEffect(() => {
+    const target = tableScrollRef.current;
+    if (!target) return;
+
+    const handleWheel = (event: WheelEvent) => {
+      if (!event.deltaY || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
+        return;
+      }
+      const scrollRoot = target.closest<HTMLElement>(".app-main");
+      if (!scrollRoot) return;
+      const before = scrollRoot.scrollTop;
+      scrollRoot.scrollTop += event.deltaY;
+      if (scrollRoot.scrollTop !== before) {
+        event.preventDefault();
+      }
+    };
+
+    target.addEventListener("wheel", handleWheel, { passive: false });
+    return () => target.removeEventListener("wheel", handleWheel);
+  }, []);
+
   // TanStack Table owns memoization internally; React Compiler should not wrap it.
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -370,9 +392,8 @@ export function PortalDataTable({
   const pendingPanelVisible = Boolean(
     pendingRecordId && selectedRecordId !== pendingRecordId,
   );
-
   return (
-    <div className="table-scroll">
+    <div className="table-scroll" ref={tableScrollRef}>
       <div className="table-view-toolbar">
         <button
           aria-pressed={favoritesOnly}

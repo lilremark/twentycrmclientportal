@@ -8,12 +8,14 @@ import {
   GripVertical,
   Globe2,
   LayoutPanelTop,
+  ListChecks,
   LockKeyhole,
   PieChart,
   Plus,
   Sigma,
   SlidersHorizontal,
   Trash2,
+  TrendingUp,
   X,
 } from "lucide-react";
 import {
@@ -638,6 +640,8 @@ const widgetIcons = {
   number: Sigma,
   bar: BarChart3,
   donut: PieChart,
+  list: ListChecks,
+  trend: TrendingUp,
   embed: Globe2,
 };
 
@@ -658,6 +662,7 @@ function DashboardWidgetBuilder({
 }) {
   const metricFields = dashboardMetricFields(fields);
   const groupFields = dashboardGroupFields(fields);
+  const dateFields = fields.filter((field) => field.type === "DATE" || field.type === "DATE_TIME");
   const [widgets, setWidgets] = useState<DashboardWidgetDraft[]>(
     initialWidgets.map((widget, index) => ({
       ...widget,
@@ -698,6 +703,20 @@ function DashboardWidgetBuilder({
         layout,
       };
     }
+    if (widget.type === "list") {
+      return {
+        id: widget.id,
+        type: widget.type,
+        label: widget.label || "Live records",
+        total: 128,
+        layout,
+        items: [
+          { id: "preview-1", label: "Northstar research sprint", meta: "Recently updated" },
+          { id: "preview-2", label: "Harbor client dashboard", meta: "Recently updated" },
+          { id: "preview-3", label: "Orbit analytics rollout", meta: "Recently updated" },
+        ],
+      };
+    }
 
     return {
       id: widget.id,
@@ -706,9 +725,17 @@ function DashboardWidgetBuilder({
       total: 128,
       layout,
       points: [
-        { label: "Active", value: 68 },
-        { label: "Pending", value: 37 },
-        { label: "Closed", value: 23 },
+        ...(widget.type === "trend"
+          ? [
+              { label: "Jul 1", value: 18 },
+              { label: "Jul 2", value: 24 },
+              { label: "Jul 3", value: 31 },
+            ]
+          : [
+              { label: "Active", value: 68 },
+              { label: "Pending", value: 37 },
+              { label: "Closed", value: 23 },
+            ]),
       ],
     };
   });
@@ -726,7 +753,10 @@ function DashboardWidgetBuilder({
             label: widget.label,
             aggregate: widget.aggregate,
             field: widget.aggregate === "count" ? "" : widget.field,
-            groupBy: widget.type === "number" ? "" : widget.groupBy,
+            groupBy:
+              widget.type === "number" || widget.type === "embed"
+                ? ""
+                : widget.groupBy,
             embedUrl: widget.type === "embed" ? widget.embedUrl : "",
             layout: normalizeDashboardLayout(widget.layout, widget.type, index),
           })}
@@ -1001,9 +1031,19 @@ function DashboardWidgetBuilder({
                                   type: event.target
                                     .value as PortalDashboardWidget["type"],
                                   groupBy:
-                                    event.target.value === "number"
+                                    event.target.value === "number" ||
+                                    event.target.value === "embed"
                                       ? undefined
                                       : widget.groupBy,
+                                  aggregate:
+                                    event.target.value === "list"
+                                      ? "count"
+                                      : widget.aggregate,
+                                  field:
+                                    event.target.value === "list" ||
+                                    event.target.value === "embed"
+                                      ? undefined
+                                      : widget.field,
                                 })
                               }
                               value={widget.type}
@@ -1011,6 +1051,8 @@ function DashboardWidgetBuilder({
                               <option value="number">Main number</option>
                               <option value="bar">Bar chart</option>
                               <option value="donut">Donut chart</option>
+                              <option value="trend">Date trend</option>
+                              <option value="list">Live record list</option>
                               <option value="embed">Secure web embed</option>
                             </AppSelect>
                           </div>
@@ -1020,7 +1062,7 @@ function DashboardWidgetBuilder({
                               <input className="input" id={`dashboard-embed-${widget.id}`} onChange={(event) => updateWidget(widget.id, { embedUrl: event.target.value })} placeholder="https://dashboard.example.com/embed/..." required type="url" value={widget.embedUrl ?? ""} />
                               <span className="field-help">Public HTTPS URLs only. Embedded content runs in an isolated sandbox.</span>
                             </div>
-                          ) : <div className="field">
+                          ) : widget.type === "list" ? null : <div className="field">
                             <label htmlFor={`dashboard-aggregate-${widget.id}`}>
                               Calculation
                             </label>
@@ -1072,7 +1114,11 @@ function DashboardWidgetBuilder({
                           {widget.type !== "number" && widget.type !== "embed" ? (
                             <div className="field">
                               <label htmlFor={`dashboard-group-${widget.id}`}>
-                                Group by
+                                {widget.type === "list"
+                                  ? "Display field"
+                                  : widget.type === "trend"
+                                    ? "Date field"
+                                    : "Group by"}
                               </label>
                               <AppSelect
                                 className="input"
@@ -1085,8 +1131,14 @@ function DashboardWidgetBuilder({
                                 required
                                 value={widget.groupBy ?? ""}
                               >
-                                <option value="">Choose a group field</option>
-                                {groupFields.map((field) => (
+                                <option value="">
+                                  {widget.type === "list"
+                                    ? "Choose a display field"
+                                    : widget.type === "trend"
+                                      ? "Choose a date field"
+                                      : "Choose a group field"}
+                                </option>
+                                {(widget.type === "trend" ? dateFields : groupFields).map((field) => (
                                   <option key={field.id} value={field.name}>
                                     {field.label} ·{" "}
                                     {field.type.replaceAll("_", " ")}

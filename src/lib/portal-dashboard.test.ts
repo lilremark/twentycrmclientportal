@@ -30,6 +30,13 @@ const fields: TwentyFieldMetadata[] = [
       { value: "WON", label: "Won" },
     ],
   },
+  {
+    id: "updatedAt",
+    name: "updatedAt",
+    label: "Updated at",
+    type: "DATE_TIME",
+    isNullable: true,
+  },
 ];
 
 describe("portal dashboards", () => {
@@ -125,6 +132,67 @@ describe("portal dashboards", () => {
         { label: "Won", value: 1 },
       ],
     });
+  });
+
+  it("builds live list and date trend widgets from portal records", () => {
+    const results = buildDashboardResults({
+      fields,
+      widgets: [
+        {
+          id: "recent",
+          type: "list",
+          label: "Recent records",
+          aggregate: "count",
+          groupBy: "status",
+        },
+        {
+          id: "trend",
+          type: "trend",
+          label: "Updates over time",
+          aggregate: "count",
+          groupBy: "updatedAt",
+        },
+      ],
+      records: [
+        { id: "1", status: "OPEN", updatedAt: "2026-07-01T12:00:00.000Z" },
+        { id: "2", status: "WON", updatedAt: "2026-07-02T12:00:00.000Z" },
+        { id: "3", status: "OPEN", updatedAt: "2026-07-02T18:00:00.000Z" },
+      ],
+    });
+
+    expect(results[0]).toMatchObject({
+      type: "list",
+      total: 3,
+      items: [
+        { id: "1", label: "Open", meta: "Status" },
+        { id: "2", label: "Won", meta: "Status" },
+        { id: "3", label: "Open", meta: "Status" },
+      ],
+    });
+    expect(results[1]).toMatchObject({
+      type: "trend",
+      points: [
+        { label: "Jul 1", value: 1 },
+        { label: "Jul 2", value: 2 },
+      ],
+    });
+  });
+
+  it("requires date metadata for trend widgets", () => {
+    expect(
+      validatePortalDashboardWidgets(
+        [
+          {
+            id: "trend",
+            type: "trend",
+            label: "Status trend",
+            aggregate: "count",
+            groupBy: "status",
+          },
+        ],
+        fields,
+      ),
+    ).toEqual(['Dashboard trend "Status trend" must use a date field.']);
   });
 
   it("repacks overlapping widget layouts without hiding dashboard data", () => {

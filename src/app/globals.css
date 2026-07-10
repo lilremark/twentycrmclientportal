@@ -1135,6 +1135,91 @@ input.input[type="datetime-local"] {
   gap: 18px;
 }
 
+.dashboard-trend-chart {
+  display: grid;
+  min-height: 170px;
+  grid-template-columns: repeat(auto-fit, minmax(42px, 1fr));
+  align-items: end;
+  gap: 10px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-subtle) 72%, transparent);
+  padding: 14px;
+}
+
+.dashboard-trend-column {
+  display: grid;
+  min-width: 0;
+  height: 142px;
+  grid-template-rows: 1fr auto auto;
+  align-items: end;
+  gap: 6px;
+  text-align: center;
+}
+
+.dashboard-trend-column > span {
+  display: block;
+  width: 100%;
+  height: var(--trend-height);
+  min-height: 8px;
+  border-radius: 999px 999px 5px 5px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--trend-color) 82%, white),
+    var(--trend-color)
+  );
+}
+
+.dashboard-trend-column strong {
+  color: var(--foreground);
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.dashboard-trend-column small {
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-record-list {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.dashboard-record-list-item {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  border-top: 1px solid var(--border);
+  padding: 11px 13px;
+}
+
+.dashboard-record-list-item:first-child {
+  border-top: 0;
+}
+
+.dashboard-record-list-item span {
+  overflow: hidden;
+  color: var(--foreground);
+  font-size: 0.82rem;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-record-list-item small {
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .dashboard-donut-chart svg {
   display: block;
   width: 100%;
@@ -1422,6 +1507,7 @@ input.input[type="datetime-local"] {
 
 .table-scroll {
   overflow-x: auto;
+  overscroll-behavior-x: contain;
 }
 
 .data-table {
@@ -11951,7 +12037,8 @@ body,
   .portal-shell .app-main,
   .portal-shell.record-panel-open .app-main {
     margin: 8px 8px 8px 0;
-    overflow: clip;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
     border-radius: 28px 0 0 28px !important;
   }
 
@@ -13792,7 +13879,8 @@ body > .record-panel-layer .export-workspace {
   .portal-shell .app-main,
   .portal-shell.record-panel-open .app-main {
     position: relative;
-    overflow: clip;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
     border: 0 !important;
     border-left: 1px solid var(--border) !important;
     border-radius: 28px 0 0 28px !important;

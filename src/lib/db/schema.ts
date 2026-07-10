@@ -269,7 +269,7 @@ export type PortalSavedFilter = {
 
 export type PortalDashboardWidget = {
   id: string;
-  type: "number" | "bar" | "donut" | "embed";
+  type: "number" | "bar" | "donut" | "list" | "trend" | "embed";
   label: string;
   aggregate: "count" | "sum" | "average";
   field?: string;

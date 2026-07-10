@@ -121,6 +121,8 @@ async function main() {
             { id: "projects-total", type: "number", label: "Active projects", aggregate: "count", layout: { x: 0, y: 0, w: 3, h: 1 } },
             { id: "projects-budget", type: "number", label: "Total budget", aggregate: "sum", field: "budget", layout: { x: 3, y: 0, w: 3, h: 1 } },
             { id: "projects-status", type: "donut", label: "Projects by status", aggregate: "count", groupBy: "status", layout: { x: 0, y: 1, w: 6, h: 2 } },
+            { id: "projects-due-trend", type: "trend", label: "Due dates", aggregate: "count", groupBy: "dueDate", layout: { x: 6, y: 1, w: 6, h: 2 } },
+            { id: "projects-live-list", type: "list", label: "Live project list", aggregate: "count", groupBy: "name", layout: { x: 0, y: 3, w: 5, h: 3 } },
           ])}, 10, true, ${tx.json([])}, ${now}, ${now}
         )
         on conflict ("slug") do update set
@@ -143,6 +145,8 @@ async function main() {
           ${tx.json([
             { id: "invoice-total", type: "number", label: "Total invoiced", aggregate: "sum", field: "amount", layout: { x: 0, y: 0, w: 3, h: 1 } },
             { id: "invoice-status", type: "bar", label: "Invoices by status", aggregate: "count", groupBy: "status", layout: { x: 0, y: 1, w: 6, h: 2 } },
+            { id: "invoice-issued-trend", type: "trend", label: "Issued over time", aggregate: "sum", field: "amount", groupBy: "issuedDate", layout: { x: 6, y: 1, w: 6, h: 2 } },
+            { id: "invoice-live-list", type: "list", label: "Live invoice list", aggregate: "count", groupBy: "invoiceNumber", layout: { x: 0, y: 3, w: 5, h: 3 } },
           ])}, 20, true, ${tx.json([])}, ${now}, ${now}
         )
         on conflict ("slug") do update set

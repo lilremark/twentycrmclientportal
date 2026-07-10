@@ -64,6 +64,7 @@ export function ClientOnboardingTour({ userKey }: { userKey: string }) {
   );
   const [stepIndex, setStepIndex] = useState(0);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLButtonElement>(null);
   const active = forced || !dismissed;
   const presentSteps =
     typeof document === "undefined"
@@ -90,6 +91,23 @@ export function ClientOnboardingTour({ userKey }: { userKey: string }) {
 
   useEffect(() => {
     if (!active) return;
+
+    const backdrop = backdropRef.current;
+    const handleWheel = (event: WheelEvent) => {
+      if (!event.deltaY || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
+        return;
+      }
+      const scrollRoot = document.querySelector<HTMLElement>(
+        ".portal-shell .app-main, .app-main",
+      );
+      if (!scrollRoot) return;
+      const before = scrollRoot.scrollTop;
+      scrollRoot.scrollTop += event.deltaY;
+      if (scrollRoot.scrollTop !== before) {
+        event.preventDefault();
+      }
+    };
+    backdrop?.addEventListener("wheel", handleWheel, { passive: false });
 
     const target = document.querySelector<HTMLElement>(step.selector);
     target?.classList.add("admin-tour-highlight");
@@ -146,6 +164,7 @@ export function ClientOnboardingTour({ userKey }: { userKey: string }) {
     document.body.classList.add("admin-tour-active");
 
     return () => {
+      backdrop?.removeEventListener("wheel", handleWheel);
       target?.classList.remove("admin-tour-highlight");
       window.removeEventListener("resize", positionCard);
       window.removeEventListener("scroll", positionCard, true);
@@ -162,6 +181,7 @@ export function ClientOnboardingTour({ userKey }: { userKey: string }) {
         aria-label="Skip client portal tour"
         className="admin-tour-backdrop client-tour-backdrop"
         onClick={closeTour}
+        ref={backdropRef}
         type="button"
       />
       <div

@@ -6,10 +6,18 @@ import type {
 } from "@/lib/db/schema";
 import { formatPortalValue } from "@/lib/format-value";
 
-export const dashboardWidgetTypes = ["number", "bar", "donut", "embed"] as const;
+export const dashboardWidgetTypes = [
+  "number",
+  "bar",
+  "donut",
+  "list",
+  "trend",
+  "embed",
+] as const;
 export const dashboardAggregates = ["count", "sum", "average"] as const;
 
 const numericFieldTypes = new Set(["NUMBER", "NUMERIC", "CURRENCY"]);
+const dateFieldTypes = new Set(["DATE", "DATE_TIME"]);
 const groupableFieldTypes = new Set([
   "TEXT",
   "BOOLEAN",
@@ -26,6 +34,12 @@ export type DashboardChartPoint = {
   value: number;
 };
 
+export type DashboardListItem = {
+  id: string;
+  label: string;
+  meta: string;
+};
+
 export type DashboardResult =
   | { id: string; type: "embed"; label: string; embedUrl: string; layout: PortalDashboardWidgetLayout }
   | {
@@ -37,17 +51,27 @@ export type DashboardResult =
     }
   | {
       id: string;
-      type: "bar" | "donut";
+      type: "bar" | "donut" | "trend";
       label: string;
       total: number;
       points: DashboardChartPoint[];
+      layout: PortalDashboardWidgetLayout;
+    }
+  | {
+      id: string;
+      type: "list";
+      label: string;
+      total: number;
+      items: DashboardListItem[];
       layout: PortalDashboardWidgetLayout;
     };
 
 const GRID_COLUMNS = 12;
 
 function defaultWidgetSize(type: PortalDashboardWidget["type"]) {
-  return type === "number" ? { w: 3, h: 2 } : { w: 6, h: 4 };
+  if (type === "number") return { w: 3, h: 2 };
+  if (type === "list") return { w: 5, h: 4 };
+  return { w: 6, h: 4 };
 }
 
 export function defaultDashboardLayout(
@@ -186,10 +210,25 @@ export function validatePortalDashboardWidgets(
         );
       }
     }
+    if (widget.type === "list") {
+      const field = widget.groupBy ? metadata.get(widget.groupBy) : null;
+      if (!field) {
+        errors.push(`Dashboard list "${widget.label}" needs a display field.`);
+      } else if (!groupableFieldTypes.has(field.type)) {
+        errors.push(
+          `Dashboard list "${widget.label}" cannot display ${field.label}.`,
+        );
+      }
+      continue;
+    }
     if (widget.type !== "number") {
       const field = widget.groupBy ? metadata.get(widget.groupBy) : null;
       if (!field) {
         errors.push(`Dashboard chart "${widget.label}" needs a group field.`);
+      } else if (widget.type === "trend" && !dateFieldTypes.has(field.type)) {
+        errors.push(
+          `Dashboard trend "${widget.label}" must use a date field.`,
+        );
       } else if (!groupableFieldTypes.has(field.type)) {
         errors.push(
           `Dashboard chart "${widget.label}" cannot group by ${field.label}.`,
@@ -268,6 +307,21 @@ function formatNumber(value: number, widget: PortalDashboardWidget) {
   }).format(value);
 }
 
+function dateBucket(value: unknown) {
+  if (typeof value !== "string" && typeof value !== "number" && !(value instanceof Date)) {
+    return null;
+  }
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return {
+    key: date.toISOString().slice(0, 10),
+    label: date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    }),
+  };
+}
+
 export function buildDashboardResults(input: {
   widgets: PortalDashboardWidget[];
   records: Record<string, unknown>[];
@@ -285,6 +339,54 @@ export function buildDashboardResults(input: {
         type: widget.type,
         label: widget.label,
         value: formatNumber(value, widget),
+        layout,
+      };
+    }
+    if (widget.type === "list") {
+      const displayField = metadata.get(widget.groupBy ?? "");
+      const items = input.records.slice(0, 8).map((record, recordIndex) => {
+        const label = formatPortalValue(record[widget.groupBy ?? ""], displayField?.type, {
+          selectOptions: displayField?.options,
+          formatSelectValues: true,
+        });
+        return {
+          id: String(record.id ?? `${widget.id}-${recordIndex}`),
+          label: label && label !== "—" ? label : `Record ${recordIndex + 1}`,
+          meta: displayField?.label ?? "Live record",
+        };
+      });
+      return {
+        id: widget.id,
+        type: widget.type,
+        label: widget.label,
+        total: input.records.length,
+        items,
+        layout,
+      };
+    }
+
+    if (widget.type === "trend") {
+      const buckets = new Map<string, { label: string; records: Record<string, unknown>[] }>();
+      for (const record of input.records) {
+        const bucket = dateBucket(record[widget.groupBy ?? ""]);
+        if (!bucket) continue;
+        const current = buckets.get(bucket.key) ?? { label: bucket.label, records: [] };
+        current.records.push(record);
+        buckets.set(bucket.key, current);
+      }
+      const points = [...buckets.entries()]
+        .sort(([left], [right]) => left.localeCompare(right))
+        .slice(-8)
+        .map(([, bucket]) => ({
+          label: bucket.label,
+          value: aggregateRecords(bucket.records, widget),
+        }));
+      return {
+        id: widget.id,
+        type: widget.type,
+        label: widget.label,
+        total: aggregateRecords(input.records, widget),
+        points,
         layout,
       };
     }
